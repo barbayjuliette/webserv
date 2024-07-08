@@ -6,34 +6,61 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/08 17:41:44 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/08 22:13:20 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/08 22:51:02 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/ListeningSocket.hpp"
 
+ListeningSocket* ListeningSocket::instance = NULL;
+
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-// ListeningSocket::ListeningSocket()
-// {
-// 	// Address
-// 	address.sin_family = AF_INET;
-// 	// Create socket: connection
-// 	server_socket = socket(AF_INET, SOCK_STREAM, 0);
-// 	if (server_socket == -1)
-// 		throw(ListeningSocket::SocketCreationFailure());
+ListeningSocket::ListeningSocket()
+{
+	signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+	// Address
+	address.sin_family = AF_INET;
+	address.sin_port = htons(8080);
+	address.sin_addr.s_addr = htonl(INADDR_ANY);
 	
-// 	// Bind the socket to an address and a port
-// 	bind(server_socket, (struct sockaddr*)&LC_ADDRESS)
+	// Create socket
+	server_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (server_socket == -1)
+	{
+		perror("Error creating socket: ");
+		exit(1);
+	}
+	int	tr = 1;
+	if (setsockopt(server_socket,SOL_SOCKET,SO_REUSEADDR,&tr,sizeof(int)) == -1) 
+	{
+		perror("setsockopt");
+		exit(1);
+	}
+	// Bind the socket to an address and a port
+	if (bind(server_socket, (struct sockaddr*)&address, sizeof(address)) < 0)
+	{
+		perror("Error bind: ");
+		exit(1);
+	}
+	// Listen: wait for the client to make a connection
+	if (listen(server_socket, 1024) < 0)
+	{
+		perror("Error listen: ");
+		exit(1);
+	}
+	instance = this;
+	this->accept_connections();
 
-// }
+}
 
 ListeningSocket::ListeningSocket(int domain, int type, int protocol, int port, u_long interface, int backlog)
 {
-	// signal(SIGINT, signal_handler);
-    // signal(SIGTERM, signal_handler);
+	signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
 	// Address
 	address.sin_family = domain;
 	address.sin_port = htons(port);
@@ -64,16 +91,14 @@ ListeningSocket::ListeningSocket(int domain, int type, int protocol, int port, u
 		perror("Error listen: ");
 		exit(1);
 	}
-	// instance = this;
+	instance = this;
 	this->accept_connections();
-
 }
 
 ListeningSocket::ListeningSocket( const ListeningSocket & src )
 {
 	(void)src;
 }
-
 
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
@@ -125,28 +150,25 @@ int	ListeningSocket::accept_new_connections(int socket)
 void	ListeningSocket::handle_connection(int client_socket)
 {
 	char	buffer[5000];
+	int		bytes_read;
 
-	read(client_socket, buffer, 5000);
-	std::cout << buffer << std::endl;;
+	if ((bytes_read = read(client_socket, buffer, 5000)) > 0)
+		std::cout << buffer << std::endl;
 	write(client_socket, "HELLO", 5);
 	fflush(stdout);
 }
 
-// void ListeningSocket::signal_handler(int signum)
-// {
-//     std::cout << "Interrupt signal (" << signum << ") received." << std::endl;
-//     if (instance)
-//     {
-//         instance->cleanup();
-//     }
-//     exit(signum);
-// }
-
-// void ListeningSocket::cleanup()
-// {
-//     close(server_socket);
-//     std::cout << "Socket closed in cleanup." << std::endl;
-// }
+void ListeningSocket::signal_handler(int signum)
+{
+    std::cout << "Signal received, webserver closed. Bye bye!" << std::endl;
+	
+	if (instance)
+	{
+		close (instance->server_socket);
+		FD_CLR(instance->server_socket, &(instance->current_sockets));
+	}
+    exit(signum);
+}
 
 void	ListeningSocket::accept_connections(void)
 {

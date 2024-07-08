@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/08 17:41:53 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/08 22:08:28 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/08 22:29:53 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,6 @@ class ListeningSocket
 		int					server_socket;
 		struct sockaddr_in	address;
 		fd_set				current_sockets;
-		// static ListeningSocket* instance;
 	public:
 
 		ListeningSocket();
@@ -54,8 +53,8 @@ class ListeningSocket
 		void	accept_connections(void);
 		int		accept_new_connections(int socket);
 		void	handle_connection(int i);
-		// static void	signal_handler(int signum);
+		static void	signal_handler(int signum);
 		// void 	cleanup();
-
+		static ListeningSocket* instance;
 };
 
