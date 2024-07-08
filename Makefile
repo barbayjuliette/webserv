@@ -25,7 +25,9 @@ SRC_DIR = ./sources
 
 # build files
 SRCS	= $(addprefix $(SRC_DIR)/, \
-		main.cpp)
+		main.cpp \
+		webserv.cpp \
+		utils.cpp)
 OBJS 	= ${SRCS:.cpp=.o}
 
 #------------------------------------------------------------------------
