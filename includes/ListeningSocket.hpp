@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/08 17:41:53 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/08 22:29:53 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/09 13:49:31 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,17 +29,20 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <csignal>
+# include <errno.h>
 
 class ListeningSocket
 {
 	private:
-		int					server_socket;
-		struct sockaddr_in	address;
-		fd_set				current_sockets;
+		int						_server_socket;
+		struct sockaddr_in		_address;
+		fd_set					_current_sockets;
+		static ListeningSocket* _instance;
 	public:
 
 		ListeningSocket();
 		ListeningSocket(int domain, int type, int protocol, int port, u_long interface, int backlog);
+		void	initialize(int domain, int type, int protocol, int port, u_long interface, int backlog);
 		ListeningSocket( ListeningSocket const & src );
 		~ListeningSocket();
 
@@ -50,11 +53,17 @@ class ListeningSocket
 			public:
 				virtual const char *what() const throw();
 		};
-		void	accept_connections(void);
-		int		accept_new_connections(int socket);
-		void	handle_connection(int i);
+		void		connect(void);
+		void		check(int num);
+		int			accept_new_connections(int socket);
+		void		handle_read_connection(int i);
+		void		handle_write_connection(int client_socket);
 		static void	signal_handler(int signum);
-		// void 	cleanup();
-		static ListeningSocket* instance;
+
+		// Accessors
+		int					getServerSocket();
+		struct sockaddr_in	getAddress();
+		fd_set				getCurrentSockets();
+		ListeningSocket*	getInstance();
 };
 

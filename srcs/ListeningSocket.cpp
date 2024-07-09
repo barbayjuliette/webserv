@@ -6,54 +6,49 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/08 17:41:44 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/08 22:51:02 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/09 13:53:08 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/ListeningSocket.hpp"
 
-ListeningSocket* ListeningSocket::instance = NULL;
+ListeningSocket* ListeningSocket::_instance = NULL;
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
+void	ListeningSocket::initialize(int domain, int type, int protocol, int port, u_long interface, int backlog)
+{
+	// Address
+	_address.sin_family = domain;
+	_address.sin_port = htons(port);
+	_address.sin_addr.s_addr = htonl(interface);
+	
+	// Create socket
+	_server_socket = socket(domain, type, protocol);
+	check(_server_socket);
+
+	// Options to be able to reuse address.
+	int	tr = 1;
+	check(setsockopt(_server_socket, SOL_SOCKET, SO_REUSEADDR, &tr, sizeof(int)));
+
+	// Bind the socket to an address and a port
+	check(bind(_server_socket, (struct sockaddr*)&_address, sizeof(_address)));
+
+	// Listen: wait for the client to make a connection
+	check(listen(_server_socket, backlog) < 0);
+}
+
 ListeningSocket::ListeningSocket()
 {
 	signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
-	// Address
-	address.sin_family = AF_INET;
-	address.sin_port = htons(8080);
-	address.sin_addr.s_addr = htonl(INADDR_ANY);
+	_instance = this;
 	
-	// Create socket
-	server_socket = socket(AF_INET, SOCK_STREAM, 0);
-	if (server_socket == -1)
-	{
-		perror("Error creating socket: ");
-		exit(1);
-	}
-	int	tr = 1;
-	if (setsockopt(server_socket,SOL_SOCKET,SO_REUSEADDR,&tr,sizeof(int)) == -1) 
-	{
-		perror("setsockopt");
-		exit(1);
-	}
-	// Bind the socket to an address and a port
-	if (bind(server_socket, (struct sockaddr*)&address, sizeof(address)) < 0)
-	{
-		perror("Error bind: ");
-		exit(1);
-	}
-	// Listen: wait for the client to make a connection
-	if (listen(server_socket, 1024) < 0)
-	{
-		perror("Error listen: ");
-		exit(1);
-	}
-	instance = this;
-	this->accept_connections();
+	initialize(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 1024);
+	
+	this->connect();
 
 }
 
@@ -61,41 +56,17 @@ ListeningSocket::ListeningSocket(int domain, int type, int protocol, int port, u
 {
 	signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
-	// Address
-	address.sin_family = domain;
-	address.sin_port = htons(port);
-	address.sin_addr.s_addr = htonl(interface);
-	
-	// Create socket
-	server_socket = socket(domain, type, protocol);
-	if (server_socket == -1)
-	{
-		perror("Error creating socket: ");
-		exit(1);
-	}
-	int	tr = 1;
-	if (setsockopt(server_socket,SOL_SOCKET,SO_REUSEADDR,&tr,sizeof(int)) == -1) 
-	{
-		perror("setsockopt");
-		exit(1);
-	}
-	// Bind the socket to an address and a port
-	if (bind(server_socket, (struct sockaddr*)&address, sizeof(address)) < 0)
-	{
-		perror("Error bind: ");
-		exit(1);
-	}
-	// Listen: wait for the client to make a connection
-	if (listen(server_socket, backlog) < 0)
-	{
-		perror("Error listen: ");
-		exit(1);
-	}
-	instance = this;
-	this->accept_connections();
+	_instance = this;
+
+	initialize(domain, type, protocol, port, interface, backlog);
+
+	this->connect();
 }
 
-ListeningSocket::ListeningSocket( const ListeningSocket & src )
+ListeningSocket::ListeningSocket( const ListeningSocket & src ):
+_server_socket(src._server_socket),
+_address(src._address),
+_current_sockets(src._current_sockets)
 {
 	(void)src;
 }
@@ -106,8 +77,9 @@ ListeningSocket::ListeningSocket( const ListeningSocket & src )
 
 ListeningSocket::~ListeningSocket()
 {
-	close(server_socket);
-	FD_CLR(server_socket, &current_sockets);
+	close(_server_socket);
+	FD_CLR(_server_socket, &_current_sockets);
+	FD_ZERO(&_current_sockets);
 	std::cout << "Socket closed." << std::endl;
 }
 
@@ -117,11 +89,13 @@ ListeningSocket::~ListeningSocket()
 
 ListeningSocket &				ListeningSocket::operator=( ListeningSocket const & rhs )
 {
-	//if ( this != &rhs )
-	//{
-		//this->_value = rhs.getValue();
-	//}
-	(void)rhs;
+	if ( this != &rhs )
+	{
+		this->_instance = rhs._instance;
+		this->_server_socket = rhs._server_socket;
+		this->_current_sockets = rhs._current_sockets;
+		this->_address = rhs._address;
+	}
 	return (*this);
 }
 
@@ -136,19 +110,30 @@ const char *ListeningSocket::SocketCreationFailure::what() const throw()
 
 int	ListeningSocket::accept_new_connections(int socket)
 {
-	socklen_t addrlen = sizeof(address);
+	socklen_t addrlen = sizeof(_address);
 
-	int	new_socket = accept(socket, (struct sockaddr*)&address, &addrlen);
+	int	new_socket = accept(socket, (struct sockaddr*)&_address, &addrlen);
 	if (new_socket < 0)
 	{
-		perror("Error accept: ");
+		std::cerr << strerror(errno);
 		exit(1);
 	}
 	return (new_socket);
 }
 
-void	ListeningSocket::handle_connection(int client_socket)
+void	ListeningSocket::check(int num)
 {
+	if (num < 0)
+	{
+		std::cerr << strerror(errno);
+		exit(1);
+	}
+}
+
+void	ListeningSocket::handle_read_connection(int client_socket)
+{
+	// Code for testing, will all be changed later
+
 	char	buffer[5000];
 	int		bytes_read;
 
@@ -158,50 +143,63 @@ void	ListeningSocket::handle_connection(int client_socket)
 	fflush(stdout);
 }
 
+void	ListeningSocket::handle_write_connection(int client_socket)
+{
+	(void)client_socket;
+}
+
+
 void ListeningSocket::signal_handler(int signum)
 {
-    std::cout << "Signal received, webserver closed. Bye bye!" << std::endl;
-	
-	if (instance)
+	if (_instance)
 	{
-		close (instance->server_socket);
-		FD_CLR(instance->server_socket, &(instance->current_sockets));
+		close(_instance->_server_socket);
+		FD_CLR(_instance->_server_socket, &(_instance->_current_sockets));
 	}
+    std::cout << "Signal received, webserver closed. Bye bye!" << std::endl;
     exit(signum);
 }
 
-void	ListeningSocket::accept_connections(void)
+void	ListeningSocket::connect(void)
 {
-	fd_set	ready_sockets;
+	fd_set	read_sockets, write_sockets;
 	int		client_socket;
+	// int		max_socket = _server_socket;
 
-	FD_ZERO(&current_sockets);
-	FD_SET(server_socket, &current_sockets);
+	FD_ZERO(&_current_sockets);
+	FD_SET(_server_socket, &_current_sockets);
 
 	while (true)
 	{
-		ready_sockets = current_sockets;
-		// Only for reading now, change the first NULL for also writing
-		if (select(FD_SETSIZE, &ready_sockets, NULL, NULL, NULL) < 0)
+		read_sockets = _current_sockets;
+		write_sockets = _current_sockets;
+		
+		if (select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, NULL) < 0)
 		{
-			perror("Error select: ");
+			std::cerr << strerror(errno);
 			exit(1);
 		}
 		int	i = 0;
 		while (i < FD_SETSIZE)
 		{
-			if (FD_ISSET(i, &ready_sockets))
+			if (FD_ISSET(i, &read_sockets))
 			{
-				if (i == server_socket) // New connection
+				if (i == _server_socket) // New connection
 				{
-					client_socket = accept_new_connections(server_socket);
-					FD_SET(client_socket, &current_sockets);
+					client_socket = accept_new_connections(_server_socket);
+					FD_SET(client_socket, &_current_sockets);
+					// if (client_socket > max_socket)
+					// 	max_socket = client_socket;
 				}
 				else
 				{
-					handle_connection(i);
-					FD_CLR(i, &current_sockets);
+					handle_read_connection(i);
+					FD_CLR(i, &_current_sockets);
 				}
+			}
+			if (FD_ISSET(i, &write_sockets))
+			{
+				handle_write_connection(i);
 			}
 			i++;
 		}
@@ -212,5 +210,24 @@ void	ListeningSocket::accept_connections(void)
 ** --------------------------------- ACCESSOR ---------------------------------
 */
 
+int	ListeningSocket::getServerSocket()
+{
+	return (_server_socket);
+}
+
+struct sockaddr_in	ListeningSocket::getAddress()
+{
+	return (_address);
+}
+
+fd_set	ListeningSocket::getCurrentSockets()
+{
+	return (_current_sockets);
+}
+
+ListeningSocket* ListeningSocket::getInstance()
+{
+	return (_instance);
+}
 
 /* ************************************************************************** */
