@@ -1,67 +1,26 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: agan <marvin@42.fr>                        +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2024/07/08 19:27:01 by agan              #+#    #+#              #
-#    Updated: 2024/07/08 19:27:02 by agan             ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
+SRCS = srcs/ListeningSocket.cpp \
+		srcs/main.cpp
 
-# program name
-NAME	= webserv
+CC = c++
+CFLAGS = -Wall -Wextra -Werror -std=c++98 -g
+RM = rm -rf
+NAME = webserv
+OBJS = ${SRCS:.cpp=.o}
 
-# compiler
-CC		= c++
-CFLAGS	= -Wall -Wextra -Werror -std=c++98 -g
-RM		= rm -fr
+all: ${NAME}
 
-# directories
-INC_DIR = ./includes
-INC 	= -I $(INC_DIR)
-SRC_DIR = ./sources
+$(NAME): ${OBJS}
+	$(CC) $(CFLAGS) ${OBJS} -o ${NAME}
 
-# build files
-SRCS	= $(addprefix $(SRC_DIR)/, \
-		main.cpp \
-		webserv.cpp \
-		utils.cpp)
-OBJS 	= ${SRCS:.cpp=.o}
+%.o: %.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
 
-#------------------------------------------------------------------------
-
-# colours
-GREEN = \033[0;32m
-B_GREEN = \033[1;32m
-BROWN = \033[0;33m
-B_BROWN = \033[1;33m
-END = \033[0m
-
-#------------------------------------------------------------------------
-
-all: $(NAME)
-
-# build program
-$(NAME): $(OBJS)
-	@$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
-	@echo "$(B_GREEN)$(NAME) compiled$(END)"
-
-# build objects
-.cpp.o:
-	@${CC} ${CFLAGS} -c $< -o ${<:.cpp=.o} $(INC)
-	@echo "$(B_GREEN)$< compiled.$(END)"
-
-# clean rules
 clean:
-	@rm -fr $(OBJS)
+	$(RM) ${OBJS}
 
 fclean: clean
-	@rm -fr $(NAME)
-	@echo "$(B_GREEN)fclean completed$(END)"
+	$(RM) ${NAME}
 
 re: fclean all
 
 .PHONY: all clean fclean re
-
