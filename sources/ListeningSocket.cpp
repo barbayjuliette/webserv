@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/08 17:41:44 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/09 13:53:08 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/10 16:34:09 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,7 @@ ListeningSocket::ListeningSocket()
 	
 	initialize(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 1024);
 	
-	this->connect();
+	// this->connect();
 
 }
 
@@ -60,7 +60,7 @@ ListeningSocket::ListeningSocket(int domain, int type, int protocol, int port, u
 
 	initialize(domain, type, protocol, port, interface, backlog);
 
-	this->connect();
+	// this->connect();
 }
 
 ListeningSocket::ListeningSocket( const ListeningSocket & src ):
@@ -103,16 +103,11 @@ ListeningSocket &				ListeningSocket::operator=( ListeningSocket const & rhs )
 ** --------------------------------- METHODS ----------------------------------
 */
 
-const char *ListeningSocket::SocketCreationFailure::what() const throw()
-{
-	return ("Error creating socket");
-}
-
-int	ListeningSocket::accept_new_connections(int socket)
+int	ListeningSocket::accept_new_connections(void)
 {
 	socklen_t addrlen = sizeof(_address);
 
-	int	new_socket = accept(socket, (struct sockaddr*)&_address, &addrlen);
+	int	new_socket = accept(_server_socket, (struct sockaddr*)&_address, &addrlen);
 	if (new_socket < 0)
 	{
 		std::cerr << strerror(errno);
@@ -132,15 +127,15 @@ void	ListeningSocket::check(int num)
 
 void	ListeningSocket::handle_read_connection(int client_socket)
 {
-	// Code for testing, will all be changed later
+	// // Code for testing, will all be changed later
+	(void)client_socket;
+	// char	buffer[5000];
+	// int		bytes_read;
 
-	char	buffer[5000];
-	int		bytes_read;
-
-	if ((bytes_read = read(client_socket, buffer, 5000)) > 0)
-		std::cout << buffer << std::endl;
-	write(client_socket, "HELLO", 5);
-	fflush(stdout);
+	// if ((bytes_read = read(client_socket, buffer, 5000)) > 0)
+	// 	std::cout << buffer << std::endl;
+	// write(client_socket, "HELLO", 5);
+	// // fflush(stdout);
 }
 
 void	ListeningSocket::handle_write_connection(int client_socket)
@@ -156,11 +151,11 @@ void ListeningSocket::signal_handler(int signum)
 		close(_instance->_server_socket);
 		FD_CLR(_instance->_server_socket, &(_instance->_current_sockets));
 	}
-    std::cout << "Signal received, webserver closed. Bye bye!" << std::endl;
+    std::cout << "\nSignal received, webserver closed. Bye bye!" << std::endl;
     exit(signum);
 }
 
-void	ListeningSocket::connect(void)
+void	ListeningSocket::run(void)
 {
 	fd_set	read_sockets, write_sockets;
 	int		client_socket;
@@ -186,7 +181,7 @@ void	ListeningSocket::connect(void)
 			{
 				if (i == _server_socket) // New connection
 				{
-					client_socket = accept_new_connections(_server_socket);
+					client_socket = accept_new_connections();
 					FD_SET(client_socket, &_current_sockets);
 					// if (client_socket > max_socket)
 					// 	max_socket = client_socket;
@@ -198,9 +193,7 @@ void	ListeningSocket::connect(void)
 				}
 			}
 			if (FD_ISSET(i, &write_sockets))
-			{
 				handle_write_connection(i);
-			}
 			i++;
 		}
 	}
