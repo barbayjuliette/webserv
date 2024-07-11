@@ -71,17 +71,17 @@ class ConfigFile
 		/* Member functions */
 		void	openFile(const char *file);
 		void	readFile(void);
-		void	parseServerContext(s_ServerContext& server);
-		void	parseLocationContext(s_LocationContext& location);
-		void	parseLine(t_strvec& tokens, t_strmap& map);
+		void	readServerContext(s_ServerContext& server);
+		void	readLocationContext(s_LocationContext& location);
+		void	addKeyValues(t_strvec& tokens, t_strmap& map);
 
 		/* Utils */
 		void	printContexts(std::vector <s_ServerContext>& vec);
 		void	printMap(t_strmap& map);
-		int		checkContext(std::string& context);
-		void	removeComments(std::string& line);
 		t_strvec	tokenizeLine(std::string& line);
+		void	removeComments(std::string& line);
 		void	trimSemicolon(t_strvec& tokens);
+		int		checkContext(std::string& context);
 
 		/* Exception handling */
 		class ConfigFailure : public std::exception

@@ -65,7 +65,7 @@ void	ConfigFile::readFile(void)
 			case HTTP:
 				continue ;
 			case SERVER:
-				parseServerContext(server);
+				readServerContext(server);
 				this->_contexts.push_back(server);
 				break ;
 			default:
@@ -79,7 +79,7 @@ void	ConfigFile::readFile(void)
 
 /* Get server details to be inserted in the server.directives map
 - If an open brace is found, validate and parse the context */
-void	ConfigFile::parseServerContext(s_ServerContext& server)
+void	ConfigFile::readServerContext(s_ServerContext& server)
 {
 	std::string	curr_line;
 
@@ -96,20 +96,20 @@ void	ConfigFile::parseServerContext(s_ServerContext& server)
 			s_LocationContext	location;
 			if ((tokens.size() == 2 && tokens[1] != "{") || (tokens.size() == 3 && tokens[2] == "{"))
 			{
-				parseLocationContext(location);
+				readLocationContext(location);
 				server.locations.push_back(location);
 			}
 			else
 				throw ConfigFailure ("Invalid nested context or syntax");
 		}
 		else
-			parseLine(tokens, server.directives);
+			addKeyValues(tokens, server.directives);
 	}
 	throw ConfigFailure("Parser error");
 }
 
 /* Get location details to be inserted the server.location[].directives map */
-void	ConfigFile::parseLocationContext(s_LocationContext& location)
+void	ConfigFile::readLocationContext(s_LocationContext& location)
 {
 	std::string	curr_line;
 
@@ -121,13 +121,13 @@ void	ConfigFile::parseLocationContext(s_LocationContext& location)
 		if (tokens.size() == 1 && tokens[0] == "}")
 			return ;
 
-		parseLine(tokens, location.directives);
+		addKeyValues(tokens, location.directives);
 	}
 	throw ConfigFailure("Parser error");
 }
 
 /* Create pair of std::string and std::vector<string> to insert in the given map */
-void	ConfigFile::parseLine(t_strvec& tokens, t_strmap& map)
+void	ConfigFile::addKeyValues(t_strvec& tokens, t_strmap& map)
 {
 	std::string	key = tokens[0];
 
@@ -166,18 +166,6 @@ t_strvec	ConfigFile::tokenizeLine(std::string& line)
 	return (tokens);
 }
 
-int	ConfigFile::checkContext(std::string& context)
-{
-	std::string	arr[3] = {"http", "server", "location"};
-
-	for (int i = 0; i < 3; i++)
-	{
-		if (context == arr[i])
-			return (i);
-	}
-	return (-1);
-}
-
 void	ConfigFile::removeComments(std::string& line)
 {
 	size_t	i = line.find("#");
@@ -199,6 +187,18 @@ void	ConfigFile::trimSemicolon(t_strvec& tokens)
 	int	lastIndex = last->size() - 1;
 	if ((*last)[lastIndex] == ';')
 		last->erase(lastIndex, 1);
+}
+
+int	ConfigFile::checkContext(std::string& context)
+{
+	std::string	arr[3] = {"http", "server", "location"};
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (context == arr[i])
+			return (i);
+	}
+	return (-1);
 }
 
 /*
