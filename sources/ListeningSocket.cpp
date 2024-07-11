@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/08 17:41:44 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/10 16:34:09 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/11 15:06:34 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,6 +80,15 @@ ListeningSocket::~ListeningSocket()
 	close(_server_socket);
 	FD_CLR(_server_socket, &_current_sockets);
 	FD_ZERO(&_current_sockets);
+
+	std::map<int, Client*>::iterator	it;
+	
+	for (it = _clients.begin() ; it != _clients.end(); it++)
+	{
+		delete it->second;
+	}
+	_clients.clear();
+
 	std::cout << "Socket closed." << std::endl;
 }
 
@@ -113,6 +122,7 @@ int	ListeningSocket::accept_new_connections(void)
 		std::cerr << strerror(errno);
 		exit(1);
 	}
+	_clients[new_socket] = new Client(new_socket);
 	return (new_socket);
 }
 
@@ -143,13 +153,13 @@ void	ListeningSocket::handle_write_connection(int client_socket)
 	(void)client_socket;
 }
 
-
 void ListeningSocket::signal_handler(int signum)
 {
 	if (_instance)
 	{
-		close(_instance->_server_socket);
-		FD_CLR(_instance->_server_socket, &(_instance->_current_sockets));
+		// close(_instance->_server_socket);
+		// FD_CLR(_instance->_server_socket, &(_instance->_current_sockets));
+		delete (_instance);
 	}
     std::cout << "\nSignal received, webserver closed. Bye bye!" << std::endl;
     exit(signum);
@@ -222,5 +232,16 @@ ListeningSocket* ListeningSocket::getInstance()
 {
 	return (_instance);
 }
+
+std::map<int, Client*>		ListeningSocket::getClients()
+{
+	return (_clients);
+}
+
+Client*		ListeningSocket::getClient(int socket)
+{
+	return (_clients[socket]);
+}
+
 
 /* ************************************************************************** */

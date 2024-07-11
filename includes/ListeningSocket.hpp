@@ -6,11 +6,13 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/08 17:41:53 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/10 15:45:00 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/11 13:45:00 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
+
+# include "Client.hpp"
 
 # include <iostream>
 # include <string>
@@ -25,6 +27,7 @@
 # include <sys/socket.h>
 # include <csignal>
 # include <errno.h>
+# include <map>
 
 class ListeningSocket
 {
@@ -33,6 +36,7 @@ class ListeningSocket
 		struct sockaddr_in		_address;
 		fd_set					_current_sockets;
 		static ListeningSocket* _instance;
+		std::map<int, Client*>	_clients;
 	public:
 
 		ListeningSocket();
@@ -55,5 +59,7 @@ class ListeningSocket
 		struct sockaddr_in	getAddress();
 		fd_set				getCurrentSockets();
 		ListeningSocket*	getInstance();
+		std::map<int, Client*>				getClients();
+		Client*				getClient(int socket);
 };
 

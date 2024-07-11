@@ -6,7 +6,7 @@
 #    By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/07/09 14:32:15 by agan              #+#    #+#              #
-#    Updated: 2024/07/10 14:41:34 by jbarbay          ###   ########.fr        #
+#    Updated: 2024/07/11 15:08:12 by jbarbay          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -27,7 +27,10 @@ SRC_DIR = ./sources
 SRCS	= $(addprefix $(SRC_DIR)/, \
 		main.cpp \
 		ListeningSocket.cpp \
-		Webserver.cpp )
+		Webserver.cpp \
+		Client.cpp \
+		Request.cpp \
+		Response.cpp )
 OBJS 	= ${SRCS:.cpp=.o}
 
 #------------------------------------------------------------------------

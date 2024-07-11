@@ -1,42 +1,46 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Webserver.hpp                                      :+:      :+:    :+:   */
+/*   Request.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/07/10 14:30:19 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/11 13:30:27 by jbarbay          ###   ########.fr       */
+/*   Created: 2024/07/11 13:06:01 by jbarbay           #+#    #+#             */
+/*   Updated: 2024/07/11 14:20:18 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
-
-# include "ListeningSocket.hpp"
-# include "Client.hpp"
 
 # include <iostream>
 # include <string>
 # include <vector>
 # include <sstream>
 # include <fstream>
-// # include <cstdlib>
 
-# define BUFFER_SIZE 5000
-
-class Webserver : public ListeningSocket
+class Request
 {
 	private:
-		
+		std::string	_full_request;
+		std::string	_path;
+		std::string	_http_version;
+		std::string	_type; // GET POST DELETE
+		std::string	_headers;
+		std::string	_body;
+		Request();
+
 	public:
+		Request(std::string request);
+		Request( Request const & src );
+		~Request();
 
-		Webserver();
-		Webserver(int domain, int type, int protocol, int port, u_long interface, int backlog);
-		Webserver( Webserver const & src );
-		~Webserver();
+		Request &		operator=( Request const & rhs );
+		std::string		getFullRequest();
+		std::string		getPath();
+		std::string		getHttpVersion();
+		std::string		getType();
+		std::string		getHeaders();
+		std::string		getBody();
 
-		void			handle_read_connection(int i);
-		void			handle_write_connection(int client_socket);
-		Webserver &		operator=( Webserver const & rhs );
+
 };
-
