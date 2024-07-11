@@ -1,25 +1,26 @@
 http
-{
-	#test comments
+{ #test skipping standalone open brace
 	server
-	{ #test skipping standalone open brace
-		listen 8081;
-		host 127.0.0.1;#test inline comments
+	{
+		listen 8081; #listening port
+		host 127.0.0.1;
 		server_name test_name1 test_name2;
-		error_page 404 /error;
-		root website/;
+		client_max_body_size 1024; #limit size of client request body
+
+		root wwwroot/; #maps all requests to this directory if location block does not include its own root directive
 		index index.html;
+		error_page 404 /errors; #default error page
 
 		location /
 		{
-			root website/www;
-			autoindex on;
-			allow_methods GET POST;
-			index index.html;
+			root wwwroot/; #root folder of location
+			autoindex on; #turn on directory listing
+			allow_methods GET POST; #accepted methods for the route
+			index index.html; #default file when request is a directory
 		}
-		
+
 		location /test { #test skipping inline open brace
-			root website/;
+			root wwwroot/;
 		}
 	}
 
