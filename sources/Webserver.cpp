@@ -178,7 +178,10 @@ void	Webserver::run(void)
 				}
 			}
 			if (FD_ISSET(i, &write_sockets))
+			{
 				handle_write_connection(i);
+				//  Then delete client ???
+			}
 			i++;
 		}
 	}
@@ -189,11 +192,16 @@ void	Webserver::handle_read_connection(int client_socket)
 	char	buffer[BUFFER_SIZE];
 	int		bytes_read = recv(client_socket, buffer, BUFFER_SIZE, 0);
 
-	//  Handle < 0 AND == 0 separetly
-	if (bytes_read <= 0)
+	if (bytes_read < 0)
 	{
 		close(client_socket);
 		FD_CLR(client_socket, &_current_sockets);
+		std::cerr << strerror(errno) << std::endl;
+	}
+	if (bytes_read == 0)
+	{
+		FD_CLR(client_socket, &_current_sockets);
+		std::cout << "Client closed the connection\n";
 	}
 	Request*	request = new Request(buffer);
 	getClient(client_socket)->setRequest(*request);
@@ -201,12 +209,19 @@ void	Webserver::handle_read_connection(int client_socket)
 	Response	*response = new Response(request);
 	getClient(client_socket)->setResponse(*response);
 
-	send(client_socket, response->getFullResponse().c_str(), response->getFullResponse().size() + 1, 0);
 }
 
 void		Webserver::handle_write_connection(int client_socket)
 {
-	(void)client_socket;
+	Client	*client = getClient(client_socket);
+
+	if (!client->getResponse())
+		return ;
+
+	send(client->getSocket(), client->getResponse()->getFullResponse().c_str(), client->getResponse()->getFullResponse().size() + 1, 0);
+	// Why don't I need to delete it?. When I make another requestm a new Request and Response will be created
+	// delete (getClient(client_socket)->getRequest());
+	// delete (getClient(client_socket)->getResponse());
 }
 
 /*

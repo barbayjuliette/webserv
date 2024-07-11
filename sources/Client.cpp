@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:00:42 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/11 15:50:05 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/11 21:02:43 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ Client::Client()
 
 Client::Client(int socket) : _socket(socket), _request(NULL), _response(NULL)
 {
-
+	
 }
 
 Client::Client( const Client & src ) :
@@ -69,14 +69,14 @@ Client &				Client::operator=( Client const & rhs )
 ** --------------------------------- ACCESSOR ---------------------------------
 */
 
-Request&	Client::getRequest()
+Request*	Client::getRequest()
 {
-	return *(this->_request);
+	return (this->_request);
 }
 
-Response&	Client::getResponse()
+Response*	Client::getResponse()
 {
-	return *(this->_response);
+	return (this->_response);
 }
 
 void	Client::setRequest(Request& request)
@@ -87,6 +87,11 @@ void	Client::setRequest(Request& request)
 void	Client::setResponse(Response& response)
 {
 	_response = &response;
+}
+
+int		Client::getSocket()
+{
+	return (_socket);
 }
 
 /* ************************************************************************** */
