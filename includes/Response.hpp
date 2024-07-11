@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/11 14:54:31 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/11 17:23:48 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,9 @@
 # include "Request.hpp"
 # include <errno.h>
 # include <string.h>
+# include <string>
+# include <stdio.h>
+# include <stdlib.h>
 
 class Response
 {
@@ -34,6 +37,8 @@ class Response
 		~Response();
 
 		Response &		operator=( Response const & rhs );
+
+		std::string	get_error_page(int num);
 
 		int			getStatusCode();
 		std::string	getStatusText();

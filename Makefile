@@ -6,7 +6,7 @@
 #    By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/07/09 14:32:15 by agan              #+#    #+#              #
-#    Updated: 2024/07/11 15:08:12 by jbarbay          ###   ########.fr        #
+#    Updated: 2024/07/11 15:54:07 by jbarbay          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -28,7 +28,6 @@ BUILD_DIR = ./sources/temp
 # build files
 SRCS	= $(addprefix $(SRC_DIR)/, \
 		main.cpp \
-		ListeningSocket.cpp \
 		Webserver.cpp \
 		Client.cpp \
 		Request.cpp \
