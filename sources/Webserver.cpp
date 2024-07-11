@@ -144,7 +144,7 @@ void	Webserver::run(void)
 {
 	fd_set	read_sockets, write_sockets;
 	int		client_socket;
-	// int		max_socket = _server_socket;
+	int		max_socket = _server_socket;
 
 	FD_ZERO(&_current_sockets);
 	FD_SET(_server_socket, &_current_sockets);
@@ -154,13 +154,13 @@ void	Webserver::run(void)
 		read_sockets = _current_sockets;
 		write_sockets = _current_sockets;
 		
-		if (select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, NULL) < 0)
+		if (select(max_socket + 1, &read_sockets, &write_sockets, NULL, NULL) < 0)
 		{
 			std::cerr << strerror(errno);
 			exit(1);
 		}
 		int	i = 0;
-		while (i < FD_SETSIZE)
+		while (i <= max_socket)
 		{
 			if (FD_ISSET(i, &read_sockets))
 			{
@@ -168,8 +168,8 @@ void	Webserver::run(void)
 				{
 					client_socket = accept_new_connections();
 					FD_SET(client_socket, &_current_sockets);
-					// if (client_socket > max_socket)
-					// 	max_socket = client_socket;
+					if (client_socket > max_socket)
+						max_socket = client_socket;
 				}
 				else
 				{
