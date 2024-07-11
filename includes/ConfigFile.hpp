@@ -31,7 +31,14 @@ struct s_LocationContext
 /* Each server block can contain multiple location blocks */
 struct s_ServerContext
 {
-	t_strmap						directives;
+	t_strmap	directives;
+	// int			listen_port;
+	// int			client_max_body_size;
+	// std::string	host;
+	// std::string	root;
+	// t_strvec	server_name;
+	// t_strvec	index;
+	// t_strvec	error_page;
 	std::vector <s_LocationContext>	locations;
 };
 

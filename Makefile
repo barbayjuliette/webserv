@@ -23,6 +23,7 @@ RM		= rm -fr
 INC_DIR = ./includes
 INC 	= -I $(INC_DIR)
 SRC_DIR = ./sources
+BUILD_DIR = ./sources/temp
 
 # build files
 SRCS	= $(addprefix $(SRC_DIR)/, \
@@ -33,8 +34,8 @@ SRCS	= $(addprefix $(SRC_DIR)/, \
 		Request.cpp \
 		Response.cpp \
 		ConfigFile.cpp)
-OBJS 	= ${SRCS:.cpp=.o}
-DEPS	= $(SRCS:.cpp=.d)
+OBJS    = $(SRCS:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
+DEPS    = $(OBJS:.o=.d)
 
 #------------------------------------------------------------------------
 
@@ -55,13 +56,17 @@ $(NAME): $(OBJS)
 	@echo "$(B_GREEN)$(NAME) compiled.$(END)"
 
 # build objects
-.cpp.o:
-	@${CC} ${CFLAGS} $(DFLAGS) -c $< -o ${<:.cpp=.o} $(INC)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	@$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@ $(INC)
 	@echo "$(B_GREEN)$< compiled.$(END)"
+
+# build directory to store objects and dependency files
+$(BUILD_DIR):
+	@mkdir -p $(BUILD_DIR)
 
 # clean rules
 clean:
-	@rm -fr $(OBJS) $(DEPS)
+	@rm -fr $(BUILD_DIR)
 	@echo "$(B_GREEN)clean completed.$(END)"
 
 fclean: clean
