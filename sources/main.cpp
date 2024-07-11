@@ -11,9 +11,23 @@
 /* ************************************************************************** */
 
 #include "ListeningSocket.hpp"
+#include "ConfigFile.hpp"
 
-int main(void)
+int main(int argc, char **argv)
 {
-	ListeningSocket server(AF_INET, SOCK_STREAM, 0, 8081, INADDR_ANY, 12);
+	if (argc != 2)
+	{
+		std::cout << RED << "./webserv [configuration file]\n" << RESET;
+		return (0);
+	}
+	try
+	{
+		ConfigFile	config(argv[1]);
+	// ListeningSocket server(AF_INET, SOCK_STREAM, 0, 8081, INADDR_ANY, 12);
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << RED << "Error: " << e.what() << ".\n" << RESET;
+	}
 	return 0;
 }

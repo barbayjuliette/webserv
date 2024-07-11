@@ -16,6 +16,7 @@ NAME	= webserv
 # compiler
 CC		= c++
 CFLAGS	= -Wall -Wextra -Werror -std=c++98 -g
+DFLAGS	= -MMD -MP # handle header dependencies
 RM		= rm -fr
 
 # directories
@@ -26,8 +27,10 @@ SRC_DIR = ./sources
 # build files
 SRCS	= $(addprefix $(SRC_DIR)/, \
 		main.cpp \
-		ListeningSocket.cpp)
+		ListeningSocket.cpp \
+		ConfigFile.cpp)
 OBJS 	= ${SRCS:.cpp=.o}
+DEPS	= $(SRCS:.cpp=.d)
 
 #------------------------------------------------------------------------
 
@@ -45,21 +48,26 @@ all: $(NAME)
 # build program
 $(NAME): $(OBJS)
 	@$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
-	@echo "$(B_GREEN)$(NAME) compiled$(END)"
+	@echo "$(B_GREEN)$(NAME) compiled.$(END)"
 
 # build objects
 .cpp.o:
-	@${CC} ${CFLAGS} -c $< -o ${<:.cpp=.o} $(INC)
+	@${CC} ${CFLAGS} $(DFLAGS) -c $< -o ${<:.cpp=.o} $(INC)
 	@echo "$(B_GREEN)$< compiled.$(END)"
 
 # clean rules
 clean:
-	@rm -fr $(OBJS)
+	@rm -fr $(OBJS) $(DEPS)
+	@echo "$(B_GREEN)clean completed.$(END)"
 
 fclean: clean
 	@rm -fr $(NAME)
 	@echo "$(B_GREEN)fclean completed$(END)"
 
 re: fclean all
+
+-include $(DEPS)
+
+#------------------------------------------------------------------------
 
 .PHONY: all clean fclean re
