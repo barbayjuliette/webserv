@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:33 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/11 14:30:41 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/11 16:03:48 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,11 @@ Request &				Request::operator=( Request const & rhs )
 	if (this != &rhs)
 	{
 		this->_full_request = rhs._full_request;
+		this->_path = rhs._path;
+		this->_http_version = rhs._http_version;
+		this->_type = rhs._type;
+		this->_headers = rhs._headers;
+		this->_body = rhs._body;
 	}
 	return (*this);
 }

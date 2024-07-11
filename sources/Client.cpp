@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:00:42 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/11 14:58:54 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/11 15:50:05 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ Client::Client()
 
 }
 
-Client::Client(int socket) : _socket(socket)
+Client::Client(int socket) : _socket(socket), _request(NULL), _response(NULL)
 {
 
 }
@@ -41,8 +41,10 @@ _response(src._response)
 
 Client::~Client()
 {
-	delete (_response);
-	delete (_request);
+	if (_response)
+		delete (_response);
+	if (_request)
+		delete (_request);
 }
 
 /*
