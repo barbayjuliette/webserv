@@ -1,24 +1,24 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ListeningSocket.cpp                                :+:      :+:    :+:   */
+/*   Webserver.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/08 17:41:44 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/09 13:53:08 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/11 15:48:05 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ListeningSocket.hpp"
+#include "Webserver.hpp"
 
-ListeningSocket* ListeningSocket::_instance = NULL;
+Webserver* Webserver::_instance = NULL;
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-void	ListeningSocket::initialize(int domain, int type, int protocol, int port, u_long interface, int backlog)
+void	Webserver::initialize(int domain, int type, int protocol, int port, u_long interface, int backlog)
 {
 	// Address
 	_address.sin_family = domain;
@@ -40,61 +40,65 @@ void	ListeningSocket::initialize(int domain, int type, int protocol, int port, u
 	check(listen(_server_socket, backlog) < 0);
 }
 
-ListeningSocket::ListeningSocket()
+Webserver::Webserver()
 {
 	signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 	_instance = this;
 	
 	initialize(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 1024);
-	
-	this->connect();
-
 }
 
-ListeningSocket::ListeningSocket(int domain, int type, int protocol, int port, u_long interface, int backlog)
+Webserver::Webserver(int domain, int type, int protocol, int port, u_long interface, int backlog)
 {
 	signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 	_instance = this;
 
 	initialize(domain, type, protocol, port, interface, backlog);
-
-	this->connect();
 }
 
-ListeningSocket::ListeningSocket( const ListeningSocket & src ):
+Webserver::Webserver( const Webserver & src ):
 _server_socket(src._server_socket),
 _address(src._address),
-_current_sockets(src._current_sockets)
+_current_sockets(src._current_sockets),
+_clients(src._clients)
 {
-	(void)src;
+
 }
 
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
 
-ListeningSocket::~ListeningSocket()
+Webserver::~Webserver()
 {
 	close(_server_socket);
 	FD_CLR(_server_socket, &_current_sockets);
 	FD_ZERO(&_current_sockets);
-	std::cout << "Socket closed." << std::endl;
+
+	std::map<int, Client*>::iterator	it;
+	
+	for (it = _clients.begin() ; it != _clients.end(); it++)
+	{
+		delete (it->second);
+	}
+	_clients.clear();
 }
 
 /*
 ** --------------------------------- OVERLOAD ---------------------------------
 */
 
-ListeningSocket &				ListeningSocket::operator=( ListeningSocket const & rhs )
+Webserver &				Webserver::operator=( Webserver const & rhs )
 {
 	if ( this != &rhs )
 	{
-		this->_instance = rhs._instance;
 		this->_server_socket = rhs._server_socket;
-		this->_current_sockets = rhs._current_sockets;
 		this->_address = rhs._address;
+		this->_current_sockets = rhs._current_sockets;
+		this->_instance = rhs._instance;
+		this->_clients = rhs._clients;
 	}
 	return (*this);
 }
@@ -103,25 +107,21 @@ ListeningSocket &				ListeningSocket::operator=( ListeningSocket const & rhs )
 ** --------------------------------- METHODS ----------------------------------
 */
 
-const char *ListeningSocket::SocketCreationFailure::what() const throw()
-{
-	return ("Error creating socket");
-}
-
-int	ListeningSocket::accept_new_connections(int socket)
+int	Webserver::accept_new_connections(void)
 {
 	socklen_t addrlen = sizeof(_address);
 
-	int	new_socket = accept(socket, (struct sockaddr*)&_address, &addrlen);
+	int	new_socket = accept(_server_socket, (struct sockaddr*)&_address, &addrlen);
 	if (new_socket < 0)
 	{
 		std::cerr << strerror(errno);
 		exit(1);
 	}
+	_clients[new_socket] = new Client(new_socket);
 	return (new_socket);
 }
 
-void	ListeningSocket::check(int num)
+void	Webserver::check(int num)
 {
 	if (num < 0)
 	{
@@ -130,37 +130,17 @@ void	ListeningSocket::check(int num)
 	}
 }
 
-void	ListeningSocket::handle_read_connection(int client_socket)
-{
-	// Code for testing, will all be changed later
-
-	char	buffer[5000];
-	int		bytes_read;
-
-	if ((bytes_read = read(client_socket, buffer, 5000)) > 0)
-		std::cout << buffer << std::endl;
-	write(client_socket, "HELLO", 5);
-	fflush(stdout);
-}
-
-void	ListeningSocket::handle_write_connection(int client_socket)
-{
-	(void)client_socket;
-}
-
-
-void ListeningSocket::signal_handler(int signum)
+void Webserver::signal_handler(int signum)
 {
 	if (_instance)
 	{
-		close(_instance->_server_socket);
-		FD_CLR(_instance->_server_socket, &(_instance->_current_sockets));
+		delete (_instance);
 	}
-    std::cout << "Signal received, webserver closed. Bye bye!" << std::endl;
+    std::cout << "\nSignal received, webserver closed. Bye bye!" << std::endl;
     exit(signum);
 }
 
-void	ListeningSocket::connect(void)
+void	Webserver::run(void)
 {
 	fd_set	read_sockets, write_sockets;
 	int		client_socket;
@@ -186,7 +166,7 @@ void	ListeningSocket::connect(void)
 			{
 				if (i == _server_socket) // New connection
 				{
-					client_socket = accept_new_connections(_server_socket);
+					client_socket = accept_new_connections();
 					FD_SET(client_socket, &_current_sockets);
 					// if (client_socket > max_socket)
 					// 	max_socket = client_socket;
@@ -198,36 +178,69 @@ void	ListeningSocket::connect(void)
 				}
 			}
 			if (FD_ISSET(i, &write_sockets))
-			{
 				handle_write_connection(i);
-			}
 			i++;
 		}
 	}
+}
+
+void	Webserver::handle_read_connection(int client_socket)
+{
+	char	buffer[BUFFER_SIZE];
+	int		bytes_read = recv(client_socket, buffer, BUFFER_SIZE, 0);
+
+	//  Handle < 0 AND == 0 separetly
+	if (bytes_read <= 0)
+	{
+		close(client_socket);
+		FD_CLR(client_socket, &_current_sockets);
+	}
+	Request*	request = new Request(buffer);
+	getClient(client_socket)->setRequest(*request);
+
+	Response	*response = new Response(request);
+	getClient(client_socket)->setResponse(*response);
+
+	send(client_socket, response->getFullResponse().c_str(), response->getFullResponse().size() + 1, 0);
+}
+
+void		Webserver::handle_write_connection(int client_socket)
+{
+	(void)client_socket;
 }
 
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */
 
-int	ListeningSocket::getServerSocket()
+int	Webserver::getServerSocket()
 {
 	return (_server_socket);
 }
 
-struct sockaddr_in	ListeningSocket::getAddress()
+struct sockaddr_in	Webserver::getAddress()
 {
 	return (_address);
 }
 
-fd_set	ListeningSocket::getCurrentSockets()
+fd_set	Webserver::getCurrentSockets()
 {
 	return (_current_sockets);
 }
 
-ListeningSocket* ListeningSocket::getInstance()
+Webserver* Webserver::getInstance()
 {
 	return (_instance);
+}
+
+std::map<int, Client*>		Webserver::getClients()
+{
+	return (_clients);
+}
+
+Client*		Webserver::getClient(int socket)
+{
+	return (_clients[socket]);
 }
 
 /* ************************************************************************** */
