@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: agan <marvin@42.fr>                        +#+  +:+       +#+         #
+#    By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/07/09 14:32:15 by agan              #+#    #+#              #
-#    Updated: 2024/07/09 14:32:16 by agan             ###   ########.fr        #
+#    Updated: 2024/07/11 15:08:12 by jbarbay          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -28,6 +28,10 @@ SRC_DIR = ./sources
 SRCS	= $(addprefix $(SRC_DIR)/, \
 		main.cpp \
 		ListeningSocket.cpp \
+		Webserver.cpp \
+		Client.cpp \
+		Request.cpp \
+		Response.cpp \
 		ConfigFile.cpp)
 OBJS 	= ${SRCS:.cpp=.o}
 DEPS	= $(SRCS:.cpp=.d)

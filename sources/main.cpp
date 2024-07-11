@@ -6,12 +6,13 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/08 17:41:35 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/09 13:32:56 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/11 15:03:17 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ListeningSocket.hpp"
 #include "ConfigFile.hpp"
+#include "Webserver.hpp"
 
 int main(int argc, char **argv)
 {
@@ -23,7 +24,11 @@ int main(int argc, char **argv)
 	try
 	{
 		ConfigFile	config(argv[1]);
-	// ListeningSocket server(AF_INET, SOCK_STREAM, 0, 8081, INADDR_ANY, 12);
+
+		Webserver *server = new Webserver(AF_INET, SOCK_STREAM, 0, 8081, INADDR_ANY, 12);
+		server->run();
+
+		delete (server);
 	}
 	catch (std::exception& e)
 	{
