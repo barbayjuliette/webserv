@@ -10,14 +10,28 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "ConfigFile.hpp"
 #include "Webserver.hpp"
-// #include "Webserver.hpp"
 
-int main(void)
+int main(int argc, char **argv)
 {
-	Webserver *server = new Webserver(AF_INET, SOCK_STREAM, 0, 8081, INADDR_ANY, 12);
-	server->run();
+	if (argc != 2)
+	{
+		std::cout << RED << "./webserv [configuration file]\n" << RESET;
+		return (0);
+	}
+	try
+	{
+		ConfigFile	config(argv[1]);
 
-	delete (server);
+		Webserver *server = new Webserver(AF_INET, SOCK_STREAM, 0, 8081, INADDR_ANY, 12);
+		server->run();
+
+		delete (server);
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << RED << "Error: " << e.what() << ".\n" << RESET;
+	}
 	return 0;
 }
