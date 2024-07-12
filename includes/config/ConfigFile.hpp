@@ -14,6 +14,11 @@
 # define CONFIGFILE_HPP
 
 # include "webserv.hpp"
+# include "ValidConfig.hpp"
+
+class ValidConfig;
+class ServerConfig;
+class LocationConfig;
 
 typedef std::vector <std::string>			t_strvec;
 typedef std::map <std::string, t_strvec>	t_strmap;
