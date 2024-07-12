@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 12:59:40 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/11 14:13:53 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/11 20:35:42 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,8 +31,9 @@ class Client
 		~Client();
 
 		Client &		operator=( Client const & rhs );
-		Request&		getRequest();
-		Response&		getResponse();
+		Request*		getRequest();
+		Response*		getResponse();
+		int				getSocket();
 		void			setRequest(Request& request);
 		void			setResponse(Response& response);
 };

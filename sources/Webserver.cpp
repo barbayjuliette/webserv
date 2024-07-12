@@ -144,7 +144,7 @@ void	Webserver::run(void)
 {
 	fd_set	read_sockets, write_sockets;
 	int		client_socket;
-	// int		max_socket = _server_socket;
+	int		max_socket = _server_socket;
 
 	FD_ZERO(&_current_sockets);
 	FD_SET(_server_socket, &_current_sockets);
@@ -154,13 +154,13 @@ void	Webserver::run(void)
 		read_sockets = _current_sockets;
 		write_sockets = _current_sockets;
 		
-		if (select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, NULL) < 0)
+		if (select(max_socket + 1, &read_sockets, &write_sockets, NULL, NULL) < 0)
 		{
 			std::cerr << strerror(errno);
 			exit(1);
 		}
 		int	i = 0;
-		while (i < FD_SETSIZE)
+		while (i <= max_socket)
 		{
 			if (FD_ISSET(i, &read_sockets))
 			{
@@ -168,8 +168,8 @@ void	Webserver::run(void)
 				{
 					client_socket = accept_new_connections();
 					FD_SET(client_socket, &_current_sockets);
-					// if (client_socket > max_socket)
-					// 	max_socket = client_socket;
+					if (client_socket > max_socket)
+						max_socket = client_socket;
 				}
 				else
 				{
@@ -178,7 +178,10 @@ void	Webserver::run(void)
 				}
 			}
 			if (FD_ISSET(i, &write_sockets))
+			{
 				handle_write_connection(i);
+				//  Then delete client ???
+			}
 			i++;
 		}
 	}
@@ -189,24 +192,35 @@ void	Webserver::handle_read_connection(int client_socket)
 	char	buffer[BUFFER_SIZE];
 	int		bytes_read = recv(client_socket, buffer, BUFFER_SIZE, 0);
 
-	//  Handle < 0 AND == 0 separetly
-	if (bytes_read <= 0)
+	if (bytes_read < 0)
 	{
 		close(client_socket);
 		FD_CLR(client_socket, &_current_sockets);
+		std::cerr << strerror(errno) << std::endl;
+	}
+	if (bytes_read == 0)
+	{
+		FD_CLR(client_socket, &_current_sockets);
+		std::cout << "Client closed the connection\n";
 	}
 	Request*	request = new Request(buffer);
 	getClient(client_socket)->setRequest(*request);
 
+	std::cout << request->getFullRequest() << std::endl;
+
 	Response	*response = new Response(request);
 	getClient(client_socket)->setResponse(*response);
 
-	send(client_socket, response->getFullResponse().c_str(), response->getFullResponse().size() + 1, 0);
 }
 
 void		Webserver::handle_write_connection(int client_socket)
 {
-	(void)client_socket;
+	Client	*client = getClient(client_socket);
+
+	if (!client->getResponse())
+		return ;
+
+	send(client->getSocket(), client->getResponse()->getFullResponse().c_str(), client->getResponse()->getFullResponse().size() + 1, 0);
 }
 
 /*
