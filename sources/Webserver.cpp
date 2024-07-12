@@ -31,7 +31,7 @@ void	Webserver::initialize(int domain, int type, int protocol, int port, u_long 
 	check(_server_socket);
 
 	// Make it non-blocking
-	fcntl(_server_socket, F_SETFL, O_NONBLOCK);
+	check(fcntl(_server_socket, F_SETFL, O_NONBLOCK));
 
 	// Options to be able to reuse address.
 	int	yes = 1;
@@ -199,17 +199,19 @@ void	Webserver::handle_read_connection(int client_socket)
 
 	if (bytes_read < 0)
 	{
+		std::cerr << strerror(errno) << std::endl;
+		close(client_socket);
 		FD_CLR(client_socket, &read_sockets);
 		FD_CLR(client_socket, &write_sockets);
-		close(client_socket);
-		std::cerr << strerror(errno) << std::endl;
+		_clients.erase(_clients.find(client_socket));
 	}
 	else if (bytes_read == 0)
 	{
+		std::cout << "Client closed the connection\n";
+		close(client_socket);
 		FD_CLR(client_socket, &read_sockets);
 		FD_CLR(client_socket, &write_sockets);
-		close(client_socket);
-		std::cout << "Client closed the connection\n";
+		_clients.erase(_clients.find(client_socket));
 	}
 	else
 	{
@@ -235,8 +237,8 @@ void		Webserver::handle_write_connection(int client_socket)
 	if (!client->getResponse())
 		return ;
 
-	bytes_sent = send(client->getSocket(), client->getResponse()->getFullResponse().c_str(), client->getResponse()->getFullResponse().size() + 1, 0);
-	if (bytes_sent == client->getResponse()->getFullResponse().size() + 1)
+	bytes_sent = send(client->getSocket(), client->getResponse()->getFullResponse().c_str(), client->getResponse()->getFullResponse().size(), 0);
+	if (bytes_sent == client->getResponse()->getFullResponse().size())
 	{
 		std::cout << "---- Response sent to client ----\n\n";
 		FD_CLR(client_socket, &write_sockets);
