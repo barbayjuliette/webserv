@@ -206,6 +206,8 @@ void	Webserver::handle_read_connection(int client_socket)
 	Request*	request = new Request(buffer);
 	getClient(client_socket)->setRequest(*request);
 
+	std::cout << request->getFullRequest() << std::endl;
+
 	Response	*response = new Response(request);
 	getClient(client_socket)->setResponse(*response);
 
@@ -219,9 +221,6 @@ void		Webserver::handle_write_connection(int client_socket)
 		return ;
 
 	send(client->getSocket(), client->getResponse()->getFullResponse().c_str(), client->getResponse()->getFullResponse().size() + 1, 0);
-	// Why don't I need to delete it?. When I make another requestm a new Request and Response will be created
-	// delete (getClient(client_socket)->getRequest());
-	// delete (getClient(client_socket)->getResponse());
 }
 
 /*

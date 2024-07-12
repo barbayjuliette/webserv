@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/11 20:31:16 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/12 16:06:44 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ Response::Response(Request *request)
 	}
 	else
 	{
-		// std::cerr << "HERE: " << strerror(errno) << std::endl;
+		// std::cerr << strerror(errno) << std::endl;
 
 		this->_status_code = 404;
 		this->_status_text = "Not found";
@@ -49,6 +49,7 @@ Response::Response(Request *request)
 	// std::cout << "Content: " << str << std::endl;
 
 	stream << "HTTP/1.1 " << this->_status_code << this->_status_text << "\r\n";
+	stream << "Connection: keep-alive";
 	stream << "Cache-Control: no-cache, private\r\n";
 	stream << "Content-Type: text/html\r\n";
 	stream << "Content-Length: " << str.size() << "\r\n";

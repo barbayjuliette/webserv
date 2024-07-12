@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/11 20:31:07 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/11 21:13:04 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,6 @@ class Response
 		Response();
 
 	public:
-		// bool		_ready;
 		Response(Request *request);
 		Response( Response const & src );
 		~Response();

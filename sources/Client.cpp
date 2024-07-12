@@ -6,12 +6,12 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:00:42 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/11 21:02:43 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/12 16:05:59 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-
-#include "Client.hpp"
+# include "Client.hpp"
+# include "webserv.hpp"
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -19,12 +19,11 @@
 
 Client::Client()
 {
-
 }
 
 Client::Client(int socket) : _socket(socket), _request(NULL), _response(NULL)
 {
-	
+	std::cout << RED << "Client created!\n" << RESET;
 }
 
 Client::Client( const Client & src ) :
