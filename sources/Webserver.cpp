@@ -13,6 +13,7 @@
 #include "Webserver.hpp"
 
 Webserver* Webserver::_instance = NULL;
+ConfigFile*	Webserver::_config = NULL;
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -49,11 +50,12 @@ Webserver::Webserver()
 	initialize(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 1024);
 }
 
-Webserver::Webserver(int domain, int type, int protocol, int port, u_long interface, int backlog)
+Webserver::Webserver(ConfigFile* config, int domain, int type, int protocol, int port, u_long interface, int backlog)
 {
 	signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 	_instance = this;
+	_config = config;
 
 	initialize(domain, type, protocol, port, interface, backlog);
 }
@@ -84,6 +86,8 @@ Webserver::~Webserver()
 		delete (it->second);
 	}
 	_clients.clear();
+
+	delete (_config);
 }
 
 /*

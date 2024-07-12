@@ -52,11 +52,13 @@ void	ConfigFile::openFile(const char *file)
 void	ConfigFile::readFile(void)
 {
 	std::string	curr_line;
+	this->_open_braces = 0;
 
 	while (std::getline(this->_config, curr_line))
 	{
 		t_strvec tokens = tokenizeLine(curr_line);
-		if (tokens.empty() || tokens[0] == "{")
+		checkBraces(tokens);
+		if (tokens.empty() || (tokens.size() == 1 && (tokens[0] == "{" || tokens[0] == "}")))
 			continue ;
 
 		s_ServerContext	server;
@@ -69,11 +71,11 @@ void	ConfigFile::readFile(void)
 				this->_contexts.push_back(server);
 				break ;
 			default:
-				if (!(tokens.size() == 1 && tokens[0] == "}"))
-					throw ConfigFailure ("Invalid context or syntax");
-				break ;
+				throw ConfigFailure("Invalid context or syntax");
 		}
 	}
+	if (this->_open_braces != 0)
+		throw ConfigFailure("Braces not closed");
 	this->_config.close();
 }
 
@@ -86,26 +88,29 @@ void	ConfigFile::readServerContext(s_ServerContext& server)
 	while (std::getline(this->_config, curr_line))
 	{
 		t_strvec tokens = tokenizeLine(curr_line);
-		if (tokens.empty() || tokens[0] == "{")
+		checkBraces(tokens);
+		if (tokens.empty() || (tokens.size() == 1 && tokens[0] == "{"))
 			continue ;
 		if (tokens.size() == 1 && tokens[0] == "}")
 			return ;
 
+		s_LocationContext	location;
 		if (checkContext(tokens[0]) == LOCATION)
 		{
 			s_LocationContext	location;
 			if ((tokens.size() == 2 && tokens[1] != "{") || (tokens.size() == 3 && tokens[2] == "{"))
 			{
+				location.pattern = tokens[1];
 				readLocationContext(location);
 				server.locations.push_back(location);
 			}
 			else
-				throw ConfigFailure ("Invalid nested context or syntax");
+				throw ConfigFailure("Invalid nested context or syntax");
 		}
 		else
 			addKeyValues(tokens, server.directives);
 	}
-	throw ConfigFailure("Parser error");
+	throw ConfigFailure("Braces not closed");
 }
 
 /* Get location details to be inserted the server.location[].directives map */
@@ -116,14 +121,14 @@ void	ConfigFile::readLocationContext(s_LocationContext& location)
 	while (std::getline(this->_config, curr_line))
 	{
 		t_strvec tokens = tokenizeLine(curr_line);
-		if (tokens.empty() || tokens[0] == "{")
+		checkBraces(tokens);
+		if (tokens.empty() || (tokens.size() == 1 && tokens[0] == "{"))
 			continue ;
 		if (tokens.size() == 1 && tokens[0] == "}")
 			return ;
-
 		addKeyValues(tokens, location.directives);
 	}
-	throw ConfigFailure("Parser error");
+	throw ConfigFailure("Braces not closed");
 }
 
 /* Create pair of std::string and std::vector<string> to insert in the given map */
@@ -139,7 +144,7 @@ void	ConfigFile::addKeyValues(t_strvec& tokens, t_strmap& map)
 }
 
 /*
-** ---------------------------------- UTILS -----------------------------------
+** --------------------------- TOKENIZATION UTILS -----------------------------
 */
 
 /* Split string by whitespaces and store the tokens in a vector */
@@ -189,6 +194,21 @@ void	ConfigFile::trimSemicolon(t_strvec& tokens)
 		last->erase(lastIndex, 1);
 }
 
+void	ConfigFile::checkBraces(t_strvec& tokens)
+{
+	for (size_t i = 0; i < tokens.size(); i++)
+	{
+		if (tokens[i] == "{")
+			this->_open_braces++;
+		else if (tokens[i] == "}")
+		{
+			this->_open_braces--;
+			if (this->_open_braces < 0)
+				throw ConfigFailure("Invalid syntax");
+		}
+	}
+}
+
 int	ConfigFile::checkContext(std::string& context)
 {
 	std::string	arr[3] = {"http", "server", "location"};
@@ -215,7 +235,7 @@ void	ConfigFile::printContexts(std::vector <s_ServerContext>& vec)
 		printMap(it->directives);
 		for (size_t i = 0; i < it->locations.size(); i++)
 		{
-			std::cout << CYAN << "--> LOCATION:\n" << RESET;
+			std::cout << CYAN << "--> LOCATION: " << it->locations[i].pattern << '\n' << RESET;
 			printMap(it->locations[i].directives);
 		}
 	}

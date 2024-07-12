@@ -13,6 +13,7 @@
 #pragma once
 
 # include "Client.hpp"
+# include "ConfigFile.hpp"
 
 # include <iostream>
 # include <string>
@@ -38,11 +39,13 @@ class Webserver
 		struct sockaddr_in		_address;
 		fd_set					_current_sockets;
 		static Webserver* 		_instance;
+		static ConfigFile*		_config;
 		std::map<int, Client*>	_clients;
+
 	public:
 
 		Webserver();
-		Webserver(int domain, int type, int protocol, int port, u_long interface, int backlog);
+		Webserver(ConfigFile* config, int domain, int type, int protocol, int port, u_long interface, int backlog);
 		void	initialize(int domain, int type, int protocol, int port, u_long interface, int backlog);
 		Webserver( Webserver const & src );
 		~Webserver();

@@ -48,6 +48,7 @@ class ConfigFile
 	private:
 		std::ifstream					_config;
 		std::vector <s_ServerContext>	_contexts;
+		int								_open_braces;
 
 	public:
 		enum e_context
@@ -81,6 +82,7 @@ class ConfigFile
 		t_strvec	tokenizeLine(std::string& line);
 		void	removeComments(std::string& line);
 		void	trimSemicolon(t_strvec& tokens);
+		void	checkBraces(t_strvec& tokens);
 		int		checkContext(std::string& context);
 
 		/* Exception handling */

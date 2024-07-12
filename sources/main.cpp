@@ -22,9 +22,9 @@ int main(int argc, char **argv)
 	}
 	try
 	{
-		ConfigFile	config(argv[1]);
+		ConfigFile	*config = new ConfigFile(argv[1]);
 
-		Webserver *server = new Webserver(AF_INET, SOCK_STREAM, 0, 8081, INADDR_ANY, 12);
+		Webserver *server = new Webserver(config, AF_INET, SOCK_STREAM, 0, 8081, INADDR_ANY, 12);
 		server->run();
 
 		delete (server);
