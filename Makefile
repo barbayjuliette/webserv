@@ -20,8 +20,9 @@ DFLAGS	= -MMD -MP # handle header dependencies
 RM		= rm -fr
 
 # directories
-INC_DIR = ./includes
-INC 	= -I $(INC_DIR)
+INC_DIR = ./includes \
+		./includes/config
+INC 	= $(addprefix -I, $(INC_DIR))
 SRC_DIR = ./sources
 BUILD_DIR = ./sources/temp
 
