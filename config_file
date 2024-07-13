@@ -19,7 +19,7 @@ http
 			index index.html; #default file when request is a directory
 		}
 
-		location /test { #test skipping inline open brace
+		location = /test { #test skipping inline open brace
 			root wwwroot/;
 		}
 	}

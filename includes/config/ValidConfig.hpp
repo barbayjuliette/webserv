@@ -10,15 +10,18 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef CONFIG_HPP
-# define CONFIG_HPP
+#ifndef VALID_CONFIG_HPP
+# define VALID_CONFIG_HPP
 
 # include "webserv.hpp"
-# include "Webserver.hpp"
 # include "ConfigFile.hpp"
 
 class ConfigFile;
+class ValidConfig;
+class LocationConfig;
 
+typedef std::vector<std::string>		t_strvec;
+typedef std::map<std::string, t_strvec>	t_strmap;
 typedef void (ValidConfig::*t_directives)(const t_strvec&);
 
 /* Abstract class for ServerConfig and LocationConfig to inherit from
@@ -44,7 +47,7 @@ class ValidConfig
 		t_strvec	_allow_methods;
 		t_strvec	_cgi_path;
 
-		std::map <int, std::string>	_error_page;
+		std::map<int, std::string>	_error_page;
 
 	public:
 		/* Constructors */
@@ -58,41 +61,45 @@ class ValidConfig
 		virtual ~ValidConfig() = 0;
 
 		/* Init functions */
-		virtual void	initValidDirectives(void);
+		// virtual void	initValidDirectives(void);
 		void			initErrorPages(void);
 
 		/* Validation functions */
-		void	setListenPort(t_strvec tokens);
-		void	setClientMaxBodySize(t_strvec tokens);
-		void	setAutoindex(t_strvec tokens);
-		void	setHost(t_strvec tokens);
-		void	setRoot(t_strvec tokens);
-		void	setAlias(t_strvec tokens);
-		void	setRedirect(t_strvec tokens);
-		void	setServerName(t_strvec tokens);
-		void	setIndex(t_strvec tokens);
-		void	setAllowedMethods(t_strvec tokens);
-		void	setErrorPages(t_strvec tokens);
+		void	validateDirectives(void);
+		void	setListenPort(t_strvec& tokens);
+		void	setClientMaxBodySize(t_strvec& tokens);
+		void	setAutoindex(t_strvec& tokens);
+		void	setHost(t_strvec& tokens);
+		void	setRoot(t_strvec& tokens);
+		void	setAlias(t_strvec& tokens);
+		void	setRedirect(t_strvec& tokens);
+		void	setServerName(t_strvec& tokens);
+		void	setIndex(t_strvec& tokens);
+		void	setAllowedMethods(t_strvec& tokens);
+		void	setErrorPages(t_strvec& tokens);
+
+		/* Accessors */
+		t_strmap&	getDirectives(void);
 
 		/* Exception handling */
-		class InvalidConfig : public std::exception
+		class InvalidConfigError : public std::exception
 		{
 			private:
 				std::string	_message;
 
 			public:
-				InvalidConfig(const std::string& message);
-				virtual	~InvalidConfig() throw();
+				InvalidConfigError(const std::string& message);
+				virtual	~InvalidConfigError() throw();
 				virtual const char	*what() const throw();
 		};
-}
+};
 
 /* Each server block can contain multiple location blocks */
 class ServerConfig : public ValidConfig
 {
 	private:
-		std::vector <LocationConfig*>			_locations;
-		std::map <std::string, t_directives>	_validDirectives;
+		std::vector<LocationConfig*>		_locations;
+		std::map<std::string, t_directives>	_validDirectives;
 	
 	public:
 		/* Constructors */
@@ -104,17 +111,36 @@ class ServerConfig : public ValidConfig
 
 		/* Destructor */
 		~ServerConfig();
-}
+
+		/* Member functions */
+		void	setLocation(LocationConfig* location);
+
+		/* Accessors */
+		std::vector<LocationConfig*>	getLocations(void);
+};
 
 /* Each location block is nested inside a server block
-- pattern: the identifier that comes after "location", before the open brace '{' */
-class LocationConfig : public ServerConfig
+- path: the location identifier to compare with a requested url
+- path modifiers:
+	=: equal sign: match a location block exactly against a requested URI.
+	~: tilde: case-sensitive regular expression match against a requested URI.
+	~*: tilde followed by asterisk: case insensitive regular expression match against a requested URI. */
+class LocationConfig : public ValidConfig
 {
 	private:
-		std::string	_pattern; //location-specific directive
-		std::map <std::string, t_directives>	_validDirectives;
+		std::string	_path; //location-specific directive
+		bool		_match_exact;
+		bool		_case_sensitive;
+		std::map<std::string, t_directives>	_validDirectives;
 
 	public:
+		enum e_modifier
+		{
+			MATCH_EXACT,
+			CASE_SENSITIVE,
+			CASE_INSENSITIVE
+		};
+
 		/* Constructors */
 		LocationConfig();
 		LocationConfig(const LocationConfig& src);
@@ -124,6 +150,16 @@ class LocationConfig : public ServerConfig
 
 		/* Destructor */
 		~LocationConfig();
-}
+
+		/* Validation functions */
+		void	setPath(t_strvec& tokens);
+		int		checkPathModifier(std::string& path);
+		int		setPathModifier(std::string& token);
+
+		/* Accessors */
+		std::string	getPath(void);
+		bool		getMatchExact(void);
+		bool		getCaseSensitive(void);
+};
 
 #endif

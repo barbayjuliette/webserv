@@ -22,14 +22,24 @@ ConfigFile::ConfigFile(const char *file)
 {
 	openFile(file);
 	readFile();
-	printContexts(this->_contexts);
+	printContexts(this->_servers);
+	for (std::vector<ServerConfig*>::iterator it = this->_servers.begin(); it != this->_servers.end(); it++)
+	{
+		(*it)->validateDirectives();
+	}
 }
 
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
 
-ConfigFile::~ConfigFile() {}
+ConfigFile::~ConfigFile()
+{
+	for (std::vector<ServerConfig*>::iterator it = this->_servers.begin(); it != this->_servers.end(); it++)
+	{
+		delete *it;
+	}
+}
 
 /*
 ** --------------------------------- METHODS ----------------------------------
@@ -39,7 +49,7 @@ void	ConfigFile::openFile(const char *file)
 {
 	this->_config.open(file, std::ios::in);
 	if (!this->_config)
-		throw ConfigFailure("Failed to open configuration file");
+		throw ConfigReadError("Failed to open configuration file");
 }
 
 /*
@@ -61,27 +71,28 @@ void	ConfigFile::readFile(void)
 		if (tokens.empty() || (tokens.size() == 1 && (tokens[0] == "{" || tokens[0] == "}")))
 			continue ;
 
-		s_ServerContext	server;
+		ServerConfig	*server = NULL;
 		switch (checkContext(tokens[0]))
 		{
 			case HTTP:
 				continue ;
 			case SERVER:
+				server = new ServerConfig();
+				this->_servers.push_back(server);
 				readServerContext(server);
-				this->_contexts.push_back(server);
 				break ;
 			default:
-				throw ConfigFailure("Invalid context or syntax");
+				throw ConfigReadError("Invalid context or syntax");
 		}
 	}
 	if (this->_open_braces != 0)
-		throw ConfigFailure("Braces not closed");
+		throw ConfigReadError("Braces not closed");
 	this->_config.close();
 }
 
 /* Get server details to be inserted in the server.directives map
 - If an open brace is found, validate and parse the context */
-void	ConfigFile::readServerContext(s_ServerContext& server)
+void	ConfigFile::readServerContext(ServerConfig* server)
 {
 	std::string	curr_line;
 
@@ -94,27 +105,22 @@ void	ConfigFile::readServerContext(s_ServerContext& server)
 		if (tokens.size() == 1 && tokens[0] == "}")
 			return ;
 
-		s_LocationContext	location;
 		if (checkContext(tokens[0]) == LOCATION)
 		{
-			s_LocationContext	location;
-			if ((tokens.size() == 2 && tokens[1] != "{") || (tokens.size() == 3 && tokens[2] == "{"))
-			{
-				location.pattern = tokens[1];
-				readLocationContext(location);
-				server.locations.push_back(location);
-			}
-			else
-				throw ConfigFailure("Invalid nested context or syntax");
+			LocationConfig	*location = new LocationConfig();
+
+			server->setLocation(location);
+			location->setPath(tokens);
+			readLocationContext(location);
 		}
 		else
-			addKeyValues(tokens, server.directives);
+			addKeyValues(tokens, server->getDirectives());
 	}
-	throw ConfigFailure("Braces not closed");
+	throw ConfigReadError("Braces not closed");
 }
 
 /* Get location details to be inserted the server.location[].directives map */
-void	ConfigFile::readLocationContext(s_LocationContext& location)
+void	ConfigFile::readLocationContext(LocationConfig* location)
 {
 	std::string	curr_line;
 
@@ -126,9 +132,9 @@ void	ConfigFile::readLocationContext(s_LocationContext& location)
 			continue ;
 		if (tokens.size() == 1 && tokens[0] == "}")
 			return ;
-		addKeyValues(tokens, location.directives);
+		addKeyValues(tokens, location->getDirectives());
 	}
-	throw ConfigFailure("Braces not closed");
+	throw ConfigReadError("Braces not closed");
 }
 
 /* Create pair of std::string and std::vector<string> to insert in the given map */
@@ -204,7 +210,7 @@ void	ConfigFile::checkBraces(t_strvec& tokens)
 		{
 			this->_open_braces--;
 			if (this->_open_braces < 0)
-				throw ConfigFailure("Invalid syntax");
+				throw ConfigReadError("Invalid syntax");
 		}
 	}
 }
@@ -225,18 +231,25 @@ int	ConfigFile::checkContext(std::string& context)
 ** ---------------------------------- PRINT -----------------------------------
 */
 
-void	ConfigFile::printContexts(std::vector <s_ServerContext>& vec)
+void	ConfigFile::printContexts(std::vector<ServerConfig*>& vec)
 {
 	std::cout << CYAN << "\nPRINTING CONTEXTS\n" << RESET;
 
-	for (std::vector <s_ServerContext>::iterator it = vec.begin(); it != vec.end(); it++)
+	for (std::vector<ServerConfig*>::iterator it = vec.begin(); it != vec.end(); it++)
 	{
 		std::cout << CYAN << "\nSERVER:\n" << RESET;
-		printMap(it->directives);
-		for (size_t i = 0; i < it->locations.size(); i++)
+
+		ServerConfig	*server = *it;
+		printMap(server->getDirectives());
+		std::vector<LocationConfig*>	locations = server->getLocations();
+
+		for (size_t i = 0; i < locations.size(); i++)
 		{
-			std::cout << CYAN << "--> LOCATION: " << it->locations[i].pattern << '\n' << RESET;
-			printMap(it->locations[i].directives);
+			std::cout << CYAN << "--> LOCATION: " << locations[i]->getPath();
+			std::cout << "\n--> match exact: " << locations[i]->getMatchExact();
+			std::cout << "; case sensitive: " << locations[i]->getCaseSensitive();
+			std::cout << '\n' << RESET;
+			printMap(locations[i]->getDirectives());
 		}
 	}
 }
@@ -255,12 +268,12 @@ void	ConfigFile::printMap(t_strmap& map)
 ** -------------------------------- EXCEPTIONS --------------------------------
 */
 
-ConfigFile::ConfigFailure::ConfigFailure(const std::string& message) \
+ConfigFile::ConfigReadError::ConfigReadError(const std::string& message) \
 	: _message("Configuration file: " + message) {};
 
-ConfigFile::ConfigFailure::~ConfigFailure() throw() {}
+ConfigFile::ConfigReadError::~ConfigReadError() throw() {}
 
-const char	*ConfigFile::ConfigFailure::what() const throw()
+const char	*ConfigFile::ConfigReadError::what() const throw()
 {
 	return (_message.c_str());
 }

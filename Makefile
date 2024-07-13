@@ -33,7 +33,10 @@ SRCS	= $(addprefix $(SRC_DIR)/, \
 		Client.cpp \
 		Request.cpp \
 		Response.cpp \
-		ConfigFile.cpp)
+		ConfigFile.cpp \
+		ValidConfig.cpp \
+		ServerConfig.cpp \
+		LocationConfig.cpp)
 OBJS    = $(SRCS:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
 DEPS    = $(OBJS:.o=.d)
 

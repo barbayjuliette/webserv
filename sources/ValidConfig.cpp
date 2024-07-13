@@ -18,26 +18,15 @@
 
 ValidConfig::ValidConfig()
 {
-	this->_listen_port = 8081;
-	this->_client_max_body_size = BUFFER_SIZE;
+	this->_listen_port = 0;
+	this->_client_max_body_size = 5000;
 	this->_autoindex = false;
-
-	this->_host = "";
-	this->_root = "";
-	this->_alias = "";
-	this->_return = "";
-
-	this->_server_name;
-	this->_index;
-	this->_allow_methods;
-	this->_cgi_path;
-
-	this->_error_page;
 }
 
-ValidConfig::ValidConfig(const ValidConfig& other)
-{
-}
+// ValidConfig::ValidConfig(const ValidConfig& other)
+// {
+// 	*this = other;
+// }
 
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
@@ -48,6 +37,35 @@ ValidConfig::~ValidConfig() {}
 /*
 ** --------------------------------- METHODS ----------------------------------
 */
+
+t_strmap&	ValidConfig::getDirectives(void)
+{
+	return (this->_directives);
+}
+
+/* Function for validating all directives in the map */
+void	ValidConfig::validateDirectives(void)
+{
+	// for (t_strmap::iterator it == this->_directives.begin(); it != this->_directives.end(); it++)
+	// {
+	// }
+	setListenPort(this->_directives["listen"]);
+}
+
+/* Port number range: 0 to 65353 */
+void	ValidConfig::setListenPort(t_strvec& tokens)
+{
+	if (tokens.size() != 1)
+		return ;
+
+	std::stringstream	stream;
+	stream << tokens[0];
+	stream >> this->_listen_port;
+
+	if (!stream.eof() || stream.fail()
+		|| this->_listen_port < 0 || this->_listen_port > 65353)
+		throw InvalidConfigError("Listening port must be a number from 0 to 65353");
+}
 
 /*
 200 OK.	The request finished normally.
@@ -64,3 +82,18 @@ ValidConfig::~ValidConfig() {}
 void	ValidConfig::initErrorPages(void)
 {
 }
+
+/*
+** -------------------------------- EXCEPTIONS --------------------------------
+*/
+
+ValidConfig::InvalidConfigError::InvalidConfigError(const std::string& message) \
+	: _message("Invalid configuration: " + message) {};
+
+ValidConfig::InvalidConfigError::~InvalidConfigError() throw() {}
+
+const char	*ValidConfig::InvalidConfigError::what() const throw()
+{
+	return (_message.c_str());
+}
+
