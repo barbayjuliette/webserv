@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ValidConfig.hpp"
+#include "LocationConfig.hpp"
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -37,6 +37,11 @@ LocationConfig::~LocationConfig()
 /*
 ** --------------------------------- METHODS ----------------------------------
 */
+
+void	LocationConfig::initValidKeys(void)
+{
+	std::cout << _path << '\n';
+}
 
 /* Syntax: location [modifier] [URI] (+ inline open brace '{' if applicable) */
 void	LocationConfig::setPath(t_strvec& tokens)

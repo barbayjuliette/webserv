@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ValidConfig.hpp"
+#include "ServerConfig.hpp"
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -18,6 +18,7 @@
 
 ServerConfig::ServerConfig() : ValidConfig()
 {
+	initValidKeys();
 	std::cout << "ServerConfig was created.\n";
 }
 
@@ -43,12 +44,22 @@ ServerConfig::~ServerConfig()
 ** --------------------------------- METHODS ----------------------------------
 */
 
-std::vector<LocationConfig*>	ServerConfig::getLocations(void)
+void	ServerConfig::initValidKeys(void)
 {
-	return (this->_locations);
+	this->_validKeys["listen"] = &ServerConfig::setListenPort;
+	this->_validKeys["client_max_body_size"] = &ServerConfig::setClientMaxBodySize;
 }
 
 void	ServerConfig::setLocation(LocationConfig* location)
 {
 	this->_locations.push_back(location);
+}
+
+/*
+** -------------------------------- ACCESSORS ---------------------------------
+*/
+
+std::vector<LocationConfig*>	ServerConfig::getLocations(void)
+{
+	return (this->_locations);
 }

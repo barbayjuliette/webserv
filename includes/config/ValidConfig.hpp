@@ -14,15 +14,13 @@
 # define VALID_CONFIG_HPP
 
 # include "webserv.hpp"
-# include "ConfigFile.hpp"
 
-class ConfigFile;
 class ValidConfig;
-class LocationConfig;
 
 typedef std::vector<std::string>		t_strvec;
 typedef std::map<std::string, t_strvec>	t_strmap;
 typedef void (ValidConfig::*t_directives)(const t_strvec&);
+typedef std::map<std::string, t_directives> t_dirmap;
 
 /* Abstract class for ServerConfig and LocationConfig to inherit from
 - directives: instructions to configure the server behaviour, stored in key-value pairs */
@@ -48,6 +46,7 @@ class ValidConfig
 		t_strvec	_cgi_path;
 
 		std::map<int, std::string>	_error_page;
+		std::map<std::string, t_directives>	_validKeys;
 
 	public:
 		/* Constructors */
@@ -58,25 +57,28 @@ class ValidConfig
 		ValidConfig&	operator=(const ValidConfig& src);
 
 		/* Destructor */
-		virtual ~ValidConfig() = 0;
+		virtual ~ValidConfig();
 
 		/* Init functions */
-		// virtual void	initValidDirectives(void);
-		void			initErrorPages(void);
+		virtual void	initValidKeys(void) = 0;
+		// void			initErrorPages(void);
 
 		/* Validation functions */
-		void	validateDirectives(void);
-		void	setListenPort(t_strvec& tokens);
-		void	setClientMaxBodySize(t_strvec& tokens);
-		void	setAutoindex(t_strvec& tokens);
-		void	setHost(t_strvec& tokens);
-		void	setRoot(t_strvec& tokens);
-		void	setAlias(t_strvec& tokens);
-		void	setRedirect(t_strvec& tokens);
-		void	setServerName(t_strvec& tokens);
-		void	setIndex(t_strvec& tokens);
-		void	setAllowedMethods(t_strvec& tokens);
-		void	setErrorPages(t_strvec& tokens);
+		void	validateKeys(void);
+		void	setListenPort(const t_strvec& tokens);
+		void	setClientMaxBodySize(const t_strvec& tokens);
+		void	setAutoindex(const t_strvec& tokens);
+		void	setHost(const t_strvec& tokens);
+		void	setRoot(const t_strvec& tokens);
+		void	setAlias(const t_strvec& tokens);
+		void	setRedirect(const t_strvec& tokens);
+		void	setServerName(const t_strvec& tokens);
+		void	setIndex(const t_strvec& tokens);
+		void	setAllowedMethods(const t_strvec& tokens);
+		void	setErrorPages(const t_strvec& tokens);
+
+		/* Utils */
+		int		convertToInt(const std::string& str);
 
 		/* Accessors */
 		t_strmap&	getDirectives(void);
@@ -92,74 +94,6 @@ class ValidConfig
 				virtual	~InvalidConfigError() throw();
 				virtual const char	*what() const throw();
 		};
-};
-
-/* Each server block can contain multiple location blocks */
-class ServerConfig : public ValidConfig
-{
-	private:
-		std::vector<LocationConfig*>		_locations;
-		std::map<std::string, t_directives>	_validDirectives;
-	
-	public:
-		/* Constructors */
-		ServerConfig();
-		ServerConfig(const ServerConfig& src);
-
-		/* Operator overload */
-		ServerConfig&	operator=(const ServerConfig& src);
-
-		/* Destructor */
-		~ServerConfig();
-
-		/* Member functions */
-		void	setLocation(LocationConfig* location);
-
-		/* Accessors */
-		std::vector<LocationConfig*>	getLocations(void);
-};
-
-/* Each location block is nested inside a server block
-- path: the location identifier to compare with a requested url
-- path modifiers:
-	=: equal sign: match a location block exactly against a requested URI.
-	~: tilde: case-sensitive regular expression match against a requested URI.
-	~*: tilde followed by asterisk: case insensitive regular expression match against a requested URI. */
-class LocationConfig : public ValidConfig
-{
-	private:
-		std::string	_path; //location-specific directive
-		bool		_match_exact;
-		bool		_case_sensitive;
-		std::map<std::string, t_directives>	_validDirectives;
-
-	public:
-		enum e_modifier
-		{
-			MATCH_EXACT,
-			CASE_SENSITIVE,
-			CASE_INSENSITIVE
-		};
-
-		/* Constructors */
-		LocationConfig();
-		LocationConfig(const LocationConfig& src);
-
-		/* Operator overload */
-		LocationConfig&	operator=(const LocationConfig& src);
-
-		/* Destructor */
-		~LocationConfig();
-
-		/* Validation functions */
-		void	setPath(t_strvec& tokens);
-		int		checkPathModifier(std::string& path);
-		int		setPathModifier(std::string& token);
-
-		/* Accessors */
-		std::string	getPath(void);
-		bool		getMatchExact(void);
-		bool		getCaseSensitive(void);
 };
 
 #endif

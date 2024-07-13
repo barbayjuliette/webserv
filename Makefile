@@ -25,19 +25,21 @@ INC_DIR = ./includes \
 INC 	= $(addprefix -I, $(INC_DIR))
 SRC_DIR = ./sources
 BUILD_DIR = ./sources/temp
+CONFIG_DIR = ./sources/config
 
 # build files
+CONFIG_SRCS = $(addprefix $(CONFIG_DIR)/, \
+		ConfigFile.cpp \
+		ValidConfig.cpp \
+		ServerConfig.cpp \
+		LocationConfig.cpp)
 SRCS	= $(addprefix $(SRC_DIR)/, \
 		main.cpp \
 		Webserver.cpp \
 		Client.cpp \
 		Request.cpp \
-		Response.cpp \
-		ConfigFile.cpp \
-		ValidConfig.cpp \
-		ServerConfig.cpp \
-		LocationConfig.cpp)
-OBJS    = $(SRCS:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
+		Response.cpp) $(CONFIG_SRCS)
+OBJS    = $(addprefix $(BUILD_DIR)/, $(notdir $(SRCS:.cpp=.o)))
 DEPS    = $(OBJS:.o=.d)
 
 #------------------------------------------------------------------------
@@ -60,6 +62,10 @@ $(NAME): $(OBJS)
 
 # build objects
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	@$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@ $(INC)
+	@echo "$(B_GREEN)$< compiled.$(END)"
+
+$(BUILD_DIR)/%.o: $(CONFIG_DIR)/%.cpp | $(BUILD_DIR)
 	@$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@ $(INC)
 	@echo "$(B_GREEN)$< compiled.$(END)"
 

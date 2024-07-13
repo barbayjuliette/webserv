@@ -14,7 +14,8 @@
 # define CONFIGFILE_HPP
 
 # include "webserv.hpp"
-# include "ValidConfig.hpp"
+# include "ServerConfig.hpp"
+# include "LocationConfig.hpp"
 
 class ValidConfig;
 class ServerConfig;
@@ -56,6 +57,7 @@ class ConfigFile
 		void	readServerContext(ServerConfig *server);
 		void	readLocationContext(LocationConfig* location);
 		void	addKeyValues(t_strvec& tokens, t_strmap& map);
+		void	validateConfig(void);
 
 		/* Utils */
 		void	printContexts(std::vector<ServerConfig*>& vec);

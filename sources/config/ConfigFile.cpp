@@ -23,10 +23,7 @@ ConfigFile::ConfigFile(const char *file)
 	openFile(file);
 	readFile();
 	printContexts(this->_servers);
-	for (std::vector<ServerConfig*>::iterator it = this->_servers.begin(); it != this->_servers.end(); it++)
-	{
-		(*it)->validateDirectives();
-	}
+	validateConfig();
 }
 
 /*
@@ -147,6 +144,14 @@ void	ConfigFile::addKeyValues(t_strvec& tokens, t_strmap& map)
 		values.push_back(tokens[i]);
 
 	map.insert(map.end(), std::make_pair(key, values));
+}
+
+void	ConfigFile::validateConfig(void)
+{
+	for (std::vector<ServerConfig*>::iterator it = this->_servers.begin(); it != this->_servers.end(); it++)
+	{
+		(*it)->validateKeys();
+	}
 }
 
 /*
