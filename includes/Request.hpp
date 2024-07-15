@@ -24,8 +24,9 @@ class Request
 		std::string	_full_request;
 		std::string	_path;
 		std::string	_http_version;
-		std::string	_type; // GET POST DELETE
-		std::string	_headers;
+		std::string	_method; // GET POST DELETE
+		int			_port;
+		std::map<std::string, std::string>	_headers;
 		std::string	_body;
 		Request();
 
@@ -38,9 +39,7 @@ class Request
 		std::string		getFullRequest();
 		std::string		getPath();
 		std::string		getHttpVersion();
-		std::string		getType();
+		std::string		getMethod();
 		std::string		getHeaders();
 		std::string		getBody();
-
-
 };

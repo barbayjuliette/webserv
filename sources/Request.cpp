@@ -16,10 +16,7 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-Request::Request()
-{
-
-}
+Request::Request() {}
 
 Request::Request(std::string full_request) : _full_request(full_request)
 {
@@ -31,7 +28,7 @@ Request::Request(std::string full_request) : _full_request(full_request)
 	{
 		request_vector.push_back(content);
 	}
-	this->_type = request_vector[0];
+	this->_method = request_vector[0];
 	// Check if valid : GET POST DELETE
 	this->_path = request_vector[1];
 	if (_path == "/")
@@ -40,22 +37,19 @@ Request::Request(std::string full_request) : _full_request(full_request)
 }
 
 Request::Request( const Request & src ):
-_full_request(src._full_request),
-_path(src._path),
-_http_version(src._http_version),
-_type(src._type),
-_headers(src._headers),
-_body(src._body)
-{
-}
+	_full_request(src._full_request),
+	_path(src._path),
+	_http_version(src._http_version),
+	_method(src._method),
+	_headers(src._headers),
+	_body(src._body)
+{}
 
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
 
-Request::~Request()
-{
-}
+Request::~Request() {}
 
 /*
 ** --------------------------------- OVERLOAD ---------------------------------
@@ -68,7 +62,7 @@ Request &				Request::operator=( Request const & rhs )
 		this->_full_request = rhs._full_request;
 		this->_path = rhs._path;
 		this->_http_version = rhs._http_version;
-		this->_type = rhs._type;
+		this->_method = rhs._method;
 		this->_headers = rhs._headers;
 		this->_body = rhs._body;
 	}
@@ -98,9 +92,9 @@ std::string		Request::getHttpVersion()
 	return (this->_http_version);
 }
 
-std::string		Request::getType()
+std::string		Request::getMethod()
 {
-	return (this->_type);
+	return (this->_method);
 }
 
 std::string		Request::getHeaders()
