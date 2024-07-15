@@ -13,31 +13,56 @@
 #include "Request.hpp"
 
 /*
+** ------------------------------- MEMBER FUNCTIONS ---------------------------
+*/
+
+int Request::parseHeader()
+{
+
+}
+
+int Request::parseMethod()
+{
+	// Find first space for method
+	this->_raw.find(' ');
+	// Find second space for path
+	// Find third space for http version
+}
+
+/*
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
 Request::Request() {}
 
-Request::Request(std::string full_request) : _full_request(full_request)
-{
-	std::stringstream			stream(_full_request);
-	std::string					content;
-	std::vector<std::string>	request_vector;
+// Request::Request(std::string full_request) : _raw(full_request)
+// {
+// 	std::stringstream			stream(_raw);
+// 	std::string					content;
+// 	std::vector<std::string>	request_vector;
 
-	while (stream >> content)
-	{
-		request_vector.push_back(content);
-	}
-	this->_method = request_vector[0];
-	// Check if valid : GET POST DELETE
-	this->_path = request_vector[1];
-	if (_path == "/")
-		_path = "/index.html";
-	_path = "./wwwroot" + _path;
+// 	while (stream >> content)
+// 	{
+// 		request_vector.push_back(content);
+// 	}
+// 	this->_method = request_vector[0];
+// 	// Check if valid : GET POST DELETE
+// 	this->_path = request_vector[1];
+// 	if (_path == "/")
+// 		_path = "/index.html";
+// 	_path = "./wwwroot" + _path;
+// }
+
+Request::Request(std::string full_request) : _raw(full_request)
+{
+	if (this->_raw.length() == 0)
+		 std::cerr << "Error: empty request" << std::endl;
+	this->parseMethod();
+	this->parseHeader();
 }
 
 Request::Request( const Request & src ):
-	_full_request(src._full_request),
+	_raw(src._raw),
 	_path(src._path),
 	_http_version(src._http_version),
 	_method(src._method),
@@ -59,7 +84,7 @@ Request &				Request::operator=( Request const & rhs )
 {
 	if (this != &rhs)
 	{
-		this->_full_request = rhs._full_request;
+		this->_raw = rhs._raw;
 		this->_path = rhs._path;
 		this->_http_version = rhs._http_version;
 		this->_method = rhs._method;
@@ -77,9 +102,9 @@ Request &				Request::operator=( Request const & rhs )
 ** --------------------------------- ACCESSOR ---------------------------------
 */
 
-std::string		Request::getFullRequest()
+std::string		Request::getRaw()
 {
-	return (this->_full_request);
+	return (this->_raw);
 }
 
 std::string		Request::getPath()
@@ -97,7 +122,7 @@ std::string		Request::getMethod()
 	return (this->_method);
 }
 
-std::string		Request::getHeaders()
+std::map<std::string, std::string>		Request::getHeaders()
 {
 	return (this->_headers);
 }
@@ -106,7 +131,6 @@ std::string		Request::getBody()
 {
 	return (this->_body);
 }
-
 
 
 /* ************************************************************************** */
