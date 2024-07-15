@@ -16,10 +16,7 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-Response::Response()
-{
-
-}
+Response::Response() {}
 
 Response::Response(Request *request)
 {
@@ -60,22 +57,18 @@ Response::Response(Request *request)
 }
 
 Response::Response( const Response & src ) :
-_status_code(src._status_code),
-_status_text(src._status_text),
-_http_version(src._http_version),
-_headers(src._headers),
-_body(src._body)
-{
-
-}
+	_status_code(src._status_code),
+	_status_text(src._status_text),
+	_http_version(src._http_version),
+	_headers(src._headers),
+	_body(src._body)
+{}
 
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
 
-Response::~Response()
-{
-}
+Response::~Response() {}
 
 /*
 ** --------------------------------- OVERLOAD ---------------------------------
