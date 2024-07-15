@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 12:59:40 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/11 20:35:42 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/12 19:26:28 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@ class Client
 		int			_socket;
 		Request		*_request;
 		Response	*_response;
+		// bool		keepAlive;
 		Client();
 
 	public:
@@ -34,6 +35,7 @@ class Client
 		Request*		getRequest();
 		Response*		getResponse();
 		int				getSocket();
+		void			reset();
 		void			setRequest(Request& request);
 		void			setResponse(Response& response);
 };
