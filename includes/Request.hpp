@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:06:01 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/12 19:22:21 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/15 18:38:30 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ class Request
 		std::string	_full_request;
 		std::string	_path;
 		std::string	_http_version;
-		std::string	_type; // GET POST DELETE
+		std::string	_method; // GET POST DELETE
 		std::string	_headers;
 		std::string	_body;
 		Request();
@@ -35,12 +35,10 @@ class Request
 		~Request();
 
 		Request &		operator=( Request const & rhs );
-		std::string		getFullRequest();
-		std::string		getPath();
-		std::string		getHttpVersion();
-		std::string		getType();
-		std::string		getHeaders();
-		std::string		getBody();
-
-
+		std::string		getFullRequest() const;
+		std::string		getPath() const;
+		std::string		getHttpVersion() const;
+		std::string		getMethod() const;
+		std::string		getHeaders() const;
+		std::string		getBody() const;
 };

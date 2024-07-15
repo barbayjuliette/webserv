@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/15 16:28:48 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/15 22:41:01 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,50 +21,45 @@ Response::Response()
 
 }
 
-Response::Response(Request *request)
+Response::Response(Request &request)
 {
-	std::string					str;
-	char						c;
-	std::ifstream				page(request->getPath().c_str());
-	std::stringstream			stream;
+	if (request.getMethod() == "GET")
+		this->respond_get_request(request);
 
-	if (page.good())
-	{
-		while (page.get(c))
-			str += c;
-		this->_status_code = 200;
-		this->_status_text = "OK";
-	}
+	else if (request.getMethod() == "POST")
+		this->respond_post_request(request);
+
+	else if (request.getMethod() == "DELETE")
+		this->respond_delete_request(request);
+		
 	else
-	{
-		// std::cerr << strerror(errno) << std::endl;
+		this->respond_wrong_request(request);
 
-		this->_status_code = 404;
-		this->_status_text = "Not found";
-		str = get_error_page(_status_code);
-	}
-	page.close();
-	// std::cout << "Status: " << _status_code << std::endl;
-	// std::cout << "Status text: " << _status_text << std::endl;
-	// std::cout << "Content: " << str << std::endl;
+	_headers["Cache-Control"] = "no-cache, private";
+	this->_http_version = request.getHttpVersion();
 
-	stream << "HTTP/1.1 " << this->_status_code << this->_status_text << "\r\n";
-	stream << "Connection: keep-alive\r\n";
-	stream << "Cache-Control: no-cache, private\r\n";
-	stream << "Content-Type: text/html\r\n";
-	stream << "Content-Length: " << str.size() << "\r\n";
-	stream << "\r\n";
-	stream << str;
+	if (this->_http_version == "HTTP/1.1") // && request.connection == keep-alive
+		_headers["Connection"] = "keep-alive";
+	else
+		_headers["Connection"] = "close";
 
-	this->_full_response = stream.str();
+	setFullResponse();
+	setContentType(request);
+	getDate();
+
+	//  Content-Length if there is a body
+	// /!\ Body can be empty string, would be valid request
+
+	std::cout << this->_full_response << std::endl;
 }
 
 Response::Response( const Response & src ) :
 _status_code(src._status_code),
 _status_text(src._status_text),
 _http_version(src._http_version),
-_headers(src._headers),
-_body(src._body)
+_body(src._body),
+_full_response(src._full_response),
+_headers(src._headers)
 {
 
 }
@@ -76,6 +71,64 @@ _body(src._body)
 Response::~Response()
 {
 }
+
+/*
+** --------------------------------- METHODS ----------------------------------
+*/
+
+void	Response::respond_get_request(const Request &request)
+{
+	char						c;
+	std::ifstream				page(request.getPath().c_str());
+
+	if (page.good())
+	{
+		while (page.get(c))
+			_body += c;
+		this->_status_code = 200;
+		this->_status_text = "OK";
+	}
+	else
+	{
+		this->_status_code = 404;
+		this->_status_text = "Not found";
+		_body = get_error_page(_status_code);
+	}
+	_headers["Content-Length"] = intToString(this->_body.size());
+	page.close();
+}
+
+void	Response::respond_post_request(const Request &request)
+{
+	(void)request;
+}
+
+void	Response::respond_delete_request(const Request &request)
+{
+	(void)request;
+}
+
+void	Response::respond_wrong_request(const Request &request)
+{
+	(void)request;
+	this->_status_code = 405;
+	this->_status_text = "Method Not Allowed";
+	_headers["Allow"] = "GET, POST, DELETE";
+}
+
+void		Response::getDate()
+{
+    time_t time;
+    std::time(&time);
+
+    struct tm *gmt;
+    gmt = std::gmtime(&time);
+    char formatted_date[30];
+    std::strftime(formatted_date, sizeof(formatted_date), "%a, %d %b %Y %H:%M:%S GMT", gmt);
+    // std::cout << std::string(formatted_date) << std::endl;
+	_headers["Date"] = formatted_date;
+}
+
 
 /*
 ** --------------------------------- OVERLOAD ---------------------------------
@@ -96,7 +149,7 @@ std::string		Response::get_error_page(int num)
 	ss << num;
 	std::string					string_code = ss.str();
 	
-	std::string					error_path = "./errors/" + string_code + ".html";
+	std::string					error_path = "./errors/" + intToString(num) + ".html";
 	std::ifstream				error_page(error_path.c_str());
 	std::string					str;
 	char						c;
@@ -107,43 +160,102 @@ std::string		Response::get_error_page(int num)
 			str += c;
 	}
 	else
+	{
 		std::cout << "Error loading Error page " << num << std::endl;
+		str = "<h1>Error" +  intToString(num) + "</h1><p>" + _status_text + "</p>";
+	}
 	error_page.close();
 	return (str);
+}
+
+std::string	Response::intToString(int num)
+{
+	std::stringstream	stream;
+	stream << num;
+	return (stream.str());
 }
 
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */
 
-int	Response::getStatusCode()
+int	Response::getStatusCode() const
 {
 	return (this->_status_code);
 }
 
-std::string	Response::getStatusText()
+std::string	Response::getStatusText() const
 {
 	return (this->_status_text);
 }
 
-std::string	Response::getHttpVersion()
+std::string	Response::getHttpVersion() const
 {
 	return (this->_http_version);
 }
 
-std::string	Response::getHeaders()
+std::map<std::string, std::string>	Response::getHeaders() const
 {
 	return (this->_headers);
 }
 
-std::string	Response::getBody()
+std::string	Response::getBody() const
 {
 	return (this->_body);
 }
 
-std::string	Response::getFullResponse()
+std::string	Response::getFullResponse() const
 {
 	return (this->_full_response);
+}
+
+void	Response::setFullResponse()
+{
+	std::stringstream								stream;
+	std::map<std::string, std::string>::iterator	it;
+
+	stream << this->_http_version << " " << this->_status_code << " " << this->_status_text << "\r\n";
+
+	for (it = _headers.begin(); it != _headers.end(); ++it)
+	{
+		stream << it->first << ": " << it->second << "\r\n";
+	}
+	stream << "\r\n";
+	stream << this->_body;
+
+	this->_full_response = stream.str();
+}
+
+void	Response::setContentType(Request &request)
+{
+	std::string		path = request.getPath();
+	std::size_t		pos = path.find_last_of(".");
+	std::string		ext;
+
+	if (pos == std::string::npos)
+	{
+		_headers["Content-Type"] = "text/plain";
+		return ;
+	}
+	ext = path.substr(pos + 1, path.size() - pos + 1);
+	if (ext == "html" || ext == "htm")
+		_headers["Content-Type"] = "text/html";
+	else if (ext == "css")
+		_headers["Content-Type"] = "text/css";
+	else if (ext == "js")
+		_headers["Content-Type"] = "text/javascript";
+	else if (ext == "jpg" || ext == "jpeg")
+		_headers["Content-Type"] = "image/jpeg";
+	else if (ext == "png")
+		_headers["Content-Type"] = "image/png";
+	else if (ext == "gif")
+		_headers["Content-Type"] = "image/gif";
+	else if (ext == "pdf")
+		_headers["Content-Type"] = "application/pdf";
+	else
+		_headers["Content-Type"] = "text/plain";
+	// std::cout << "Extension: " << ext << std::endl;
+	// std::cout << "Path: " << path << std::endl;
 }
 
 /* ************************************************************************** */

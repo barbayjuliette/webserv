@@ -116,11 +116,8 @@ int	Webserver::accept_new_connections(void)
 	socklen_t addrlen = sizeof(_address);
 
 	int	new_socket = accept(_server_socket, (struct sockaddr*)&_address, &addrlen);
-	if (new_socket < 0)
-	{
-		std::cerr << strerror(errno);
-		exit(1);
-	}
+	check(new_socket);
+	check(fcntl(_server_socket, F_SETFL, O_NONBLOCK));
 	_clients[new_socket] = new Client(new_socket);
 	return (new_socket);
 }
@@ -219,9 +216,9 @@ void	Webserver::handle_read_connection(int client_socket)
 		Request*	request = new Request(buffer);
 		getClient(client_socket)->setRequest(*request);
 
-		std::cout << request->getFullRequest() << std::endl;
+		// std::cout << request->getFullRequest() << std::endl;
 
-		Response	*response = new Response(request);
+		Response	*response = new Response(*request);
 		getClient(client_socket)->setResponse(*response);
 		FD_CLR(client_socket, &read_sockets);
 		FD_SET(client_socket, &write_sockets);
@@ -231,19 +228,29 @@ void	Webserver::handle_read_connection(int client_socket)
 
 void		Webserver::handle_write_connection(int client_socket)
 {
-	Client	*client = getClient(client_socket);
-	unsigned int		bytes_sent;
+	Client			*client = getClient(client_socket);
+	Response		*response = client->getResponse();
+	unsigned int	bytes_sent;
 
-	if (!client->getResponse())
+	if (!response)
 		return ;
 
-	bytes_sent = send(client->getSocket(), client->getResponse()->getFullResponse().c_str(), client->getResponse()->getFullResponse().size(), 0);
-	if (bytes_sent == client->getResponse()->getFullResponse().size())
+	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
+	if (bytes_sent == response->getFullResponse().size())
 	{
 		std::cout << "---- Response sent to client ----\n\n";
-		FD_CLR(client_socket, &write_sockets);
-		FD_SET(client_socket, &read_sockets);
-		client->reset();
+		if ((response->getHeaders())["Connection"] == "keep-alive")
+		{
+			FD_CLR(client_socket, &write_sockets);
+			FD_SET(client_socket, &read_sockets);
+			client->reset();
+		}
+		else
+		{
+			FD_CLR(client_socket, &write_sockets);
+			close(client_socket);
+			_clients.erase(_clients.find(client_socket));
+		}
 	}
 	else
 		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
