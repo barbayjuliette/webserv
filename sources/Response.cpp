@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/12 16:06:44 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/15 16:28:48 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ Response::Response(Request *request)
 	// std::cout << "Content: " << str << std::endl;
 
 	stream << "HTTP/1.1 " << this->_status_code << this->_status_text << "\r\n";
-	stream << "Connection: keep-alive";
+	stream << "Connection: keep-alive\r\n";
 	stream << "Cache-Control: no-cache, private\r\n";
 	stream << "Content-Type: text/html\r\n";
 	stream << "Content-Length: " << str.size() << "\r\n";
