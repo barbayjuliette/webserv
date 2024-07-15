@@ -15,12 +15,15 @@
 
 # include "webserv.hpp"
 
+/* Errors */
+# define PARAM_COUNT_ERR "Invalid number of parameters"
+
 class ValidConfig;
 
 typedef std::vector<std::string>		t_strvec;
 typedef std::map<std::string, t_strvec>	t_strmap;
-typedef void (ValidConfig::*t_directives)(const t_strvec&);
-typedef std::map<std::string, t_directives> t_dirmap;
+typedef void (ValidConfig::*t_directive)(const t_strvec&);
+typedef std::map<std::string, t_directive> t_dirmap;
 
 /* Abstract class for ServerConfig and LocationConfig to inherit from
 - directives: instructions to configure the server behaviour, stored in key-value pairs */
@@ -33,7 +36,7 @@ class ValidConfig
 		/* Values after parsing _directives */
 		int			_listen_port;
 		int			_client_max_body_size;
-		bool		_autoindex; //init false
+		bool		_autoindex; //init false - toggles directory listing for when no index file is found
 
 		std::string	_host;
 		std::string	_root;
@@ -46,7 +49,7 @@ class ValidConfig
 		t_strvec	_cgi_path;
 
 		std::map<int, std::string>	_error_page;
-		std::map<std::string, t_directives>	_validKeys;
+		std::map<std::string, t_directive>	_validKeys;
 
 	public:
 		/* Constructors */
@@ -79,6 +82,7 @@ class ValidConfig
 
 		/* Utils */
 		int		convertToInt(const std::string& str);
+		bool	isStatusCode(const std::string& str);
 
 		/* Accessors */
 		t_strmap&	getDirectives(void);

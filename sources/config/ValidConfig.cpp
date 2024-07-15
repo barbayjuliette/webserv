@@ -50,7 +50,7 @@ void	ValidConfig::validateKeys(void)
 		t_dirmap::iterator found = this->_validKeys.find(it->first);
 		if (found == this->_validKeys.end())
 			throw InvalidConfigError("Invalid directive");
-		t_directives	handlerFunction = found->second;
+		t_directive	handlerFunction = found->second;
 		(this->*handlerFunction)(it->second);
 	}
 }
@@ -59,7 +59,7 @@ void	ValidConfig::validateKeys(void)
 void	ValidConfig::setListenPort(const t_strvec& tokens)
 {
 	if (tokens.size() != 1)
-		return ;
+		throw InvalidConfigError(PARAM_COUNT_ERR);
 
 	this->_listen_port = convertToInt(tokens[0]);
 
@@ -70,20 +70,21 @@ void	ValidConfig::setListenPort(const t_strvec& tokens)
 void	ValidConfig::setClientMaxBodySize(const t_strvec& tokens)
 {
 	if (tokens.size() != 1)
-		return ;
+		throw InvalidConfigError(PARAM_COUNT_ERR);
 
 	this->_client_max_body_size = convertToInt(tokens[0]);
 }
 
-int	ValidConfig::convertToInt(const std::string& str)
+void	ValidConfig::setAutoindex(const t_strvec& tokens)
 {
-	std::stringstream	stream(str);
-	int	nb;
-	stream >> nb;
-
-	if (!stream.eof() || stream.fail())
-		throw InvalidConfigError("Non-numeric parameter");
-	return (nb);
+	if (tokens.size() != 1)
+		throw InvalidConfigError(PARAM_COUNT_ERR);
+	if (tokens[0] == "on")
+		this->_autoindex = true;
+	else if (tokens[0] == "off")
+		this->_autoindex = false;
+	else
+		throw InvalidConfigError("Invalid param for autoindex");
 }
 
 /*
@@ -97,6 +98,17 @@ int	ValidConfig::convertToInt(const std::string& str)
 404 Not found.	The client asked for something the server couldn't find.
 500 Server error.	This is a catch-all error code that indicates something went wrong in the server or the CGI program, and the problem stopped the request from being completed.
 501 Not implemented.	The client asked the server to perform an action that the server knows about, but can't do.*/
+void	ValidConfig::setErrorPages(const t_strvec& tokens)
+{
+	std::string	error_page = tokens[tokens.size() - 1];
+
+	for (size_t i = 0; i < tokens.size() - 1; i++)
+	{
+		int	status_code = convertToInt(tokens[i]);
+		this->_error_page[status_code] = error_page;
+		// std::cout << "status code: " << status_code << "; error page: " << error_page << '\n';
+	}
+}
 
 /*
 ** -------------------------------- ACCESSORS ---------------------------------
@@ -108,11 +120,39 @@ t_strmap&	ValidConfig::getDirectives(void)
 }
 
 /*
+** ---------------------------------- UTILS -----------------------------------
+*/
+
+int	ValidConfig::convertToInt(const std::string& str)
+{
+	std::stringstream	stream(str);
+	int	nb;
+	stream >> nb;
+
+	if (!stream.eof() || stream.fail())
+		throw InvalidConfigError("Non-numeric parameter");
+	return (nb);
+}
+
+bool	ValidConfig::isStatusCode(const std::string& str)
+{
+	std::stringstream	stream(str);
+	int	nb;
+	stream >> nb;
+
+	if (!stream.eof() || stream.fail())
+		return (false);
+	if (nb < 100 || nb > 599)
+		return (false);
+	return (true);
+}
+
+/*
 ** -------------------------------- EXCEPTIONS --------------------------------
 */
 
 ValidConfig::InvalidConfigError::InvalidConfigError(const std::string& message) \
-	: _message("Invalid configuration: " + message) {};
+	: _message("Invalid config: " + message) {};
 
 ValidConfig::InvalidConfigError::~InvalidConfigError() throw() {}
 

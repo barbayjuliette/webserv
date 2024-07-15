@@ -48,6 +48,8 @@ void	ServerConfig::initValidKeys(void)
 {
 	this->_validKeys["listen"] = &ServerConfig::setListenPort;
 	this->_validKeys["client_max_body_size"] = &ServerConfig::setClientMaxBodySize;
+	this->_validKeys["autoindex"] = &ServerConfig::setAutoindex;
+	this->_validKeys["error_page"] = &ServerConfig::setErrorPages;
 }
 
 void	ServerConfig::setLocation(LocationConfig* location)
