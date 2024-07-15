@@ -16,17 +16,69 @@
 ** ------------------------------- MEMBER FUNCTIONS ---------------------------
 */
 
-int Request::parseHeader()
-{
+// int Request::parseHeader()
+// {
 
+// }
+
+void Request::checkMethod()
+{
+    const std::string validMethods = "PUT,PATCH,CONNECT,OPTIONS,TRACE";
+    std::string searchMethod = "," + _method + ",";
+
+	if (this->_method == "GET" || this->_method == "POST" 
+	 	|| this->_method == "DELETE")
+	 	return ;
+	else if (validMethods.find(searchMethod) != std::string::npos)
+		this->_error = NOT_SUPPORTED;
+	else
+		this->_error = INVALID;
 }
 
-int Request::parseMethod()
+void Request::checkPath()
 {
-	// Find first space for method
-	this->_raw.find(' ');
+	if (_path == "/")
+		_path = "/index.html";
+	_path = "./wwwroot" + _path;
+}
+
+int Request::parseRequest()
+{
+	// Find first space for method -> Unsupport method 501
+	size_t methodEnd = _raw.find(' ');
+	// No method found
+	if (methodEnd == std::string::npos)
+	{
+		this->_error = INVALID;
+		return -1;
+	}
+	this->_method = _raw.substr(0, methodEnd);
+	// Check if valid method
+	checkMethod();
+
 	// Find second space for path
-	// Find third space for http version
+	size_t pathEnd = _raw.find(' ', methodEnd + 1);
+	if (pathEnd == std::string::npos)
+	{
+		this->_error = INVALID;
+		return -1;
+	}
+	this->_path = _raw.substr(methodEnd + 1, pathEnd - (methodEnd + 1));
+	// Check if path is root
+	checkPath();
+
+	// Find newline for http version
+	size_t versionEnd = _raw.find("\r\n", pathEnd + 1);
+	if (versionEnd == std::string::npos)
+	{
+		this->_error = INVALID;
+		return -1;
+	}
+	this->_http_version = _raw.substr(pathEnd + 1, versionEnd - (pathEnd + 1));
+	// std::cout << std::endl << std::endl << 
+	// 	_method + " " + _path + " " + _http_version + " " << "end of vars" << 
+	// 	std::endl << std::endl; 
+	return 0;
 }
 
 /*
@@ -35,37 +87,18 @@ int Request::parseMethod()
 
 Request::Request() {}
 
-// Request::Request(std::string full_request) : _raw(full_request)
-// {
-// 	std::stringstream			stream(_raw);
-// 	std::string					content;
-// 	std::vector<std::string>	request_vector;
-
-// 	while (stream >> content)
-// 	{
-// 		request_vector.push_back(content);
-// 	}
-// 	this->_method = request_vector[0];
-// 	// Check if valid : GET POST DELETE
-// 	this->_path = request_vector[1];
-// 	if (_path == "/")
-// 		_path = "/index.html";
-// 	_path = "./wwwroot" + _path;
-// }
-
-Request::Request(std::string full_request) : _raw(full_request)
+Request::Request(std::string full_request) : _raw(full_request), _error(NO_ERR)
 {
 	if (this->_raw.length() == 0)
 		 std::cerr << "Error: empty request" << std::endl;
-	this->parseMethod();
-	this->parseHeader();
+	this->parseRequest();
 }
 
 Request::Request( const Request & src ):
 	_raw(src._raw),
+	_method(src._method),
 	_path(src._path),
 	_http_version(src._http_version),
-	_method(src._method),
 	_headers(src._headers),
 	_body(src._body)
 {}

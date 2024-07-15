@@ -22,19 +22,32 @@
 enum connection_type {
 	KEEP_ALIVE,
 	CLOSE
-}
+};
+
+enum error_type {
+	NO_ERR,
+	INVALID, // 400
+	NOT_SUPPORTED // 501
+};
 
 class Request
 {
 	private:
 		std::string							_raw;
+		std::string							_method;
 		std::string							_path;
 		std::string							_http_version;
-		std::string							_method; // GET POST DELETE
 		// int									_port;
+		// std::string							_connection;
 		std::map<std::string, std::string>	_headers;
 		std::string							_body;
+		error_type							_error;
 		Request();
+
+		// Member functions
+		int parseRequest();
+		void checkMethod();
+		void checkPath();
 
 	public:
 		Request(std::string request);
