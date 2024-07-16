@@ -3,15 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yliew <marvin@42.fr>                       +#+  +:+       +#+        */
+/*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/10 19:34:58 by yliew             #+#    #+#             */
-/*   Updated: 2024/07/10 19:35:01 by yliew            ###   ########.fr       */
+/*   Updated: 2024/07/16 17:55:52 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
+
+#define DEBUG 1
 
 /* C++ headers */
 # include <iostream>
