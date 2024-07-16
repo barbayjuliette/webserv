@@ -18,6 +18,8 @@
 # include <sstream>
 # include <fstream>
 # include <map>
+# include <cstdlib>
+# include "webserv.hpp"
 
 enum connection_type {
 	KEEP_ALIVE,
@@ -27,7 +29,7 @@ enum connection_type {
 enum error_type {
 	NO_ERR,
 	INVALID, // 400
-	NOT_SUPPORTED // 501
+	NOT_SUPPORTED // 405
 };
 
 class Request
@@ -37,8 +39,7 @@ class Request
 		std::string							_method;
 		std::string							_path;
 		std::string							_http_version;
-		// int									_port;
-		// std::string							_connection;
+		int									_port;
 		std::map<std::string, std::string>	_headers;
 		std::string							_body;
 		error_type							_error;
@@ -46,8 +47,14 @@ class Request
 
 		// Member functions
 		int parseRequest();
+		void parseHeader();
+		void parsePort();
+		void parseBody();
+
 		void checkMethod();
 		void checkPath();
+		std::string extractHeader();
+		void printHeaders(const std::map<std::string, std::string>& headers);
 
 	public:
 		Request(std::string request);

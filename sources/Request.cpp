@@ -16,10 +16,97 @@
 ** ------------------------------- MEMBER FUNCTIONS ---------------------------
 */
 
-// int Request::parseHeader()
-// {
+void Request::parseBody()
+{
+	size_t headerEnd = _raw.find("\r\n\r\n");
+	if (headerEnd != std::string::npos && headerEnd + 4 != _raw.size())
+		this->_body = _raw.substr(headerEnd + 4);
+	else if (_method == "POST")
+			_error = INVALID;
+}
 
-// }
+// Testing function
+void Request::printHeaders(const std::map<std::string, std::string>& headers)
+{
+	std::cout << std::endl << std::endl << 
+		_method + " " + _path + " " + _http_version + " " << _port << " end of vars" << 
+		std::endl << std::endl;
+    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+    {
+        std::cout << "[" << it->first << "] = " << it->second << std::endl;
+    }
+    std::cout << GREEN << "end of headers" << RESET << std::endl << std::endl;
+}
+
+std::string Request::extractHeader()
+{
+    // Find the "Connection:" line in the raw request
+    size_t connectionStart = _raw.find("Connection: ");
+    if (connectionStart == std::string::npos)
+        return "";
+    // Find the end of the header
+    size_t headersEnd = _raw.find("\r\n\r\n", connectionStart);
+    if (headersEnd == std::string::npos)
+        return "";
+    // Extract from "Connection:" line to the end of headers (not including the body)
+    std::string result = _raw.substr(connectionStart, headersEnd - connectionStart);
+    return result;
+}
+
+void Request::parseHeader()
+{
+	std::string header = extractHeader();
+	if (header != "")
+	{
+		std::istringstream stream(header);
+		std::string line;
+
+		while(std::getline(stream, line))
+		{
+			// Remove trailing carriage return char
+			if (!line.empty() && line[line.size() - 1] == '\r')
+	            line.erase(line.size() - 1);
+	        // Find colon
+	        size_t colon = line.find(":");
+	        if (colon != std::string::npos)
+	        {
+	        	std::string name = line.substr(0, colon);
+	        	std::string value = line.substr(colon + 2);
+
+	        	// Trim leading/trailing whitespaces
+		       	name.erase(name.find_last_not_of(" \n\r\t") + 1);
+	            value.erase(0, value.find_first_not_of(" \n\r\t"));
+
+	            this->_headers[name] = value;
+	        }
+		}
+	}
+}
+
+/* Function to get second line with Host: 
+convert port number to int and store */
+void Request::parsePort()
+{
+	size_t hostStart = _raw.find("Host: ");
+	if (hostStart != std::string::npos)
+	{
+		hostStart += 6;
+		size_t hostEnd = _raw.find("\r\n", hostStart);
+		if (hostEnd != std::string::npos)
+		{
+			std::string host = _raw.substr(hostStart, hostEnd - hostStart);
+			size_t colon = host.find(":");
+			if (colon != std::string::npos)
+				this->_port = std::atoi(host.substr(colon + 1).c_str());
+			else
+				_error = INVALID;
+		}
+		else
+			_error = INVALID;
+	}
+	else
+		_error = INVALID;
+}
 
 void Request::checkMethod()
 {
@@ -92,6 +179,10 @@ Request::Request(std::string full_request) : _raw(full_request), _error(NO_ERR)
 	if (this->_raw.length() == 0)
 		 std::cerr << "Error: empty request" << std::endl;
 	this->parseRequest();
+	this->parsePort();
+	this->parseHeader();
+	this->parseBody();
+	// printHeaders(_headers);
 }
 
 Request::Request( const Request & src ):

@@ -42,9 +42,9 @@ class Webserver
 	public:
 		fd_set	read_sockets;
 		fd_set	write_sockets;
+		
 		Webserver();
 		Webserver(int domain, int type, int protocol, int port, u_long interface, int backlog);
-		void	initialize(int domain, int type, int protocol, int port, u_long interface, int backlog);
 		Webserver( Webserver const & src );
 		~Webserver();
 
@@ -56,6 +56,7 @@ class Webserver
 		void			handle_read_connection(int i);
 		void			handle_write_connection(int client_socket);
 		static void		signal_handler(int signum);
+		void			initialize(int domain, int type, int protocol, int port, u_long interface, int backlog);
 
 		// Accessors
 		int							getServerSocket();
