@@ -21,6 +21,8 @@
 # include <cstdlib>
 # include "webserv.hpp"
 
+# define VERBOSE 0
+
 enum connection_type {
 	KEEP_ALIVE,
 	CLOSE
@@ -56,6 +58,9 @@ class Request
 		void checkMethod();
 		void checkPath();
 		std::string extractHeader();
+
+		// Error handling
+		void printError(std::string error_msg);
 		void printHeaders(const std::map<std::string, std::string>& headers);
 
 	public:
