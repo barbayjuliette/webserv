@@ -192,6 +192,7 @@ void	Webserver::run(void)
 void	Webserver::handle_read_connection(int client_socket)
 {
 	char	buffer[BUFFER_SIZE];
+	memset(buffer, 0, sizeof(buffer));
 	int		bytes_read = recv(client_socket, buffer, BUFFER_SIZE, 0);
 
 	if (bytes_read < 0)
@@ -216,7 +217,7 @@ void	Webserver::handle_read_connection(int client_socket)
 		Request*	request = new Request(buffer);
 		getClient(client_socket)->setRequest(*request);
 
-		// std::cout << request->getFullRequest() << std::endl;
+		std::cout << request->getRaw() << std::endl;
 
 		Response	*response = new Response(*request);
 		getClient(client_socket)->setResponse(*response);
