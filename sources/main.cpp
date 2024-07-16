@@ -6,14 +6,14 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/08 17:41:35 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/12 15:00:42 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/12 20:22:10 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ConfigFile.hpp"
 #include "Webserver.hpp"
 
-int main(int argc, char **argv)
+int main(void)
 {
 	if (argc != 2)
 	{

@@ -3,15 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yliew <marvin@42.fr>                       +#+  +:+       +#+        */
+/*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/10 19:34:58 by yliew             #+#    #+#             */
-/*   Updated: 2024/07/10 19:35:01 by yliew            ###   ########.fr       */
+/*   Updated: 2024/07/16 17:55:52 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
+
+#define DEBUG 1
 
 /* C++ headers */
 # include <iostream>
@@ -47,7 +49,6 @@
 # define GREEN "\001\033[1;32m\002"
 # define RED "\001\033[1;31m\002"
 # define RESET "\001\033[0m\002"
-
 # define WHITESPACE " \f\n\r\t\v"
 
 #endif
