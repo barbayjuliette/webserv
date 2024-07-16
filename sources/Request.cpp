@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:33 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/16 16:43:08 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/16 16:35:49 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,26 +16,45 @@
 ** ------------------------------- MEMBER FUNCTIONS ---------------------------
 */
 
+/* TODO:
+FORM -> key value pairs
+POST -> three pges 
+DELETE -> /database/filename */
+
+void Request::printError(std::string error_msg)
+{
+	std::cout << RED << error_msg << RESET << std::endl;
+}
+
 void Request::parseBody()
 {
 	size_t headerEnd = _raw.find("\r\n\r\n");
 	if (headerEnd != std::string::npos && headerEnd + 4 != _raw.size())
 		this->_body = _raw.substr(headerEnd + 4);
 	else if (_method == "POST")
-			_error = INVALID;
+	{
+		_error = INVALID;
+		if (VERBOSE)
+			printError("invalid POST as body is missing");
+	}
 }
 
 // Testing function
 void Request::printHeaders(const std::map<std::string, std::string>& headers)
 {
 	std::cout << std::endl << std::endl << 
-		_method + " " + _path + " " + _http_version + " " << _port << " end of vars" << 
-		std::endl << std::endl;
+		"method: " << _method << std::endl << 
+		"path:   " << _path << std::endl <<
+		"http:   " << _http_version << std::endl <<
+		"port:   " << _port << std::endl <<
+		GREEN << "END OF VARS" << RESET << std::endl;
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
     {
         std::cout << "[" << it->first << "] = " << it->second << std::endl;
     }
-    std::cout << GREEN << "end of headers" << RESET << std::endl << std::endl;
+    std::cout << GREEN << "END OF HEADERS" << RESET << std::endl;
+    std::cout << GREEN << "START OF BODY" << _body << RESET << std::endl;
+    std::cout << GREEN << "END OF BODY" << RESET << std::endl;
 }
 
 std::string Request::extractHeader()
@@ -110,7 +129,7 @@ void Request::parsePort()
 
 void Request::checkMethod()
 {
-    const std::string validMethods = "PUT,PATCH,CONNECT,OPTIONS,TRACE";
+    const std::string validMethods = ",PUT,PATCH,CONNECT,OPTIONS,TRACE,";
     std::string searchMethod = "," + _method + ",";
 
 	if (this->_method == "GET" || this->_method == "POST" 
@@ -128,6 +147,7 @@ void Request::checkPath()
 		_path = "/index.html";
 	_path = "./wwwroot" + _path;
 	this->_http_version = "HTTP/1.1";
+	// std::cout << this->_full_request << std::endl;
 }
 
 int Request::parseRequest()
@@ -183,7 +203,8 @@ Request::Request(std::string full_request) : _raw(full_request), _error(NO_ERR)
 	this->parsePort();
 	this->parseHeader();
 	this->parseBody();
-	// printHeaders(_headers);
+	if (VERBOSE)
+		printHeaders(_headers);
 }
 
 Request::Request( const Request & src ):
