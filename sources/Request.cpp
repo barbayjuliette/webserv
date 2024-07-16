@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:33 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/15 19:24:30 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/16 14:53:37 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,7 @@ Request::Request(std::string full_request) : _full_request(full_request)
 		_path = "/index.html";
 	_path = "./wwwroot" + _path;
 	this->_http_version = "HTTP/1.1";
+	std::cout << this->_full_request << std::endl;
 }
 
 Request::Request( const Request & src ):
