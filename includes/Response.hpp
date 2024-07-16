@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/15 22:39:15 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/16 17:33:18 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ class Response
 		void		respond_wrong_request(const Request &request);
 		std::string	intToString(int num);
 		void		getDate();
+		void		addToData(std::string data);
 
 
 		int			getStatusCode() const;

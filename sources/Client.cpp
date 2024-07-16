@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:00:42 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/12 19:26:57 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/16 17:40:22 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,8 @@ Client::Client()
 
 Client::Client(int socket) : _socket(socket), _request(NULL), _response(NULL)
 {
-	std::cout << RED << "Client created: " << socket << std::endl << RESET;
+	if (DEBUG)
+		std::cout << CYAN << "Client created: " << socket << std::endl << RESET;
 }
 
 Client::Client( const Client & src ) :

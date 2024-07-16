@@ -205,7 +205,8 @@ void	Webserver::handle_read_connection(int client_socket)
 	}
 	else if (bytes_read == 0)
 	{
-		std::cout << "Client closed the connection\n";
+		if (DEBUG)
+			std::cout << "Client closed the connection\n";
 		close(client_socket);
 		FD_CLR(client_socket, &read_sockets);
 		FD_CLR(client_socket, &write_sockets);
@@ -213,12 +214,16 @@ void	Webserver::handle_read_connection(int client_socket)
 	}
 	else
 	{
-		std::cout << "---- Request received from client " << client_socket << " ----\n";
 		Request*	request = new Request(buffer);
 		getClient(client_socket)->setRequest(*request);
 
-		std::cout << request->getRaw() << std::endl;
 
+		if (DEBUG)
+		{
+			std::cout << RED << "---- Request received from client " << client_socket << " ----\n" << RESET;
+			std::cout << request->getRaw();
+			std::cout << RED << "End of request\n\n" << RESET;
+		}
 		Response	*response = new Response(*request);
 		getClient(client_socket)->setResponse(*response);
 		FD_CLR(client_socket, &read_sockets);
@@ -239,7 +244,12 @@ void		Webserver::handle_write_connection(int client_socket)
 	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
 	if (bytes_sent == response->getFullResponse().size())
 	{
-		std::cout << "---- Response sent to client ----\n\n";
+		if (DEBUG)
+		{
+			std::cout << GREEN << "---- Response sent to client ----\n" << RESET;
+			std::cout << response->getFullResponse() << std::endl;
+			std::cout << GREEN << "End of response\n" << RESET;
+		}
 		if ((response->getHeaders())["Connection"] == "keep-alive")
 		{
 			FD_CLR(client_socket, &write_sockets);

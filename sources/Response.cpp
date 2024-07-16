@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/16 16:28:47 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/16 18:23:16 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,19 +35,17 @@ Response::Response(Request &request)
 	_headers["Cache-Control"] = "no-cache, private";
 	this->_http_version = request.getHttpVersion();
 
-	if (this->_http_version == "HTTP/1.1") // && request.connection == keep-alive
+	if (this->_http_version == "HTTP/1.1" && request.getHeaders()["Connection"] == "keep-alive")
 		_headers["Connection"] = "keep-alive";
 	else
 		_headers["Connection"] = "close";
 
-	setFullResponse();
 	setContentType(request);
 	getDate();
+	setFullResponse();
 
 	//  Content-Length if there is a body
 	// /!\ Body can be empty string, would be valid request
-
-	std::cout << this->_full_response << std::endl;
 }
 
 Response::Response( const Response & src ) :
@@ -95,7 +93,24 @@ void	Response::respond_get_request(const Request &request)
 
 void	Response::respond_post_request(const Request &request)
 {
-	(void)request;
+	std::string	name = "Juliette";
+	std::string	email = "hello@gmail.com";
+	if (request.getHeaders()["Content-Type"] == "application/x-www-form-urlencoded")
+	{
+		std::cout << "Wrong type\n";
+	}
+	else //(request.getHeaders()["Content-Type"] == "multipart/form-data")
+	{
+		if (request.getPath() == "./wwwroot/simple-form.html")
+		{
+			_body = "<p>Saved " + name + "</p>";
+		}
+		else if (request.getPath() == "./wwwroot/subscribe.html")
+		{
+			std::cout << "hereeeee" << std::endl;
+			addToData(email);
+		}
+	}
 }
 
 void	Response::respond_delete_request(const Request &request)
@@ -122,6 +137,16 @@ void		Response::getDate()
     std::strftime(formatted_date, sizeof(formatted_date), "%a, %d %b %Y %H:%M:%S GMT", gmt);
     // std::cout << std::string(formatted_date) << std::endl;
 	_headers["Date"] = formatted_date;
+}
+
+void	Response::addToData(std::string data)
+{
+	std::ofstream file;
+	file.open("./database/newsletter.txt", std::ios::app);
+	if (!file.is_open())
+		std::cout << strerror(errno);
+	file << data << "\n";
+	file.close();
 }
 
 
