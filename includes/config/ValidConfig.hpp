@@ -40,13 +40,12 @@ class ValidConfig
 
 		std::string	_host;
 		std::string	_root;
-		std::string	_alias;
 		std::string	_return; //redirect uri
 
 		t_strvec	_server_name;
 		t_strvec	_index;
 		t_strvec	_allow_methods;
-		t_strvec	_cgi_path;
+		// t_strvec	_cgi_path;
 
 		std::map<int, std::string>	_error_page;
 		std::map<std::string, t_directive>	_validKeys;
@@ -64,7 +63,6 @@ class ValidConfig
 
 		/* Init functions */
 		virtual void	initValidKeys(void) = 0;
-		// void			initErrorPages(void);
 
 		/* Validation functions */
 		void	validateKeys(void);
@@ -73,7 +71,6 @@ class ValidConfig
 		void	setAutoindex(const t_strvec& tokens);
 		void	setHost(const t_strvec& tokens);
 		void	setRoot(const t_strvec& tokens);
-		void	setAlias(const t_strvec& tokens);
 		void	setRedirect(const t_strvec& tokens);
 		void	setServerName(const t_strvec& tokens);
 		void	setIndex(const t_strvec& tokens);
@@ -81,11 +78,23 @@ class ValidConfig
 		void	setErrorPages(const t_strvec& tokens);
 
 		/* Utils */
-		int		convertToInt(const std::string& str);
+		int		strToInt(const std::string& str);
 		bool	isStatusCode(const std::string& str);
+		int		isDirectory(const std::string& str);
+		int		isRegularFile(const std::string& str);
+		bool	isValidMethod(const std::string& str);
 
 		/* Accessors */
 		t_strmap&	getDirectives(void);
+		int			getClientMaxBodySize(void);
+		bool		getAutoindex(void);
+		std::string	getHost(void);
+		std::string	getRoot(void);
+		std::string	getRedirect(void);
+		t_strvec	getServerName(void);
+		t_strvec	getIndex(void);
+		t_strvec	getAllowedMethods(void);
+		std::string	getErrorPage(int status_code);
 
 		/* Exception handling */
 		class InvalidConfigError : public std::exception

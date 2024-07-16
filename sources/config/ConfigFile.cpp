@@ -150,7 +150,16 @@ void	ConfigFile::validateConfig(void)
 {
 	for (std::vector<ServerConfig*>::iterator it = this->_servers.begin(); it != this->_servers.end(); it++)
 	{
+		std::cout << CYAN << "\nCHECKING SERVER DIRECTIVES:\n" << RESET;
 		(*it)->validateKeys();
+
+		std::vector<LocationConfig*>	locations = (*it)->getLocations();
+
+		for (size_t i = 0; i < locations.size(); i++)
+		{
+			std::cout << CYAN << "\nCHECKING LOCATION DIRECTIVES: " << locations[i]->getPath() << '\n' << RESET;
+			locations[i]->validateKeys();
+		}
 	}
 }
 

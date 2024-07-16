@@ -22,9 +22,10 @@ ServerConfig::ServerConfig() : ValidConfig()
 	std::cout << "ServerConfig was created.\n";
 }
 
-// ServerConfig::ServerConfig(const ServerConfig& other) : ValidConfig(other)
-// {
-// }
+ServerConfig::ServerConfig(const ServerConfig& other) : ValidConfig(other)
+{
+	initValidKeys();
+}
 
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
@@ -50,6 +51,12 @@ void	ServerConfig::initValidKeys(void)
 	this->_validKeys["client_max_body_size"] = &ServerConfig::setClientMaxBodySize;
 	this->_validKeys["autoindex"] = &ServerConfig::setAutoindex;
 	this->_validKeys["error_page"] = &ServerConfig::setErrorPages;
+	this->_validKeys["host"] = &ServerConfig::setHost;
+	this->_validKeys["root"] = &ServerConfig::setRoot;
+	this->_validKeys["server_name"] = &ServerConfig::setServerName;
+	this->_validKeys["index"] = &ServerConfig::setIndex;
+	this->_validKeys["return"] = &ServerConfig::setRedirect;
+	this->_validKeys["allow_methods"] = &ServerConfig::setAllowedMethods;
 }
 
 void	ServerConfig::setLocation(LocationConfig* location)

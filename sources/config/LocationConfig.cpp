@@ -18,12 +18,14 @@
 
 LocationConfig::LocationConfig() : ValidConfig(), _match_exact(false), _case_sensitive(false)
 {
+	initValidKeys();
 	std::cout << "LocationConfig was created.\n";
 }
 
-// LocationConfig::LocationConfig(const LocationConfig& other) : ValidConfig(other)
-// {
-// }
+LocationConfig::LocationConfig(const LocationConfig& other) : ValidConfig(other)
+{
+	initValidKeys();
+}
 
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
@@ -40,7 +42,12 @@ LocationConfig::~LocationConfig()
 
 void	LocationConfig::initValidKeys(void)
 {
-	std::cout << _path << '\n';
+	this->_validKeys["autoindex"] = &LocationConfig::setAutoindex;
+	this->_validKeys["error_page"] = &LocationConfig::setErrorPages;
+	this->_validKeys["root"] = &LocationConfig::setRoot;
+	this->_validKeys["index"] = &LocationConfig::setIndex;
+	this->_validKeys["return"] = &LocationConfig::setRedirect;
+	this->_validKeys["allow_methods"] = &LocationConfig::setAllowedMethods;
 }
 
 /* Syntax: location [modifier] [URI] (+ inline open brace '{' if applicable) */
@@ -118,4 +125,3 @@ bool LocationConfig::getCaseSensitive(void)
 {
 	return (this->_case_sensitive);
 }
-

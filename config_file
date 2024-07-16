@@ -9,7 +9,7 @@ http
 
 		root wwwroot/; #maps all requests to this directory if location block does not include its own root directive
 		index index.html;
-		error_page 404 /errors; #default error page
+		error_page 404 errors/404.html; #default error page
 
 		location /
 		{
@@ -28,11 +28,11 @@ http
         listen 80;
         server_name example.org www.example.org;
 
-        root /var/www/example.org;
-        index index.html index.htm;
+        root database/;
+        index people.txt;
 
         location / {
-            try_files $uri $uri/ =404;
+            #try_files $uri $uri/ =404;
         }
     }
 }

@@ -38,11 +38,13 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>
+# include <netdb.h>
 /* System calls */
 # include <unistd.h>
 # include <sys/select.h>
 # include <sys/time.h>
 # include <sys/types.h>
+# include <sys/stat.h>
 
 /* Colours */
 # define CYAN "\001\033[1;36m\002"
