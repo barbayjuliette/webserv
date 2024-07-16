@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:06:01 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/12 19:22:21 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/16 16:35:33 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,10 +64,10 @@ class Request
 		~Request();
 
 		Request &							operator=( Request const & rhs );
-		std::string							getRaw();
-		std::string							getPath();
-		std::string							getHttpVersion();
-		std::string							getMethod();
-		std::string							getBody();
-		std::map<std::string, std::string>	getHeaders();
+		std::string							getRaw() const;
+		std::string							getPath() const;
+		std::string							getHttpVersion() const;
+		std::string							getMethod() const;
+		std::string							getBody() const;
+		std::map<std::string, std::string>	getHeaders() const;
 };

@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:33 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/11 16:03:48 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/16 16:35:49 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,6 +127,8 @@ void Request::checkPath()
 	if (_path == "/")
 		_path = "/index.html";
 	_path = "./wwwroot" + _path;
+	this->_http_version = "HTTP/1.1";
+	// std::cout << this->_full_request << std::endl;
 }
 
 int Request::parseRequest()
@@ -226,32 +228,32 @@ Request &				Request::operator=( Request const & rhs )
 ** --------------------------------- ACCESSOR ---------------------------------
 */
 
-std::string		Request::getRaw()
+std::string		Request::getRaw() const
 {
 	return (this->_raw);
 }
 
-std::string		Request::getPath()
+std::string		Request::getPath() const
 {
 	return (this->_path);
 }
 
-std::string		Request::getHttpVersion()
+std::string		Request::getHttpVersion() const
 {
 	return (this->_http_version);
 }
 
-std::string		Request::getMethod()
+std::string		Request::getMethod() const
 {
 	return (this->_method);
 }
 
-std::map<std::string, std::string>		Request::getHeaders()
+std::map<std::string, std::string>		Request::getHeaders() const
 {
 	return (this->_headers);
 }
 
-std::string		Request::getBody()
+std::string		Request::getBody() const
 {
 	return (this->_body);
 }
