@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/16 18:23:16 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/16 19:27:35 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@ Response::Response() {}
 
 Response::Response(Request &request)
 {
+	setContentType(request);
 	if (request.getMethod() == "GET")
 		this->respond_get_request(request);
 
@@ -40,7 +41,6 @@ Response::Response(Request &request)
 	else
 		_headers["Connection"] = "close";
 
-	setContentType(request);
 	getDate();
 	setFullResponse();
 
@@ -95,20 +95,28 @@ void	Response::respond_post_request(const Request &request)
 {
 	std::string	name = "Juliette";
 	std::string	email = "hello@gmail.com";
+
 	if (request.getHeaders()["Content-Type"] == "application/x-www-form-urlencoded")
 	{
 		std::cout << "Wrong type\n";
 	}
-	else //(request.getHeaders()["Content-Type"] == "multipart/form-data")
+	else if ((request.getHeaders()["Content-Type"]).substr(0, 19) == "multipart/form-data")
 	{
+		std::cout << RED << "HERE\n" << RESET;
 		if (request.getPath() == "./wwwroot/simple-form.html")
 		{
+			std::map<std::string, std::string> map;
+			map["name"] = "Juliette";
+			map["last-name"] = "Barbay";
+			addToPeople(map);
 			_body = "<p>Saved " + name + "</p>";
+			_headers["Content-Length"] = intToString(this->_body.size());
 		}
 		else if (request.getPath() == "./wwwroot/subscribe.html")
 		{
-			std::cout << "hereeeee" << std::endl;
-			addToData(email);
+			addToNewsletter(email);
+			_body = "<p>Thanks for subscribing to our newsletter!</p>";
+			_headers["Content-Length"] = intToString(this->_body.size());
 		}
 	}
 }
@@ -139,13 +147,23 @@ void		Response::getDate()
 	_headers["Date"] = formatted_date;
 }
 
-void	Response::addToData(std::string data)
+void	Response::addToNewsletter(std::string data)
 {
 	std::ofstream file;
 	file.open("./database/newsletter.txt", std::ios::app);
 	if (!file.is_open())
 		std::cout << strerror(errno);
 	file << data << "\n";
+	file.close();
+}
+
+void	Response::addToPeople(std::map<std::string, std::string> body)
+{
+	std::ofstream file;
+	file.open("./database/people.txt", std::ios::app);
+	if (!file.is_open())
+		std::cout << strerror(errno);
+	file << "First name: " << body["name"] << ", Last name: " << body["last-name"] << "\n";
 	file.close();
 }
 
@@ -185,6 +203,7 @@ std::string		Response::get_error_page(int num)
 		str = "<h1>Error" +  intToString(num) + "</h1><p>" + _status_text + "</p>";
 	}
 	error_page.close();
+	_headers["Content-Type"] = "text/html";
 	return (str);
 }
 
