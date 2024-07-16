@@ -35,6 +35,7 @@ enum error_type {
 class Request
 {
 	private:
+
 		std::string							_raw;
 		std::string							_method;
 		std::string							_path;
@@ -43,6 +44,7 @@ class Request
 		std::map<std::string, std::string>	_headers;
 		std::string							_body;
 		error_type							_error;
+
 		Request();
 
 		// Member functions
