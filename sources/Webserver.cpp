@@ -189,47 +189,63 @@ void	Webserver::run(void)
 	}
 }
 
+// void	Webserver::handle_chunk(int client_socket)
+// {
+// 	if (_content_length != -1)
+// 	{
+
+// 	}
+// 	else if (_is_chunked)
+// 	{
+
+// 	}
+// }
+
+void	Webserver::create_response(Request &request, int client_socket)
+{
+	Response	*_response = new Response(request);
+	getClient(client_socket)->setResponse(*_response);
+	FD_CLR(client_socket, &read_sockets);
+	FD_SET(client_socket, &write_sockets);
+}
+
 void	Webserver::handle_read_connection(int client_socket)
 {
 	char	buffer[BUFFER_SIZE];
 	memset(buffer, 0, sizeof(buffer));
 	int		bytes_read = recv(client_socket, buffer, BUFFER_SIZE, 0);
 
-	if (bytes_read < 0)
+	if (bytes_read <= 0)
 	{
-		std::cerr << strerror(errno) << std::endl;
-		close(client_socket);
-		FD_CLR(client_socket, &read_sockets);
-		FD_CLR(client_socket, &write_sockets);
-		_clients.erase(_clients.find(client_socket));
-	}
-	else if (bytes_read == 0)
-	{
-		if (DEBUG)
+		if (bytes_read < 0)
+			std::cerr << strerror(errno) << std::endl;
+		else if (DEBUG)
 			std::cout << "Client closed the connection\n";
 		close(client_socket);
 		FD_CLR(client_socket, &read_sockets);
 		FD_CLR(client_socket, &write_sockets);
 		_clients.erase(_clients.find(client_socket));
 	}
-	else
+	else // valid bytes read
 	{
-		Request*	request = new Request(buffer);
-		getClient(client_socket)->setRequest(*request);
-
-
-		if (DEBUG)
+		// If not existing request -> create new request
+		if (!_clients[client_socket]->getRequest())
 		{
-			std::cout << RED << "---- Request received from client " << client_socket << " ----\n" << RESET;
-			std::cout << request->getRaw();
-			std::cout << RED << "End of request\n\n" << RESET;
+			Request*	new_request = new Request(buffer);
+			getClient(client_socket)->setRequest(*new_request);
+			// if (DEBUG)
+			// {
+			// 	std::cout << RED << "---- Request received from client " << client_socket << " ----\n" << RESET;
+			// 	std::cout << request->getRaw();
+			// 	std::cout << RED << "End of request\n\n" << RESET;
+			// }
+			// if (request._req_complete == TRUE)
+			create_response(*new_request, client_socket);
 		}
-		Response	*response = new Response(*request);
-		getClient(client_socket)->setResponse(*response);
-		FD_CLR(client_socket, &read_sockets);
-		FD_SET(client_socket, &write_sockets);
-	}
 
+		// // If existing request -> waiting for new chunks
+		// handle_chunk(client_socket);
+	}
 }
 
 void		Webserver::handle_write_connection(int client_socket)

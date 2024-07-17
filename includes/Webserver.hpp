@@ -29,6 +29,7 @@
 # include <errno.h>
 # include <map>
 # include <fcntl.h>
+# include "Response.hpp"
 
 # define BUFFER_SIZE 50000
 
@@ -57,6 +58,7 @@ class Webserver
 		void			handle_write_connection(int client_socket);
 		static void		signal_handler(int signum);
 		void			initialize(int domain, int type, int protocol, int port, u_long interface, int backlog);
+		void			create_response(Request &request, int client_socket);
 
 		// Accessors
 		int							getServerSocket();

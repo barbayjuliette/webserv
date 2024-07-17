@@ -19,9 +19,10 @@
 # include <fstream>
 # include <map>
 # include <cstdlib>
+# include <algorithm>
 # include "webserv.hpp"
 
-# define VERBOSE 0
+# define VERBOSE 1
 
 enum connection_type {
 	KEEP_ALIVE,
@@ -39,10 +40,17 @@ class Request
 	private:
 
 		std::string							_raw;
+		// char								_buf[10000];
+		// size_t							_header_length;
+		// bool								_req_complete;
+		// size_t							_body_max_length;
+		// size_t							_content_length;
+		// bool								_is_chunked;
 		std::string							_method;
 		std::string							_path;
 		std::string							_http_version;
 		int									_port;
+		// size_t								_curr_length;
 		std::map<std::string, std::string>	_headers;
 		std::string							_body;
 		error_type							_error;

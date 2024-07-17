@@ -16,11 +16,6 @@
 ** ------------------------------- MEMBER FUNCTIONS ---------------------------
 */
 
-/* TODO:
-FORM -> key value pairs
-POST -> three pges 
-DELETE -> /database/filename */
-
 void Request::printError(std::string error_msg)
 {
 	std::cout << RED << error_msg << RESET << std::endl;
@@ -95,6 +90,8 @@ void Request::parseHeader()
 	        	// Trim leading/trailing whitespaces
 		       	name.erase(name.find_last_not_of(" \n\r\t") + 1);
 	            value.erase(0, value.find_first_not_of(" \n\r\t"));
+
+	            std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
 	            this->_headers[name] = value;
 	        }
@@ -183,10 +180,38 @@ int Request::parseRequest()
 		return -1;
 	}
 	this->_http_version = _raw.substr(pathEnd + 1, versionEnd - (pathEnd + 1));
-	// std::cout << std::endl << std::endl << 
-	// 	_method + " " + _path + " " + _http_version + " " << "end of vars" << 
-	// 	std::endl << std::endl; 
 	return 0;
+}
+
+void Request::initRequest(size_t bytes_read)
+{
+	// Set curr_length
+	_curr_length = bytes_read
+	// Check if body max length exceeded
+		// Arbitrary body max length -> to be set by config file
+	_body_max_length = 100;
+	if (_curr_length > _body_max_length)
+	{
+		_error = INVALID;
+		_req_complete = TRUE;
+	}
+	// Find end of header
+	size_t headerEnd = _raw.find("\r\n\r\n");
+	if (headerEnd != std::string::npos)
+		_header_length = headerEnd + 4;
+	// Check if encoding chunked
+	if (this->_headers.find("transfer-encoding") != this->_headers.end())
+	{
+		if (_headers["transfer-encoding"] == "chunked")
+			_is_chunked = TRUE;
+	}
+	// Check if curr read >= content length
+	if (this->_headers.find("content-length") != this->_headers.end())
+	{
+		if (_is_chunked == TRUE)
+			_error = INVALID;
+		else
+	}
 }
 
 /*
@@ -195,13 +220,20 @@ int Request::parseRequest()
 
 Request::Request() {}
 
-Request::Request(std::string full_request) : _raw(full_request), _error(NO_ERR)
+Request::Request(std::string full_request) : 
+	_raw(full_request),
+	// _header_length(-1),
+	// _body_max_length(1000),
+	// _content_length(-1),
+	// _is_chunked(false),
+	_error(NO_ERR)
 {
 	if (this->_raw.length() == 0)
 		 std::cerr << "Error: empty request" << std::endl;
 	this->parseRequest();
 	this->parsePort();
 	this->parseHeader();
+	// this->initRequest(bytes_read);
 	this->parseBody();
 	if (VERBOSE)
 		printHeaders(_headers);
