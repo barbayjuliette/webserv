@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/16 19:27:35 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/17 20:26:18 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,12 +31,12 @@ Response::Response(Request &request)
 		this->respond_delete_request(request);
 		
 	else
-		this->respond_wrong_request(request);
+		this->respond_wrong_request();
 
 	_headers["Cache-Control"] = "no-cache, private";
 	this->_http_version = request.getHttpVersion();
 
-	if (this->_http_version == "HTTP/1.1" && request.getHeaders()["Connection"] == "keep-alive")
+	if (this->_http_version == "HTTP/1.1" && request.getHeaders()["Connection"] != "close")
 		_headers["Connection"] = "keep-alive";
 	else
 		_headers["Connection"] = "close";
@@ -82,11 +82,7 @@ void	Response::respond_get_request(const Request &request)
 		this->_status_text = "OK";
 	}
 	else
-	{
-		this->_status_code = 404;
-		this->_status_text = "Not found";
-		_body = get_error_page(_status_code);
-	}
+		set_error(404, "Not Found");
 	_headers["Content-Length"] = intToString(this->_body.size());
 	page.close();
 }
@@ -97,9 +93,7 @@ void	Response::respond_post_request(const Request &request)
 	std::string	email = "hello@gmail.com";
 
 	if (request.getHeaders()["Content-Type"] == "application/x-www-form-urlencoded")
-	{
-		std::cout << "Wrong type\n";
-	}
+		std::cout << "Wrong type\n"; // DO something else here, error page??
 	else if ((request.getHeaders()["Content-Type"]).substr(0, 19) == "multipart/form-data")
 	{
 		std::cout << RED << "HERE\n" << RESET;
@@ -119,18 +113,57 @@ void	Response::respond_post_request(const Request &request)
 			_headers["Content-Length"] = intToString(this->_body.size());
 		}
 	}
+	_headers["Content-Length"] = intToString(this->_body.size());
+}
+
+int	Response::check_permission(const Request &request)
+{
+	std::string		root = "./wwwroot/database";
+	int				length = root.size();
+
+	if (request.getPath().substr(0, length) != root)
+	{
+		set_error(403, "Forbidden");
+		_headers["Content-Length"] = intToString(this->_body.size());
+		return (0);
+	}
+	return (1);
+}
+
+void	Response::set_error(int code, std::string text)
+{
+	this->_status_code = code;
+	this->_status_text = text;
+	_body = get_error_page(_status_code);
 }
 
 void	Response::respond_delete_request(const Request &request)
 {
-	(void)request;
+	if (!check_permission(request))
+		return ;
+
+	if (access(request.getPath().c_str(), F_OK) == -1)
+		set_error(404, "Not found");
+	else if (remove(request.getPath().c_str()) == 0)
+	{
+		this->_status_code = 200;
+		this->_status_text = "OK";
+		_body = "<p>Resource deleted</p>";
+	}
+	else
+	{
+		if (errno == EACCES || errno == EPERM)
+			set_error(403, "Forbidden");
+		else
+			set_error(500, "Internal Server Error");
+		std::cout << "Error deleting resource\n";
+	}
+	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
-void	Response::respond_wrong_request(const Request &request)
+void	Response::respond_wrong_request(void)
 {
-	(void)request;
-	this->_status_code = 405;
-	this->_status_text = "Method Not Allowed";
+	set_error(405, "Method Not Allowed");
 	_headers["Allow"] = "GET, POST, DELETE";
 }
 
