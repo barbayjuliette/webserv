@@ -13,7 +13,9 @@
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
 
-#define DEBUG 1
+#ifndef DEBUG
+# define DEBUG 1
+#endif
 
 /* C++ headers */
 # include <iostream>
@@ -45,6 +47,7 @@
 # include <sys/time.h>
 # include <sys/types.h>
 # include <sys/stat.h>
+# include <sys/wait.h>
 
 /* Colours */
 # define CYAN "\001\033[1;36m\002"

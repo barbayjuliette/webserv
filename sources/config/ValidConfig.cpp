@@ -38,7 +38,7 @@ ValidConfig&	ValidConfig::operator=(const ValidConfig& other)
 		this->_autoindex = other._autoindex;
 		this->_host = other._host;
 		this->_root = other._root;
-		this->_return = other._return;
+		this->_redirect = other._redirect;
 		this->_server_name = other._server_name;
 		this->_index = other._index;
 		this->_allow_methods = other._allow_methods;
@@ -64,7 +64,8 @@ void	ValidConfig::validateKeys(void)
 		setRoot(this->_directives["root"]);
 	for (t_strmap::iterator it = this->_directives.begin(); it != this->_directives.end(); it++)
 	{
-		std::cout << "current key: " << it->first << '\n';
+		if (DEBUG)
+			std::cout << "current key: " << it->first << '\n';
 
 		t_dirmap::iterator found = this->_validKeys.find(it->first);
 		if (found == this->_validKeys.end())
@@ -91,7 +92,7 @@ void	ValidConfig::setClientMaxBodySize(const t_strvec& tokens)
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
 
-	this->_client_max_body_size = strToInt(tokens[0]);
+	this->_client_max_body_size = strToSizet(tokens[0]);
 }
 
 void	ValidConfig::setAutoindex(const t_strvec& tokens)
@@ -110,25 +111,25 @@ void	ValidConfig::setHost(const t_strvec& tokens)
 {
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
-	if (tokens[0] == "localhost")
-	{
-		this->_host = "127.0.0.1";
-		return ;
-	}
 
 	struct addrinfo hints;
 	struct addrinfo	*res;
+	std::string	host;
+	if (tokens[0] == "localhost")
+		host = "127.0.0.1";
+	else
+		host = tokens[0];
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 
-	int	result = getaddrinfo(tokens[0].c_str(), NULL, &hints, &res);
+	int	result = getaddrinfo(host.c_str(), NULL, &hints, &res);
 	if (result != 0)
 		throw InvalidConfigError(gai_strerror(result));
     freeaddrinfo(res);
 
-	this->_host = tokens[0];
+	this->_host = host;
 }
 
 void	ValidConfig::setRoot(const t_strvec& tokens)
@@ -148,7 +149,7 @@ void	ValidConfig::setRedirect(const t_strvec& tokens)
 
 	if (!isRegularFile(tokens[0]))
 		throw InvalidConfigError("Invalid redirect");
-	this->_return = tokens[0];
+	this->_redirect = tokens[0];
 }
 
 void	ValidConfig::setServerName(const t_strvec& tokens)
@@ -187,17 +188,19 @@ void	ValidConfig::setAllowedMethods(const t_strvec& tokens)
 
 void	ValidConfig::setErrorPages(const t_strvec& tokens)
 {
-	std::string	error_page = tokens[tokens.size() - 1];
-	if (!isRegularFile(error_page))
+	for (size_t i = 0; i < tokens.size(); i++)
+	{
+		int	delimiter = tokens[i].find("=");
+		std::string	status = tokens[i].substr(0, delimiter);
+		int	status_code = strToInt(status);
+
+		std::string	error_page = tokens[i].substr(delimiter + 1, std::string::npos);
+		if (!isRegularFile(error_page))
 			throw InvalidConfigError("Invalid error page");
 
-	for (size_t i = 0; i < tokens.size() - 1; i++)
-	{
-		int	status_code = strToInt(tokens[i]);
 		this->_error_page[status_code] = error_page;
 	}
 }
-
 
 /*
 ** ---------------------------------- UTILS -----------------------------------
@@ -207,6 +210,17 @@ int	ValidConfig::strToInt(const std::string& str)
 {
 	std::stringstream	stream(str);
 	int	nb;
+	stream >> nb;
+
+	if (!stream.eof() || stream.fail())
+		throw InvalidConfigError("Non-numeric parameter");
+	return (nb);
+}
+
+int	ValidConfig::strToSizet(const std::string& str)
+{
+	std::stringstream	stream(str);
+	size_t	nb;
 	stream >> nb;
 
 	if (!stream.eof() || stream.fail())
@@ -254,6 +268,11 @@ t_strmap&	ValidConfig::getDirectives(void)
 	return (this->_directives);
 }
 
+int	ValidConfig::getPort(void)
+{
+	return (this->_listen_port);
+}
+
 int	ValidConfig::getClientMaxBodySize(void)
 {
 	return (this->_client_max_body_size);
@@ -276,7 +295,7 @@ std::string	ValidConfig::getRoot(void)
 
 std::string	ValidConfig::getRedirect(void)
 {
-	return (this->_return);
+	return (this->_redirect);
 }
 
 t_strvec	ValidConfig::getServerName(void)

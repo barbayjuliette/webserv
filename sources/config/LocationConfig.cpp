@@ -19,7 +19,6 @@
 LocationConfig::LocationConfig() : ValidConfig(), _match_exact(false), _case_sensitive(false)
 {
 	initValidKeys();
-	std::cout << "LocationConfig was created.\n";
 }
 
 LocationConfig::LocationConfig(const LocationConfig& other) : ValidConfig(other)
@@ -31,10 +30,7 @@ LocationConfig::LocationConfig(const LocationConfig& other) : ValidConfig(other)
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
 
-LocationConfig::~LocationConfig()
-{
-	std::cout << "LocationConfig was destroyed.\n";
-}
+LocationConfig::~LocationConfig() {}
 
 /*
 ** --------------------------------- METHODS ----------------------------------
@@ -46,8 +42,8 @@ void	LocationConfig::initValidKeys(void)
 	this->_validKeys["error_page"] = &LocationConfig::setErrorPages;
 	this->_validKeys["root"] = &LocationConfig::setRoot;
 	this->_validKeys["index"] = &LocationConfig::setIndex;
-	this->_validKeys["return"] = &LocationConfig::setRedirect;
-	this->_validKeys["allow_methods"] = &LocationConfig::setAllowedMethods;
+	this->_validKeys["redirect"] = &LocationConfig::setRedirect;
+	this->_validKeys["allowed_methods"] = &LocationConfig::setAllowedMethods;
 }
 
 /* Syntax: location [modifier] [URI] (+ inline open brace '{' if applicable) */

@@ -12,26 +12,26 @@
 
 #include "ConfigFile.hpp"
 #include "Webserver.hpp"
+#include "Cluster.hpp"
 
-int main(void)
+int main(int argc, char **argv)
 {
 	if (argc != 2)
 	{
 		std::cout << RED << "./webserv [configuration file]\n" << RESET;
 		return (0);
 	}
+
 	try
 	{
-		ConfigFile	*config = new ConfigFile(argv[1]);
+		ConfigFile	*config_file = new ConfigFile(argv[1]);
+		Cluster		*cluster = new Cluster(config_file);
 
-		Webserver *server = new Webserver(config, AF_INET, SOCK_STREAM, 0, 8081, INADDR_ANY, 12);
-		server->run();
-
-		delete (server);
+		cluster->runServers();
 	}
 	catch (std::exception& e)
 	{
 		std::cerr << RED << "Error: " << e.what() << ".\n" << RESET;
 	}
-	return 0;
+	return (0);
 }

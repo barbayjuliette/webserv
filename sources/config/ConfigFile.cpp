@@ -22,7 +22,8 @@ ConfigFile::ConfigFile(const char *file)
 {
 	openFile(file);
 	readFile();
-	printContexts(this->_servers);
+	if (DEBUG)
+		printContexts(this->_servers);
 	validateConfig();
 }
 
@@ -150,14 +151,16 @@ void	ConfigFile::validateConfig(void)
 {
 	for (std::vector<ServerConfig*>::iterator it = this->_servers.begin(); it != this->_servers.end(); it++)
 	{
-		std::cout << CYAN << "\nCHECKING SERVER DIRECTIVES:\n" << RESET;
+		if (DEBUG)
+			std::cout << CYAN << "\nCHECKING SERVER DIRECTIVES:\n" << RESET;
 		(*it)->validateKeys();
 
 		std::vector<LocationConfig*>	locations = (*it)->getLocations();
 
 		for (size_t i = 0; i < locations.size(); i++)
 		{
-			std::cout << CYAN << "\nCHECKING LOCATION DIRECTIVES: " << locations[i]->getPath() << '\n' << RESET;
+			if (DEBUG)
+				std::cout << CYAN << "\nCHECKING LOCATION DIRECTIVES: " << locations[i]->getPath() << '\n' << RESET;
 			locations[i]->validateKeys();
 		}
 	}
@@ -276,6 +279,15 @@ void	ConfigFile::printMap(t_strmap& map)
 		for (size_t i = 0; i < it->second.size(); i++)
 			std::cout << "\t\tvalue [" << i << "]: " << it->second[i] << '\n';
 	}
+}
+
+/*
+** -------------------------------- ACCESSORS ---------------------------------
+*/
+
+std::vector<ServerConfig*>	ConfigFile::getServers(void)
+{
+	return (this->_servers);
 }
 
 /*

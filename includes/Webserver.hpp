@@ -14,6 +14,7 @@
 
 # include "Client.hpp"
 # include "ConfigFile.hpp"
+# include "Cluster.hpp"
 
 # include <iostream>
 # include <string>
@@ -39,7 +40,7 @@ class Webserver
 		int						_server_socket;
 		struct sockaddr_in		_address;
 		static Webserver* 		_instance;
-		static ConfigFile*		_config;
+		static ServerConfig*	_config;
 		std::map<int, Client*>	_clients;
 
 	public:
@@ -47,8 +48,7 @@ class Webserver
 		fd_set	write_sockets;
 		
 		Webserver();
-		Webserver(ConfigFile* config, int domain, int type, int protocol, int port, u_long interface, int backlog);
-		void	initialize(int domain, int type, int protocol, int port, u_long interface, int backlog);
+		Webserver(ServerConfig* config, int domain, int type, int protocol, u_long interface, int backlog);
 		Webserver( Webserver const & src );
 		~Webserver();
 

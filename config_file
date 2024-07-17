@@ -9,13 +9,14 @@ http
 
 		root wwwroot/; #maps all requests to this directory if location block does not include its own root directive
 		index index.html;
-		error_page 404 errors/404.html; #default error page
+
+		error_page 400=errors/400.html 404=errors/404.html; #default error page
 
 		location /
 		{
 			root wwwroot/; #root folder of location
 			autoindex on; #turn on directory listing
-			allow_methods GET POST; #accepted methods for the route
+			allowed_methods GET POST; #accepted methods for the route
 			index index.html; #default file when request is a directory
 		}
 
@@ -24,8 +25,10 @@ http
 		}
 	}
 
-	server  {
-        listen 80;
+	server 
+	{
+        listen 8080;
+        host localhost;
         server_name example.org www.example.org;
 
         root database/;

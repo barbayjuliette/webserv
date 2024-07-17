@@ -14,7 +14,7 @@
 #include "webserv.hpp"
 
 Webserver* Webserver::_instance = NULL;
-ConfigFile*	Webserver::_config = NULL;
+ServerConfig*	Webserver::_config = NULL;
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -38,6 +38,7 @@ void	Webserver::initialize(int domain, int type, int protocol, int port, u_long 
 	int	yes = 1;
 	check(setsockopt(_server_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)));
 
+	std::cout << "port: " << port << '\n';
 	// Bind the socket to an address and a port
 	check(bind(_server_socket, (struct sockaddr*)&_address, sizeof(_address)));
 
@@ -47,21 +48,21 @@ void	Webserver::initialize(int domain, int type, int protocol, int port, u_long 
 
 Webserver::Webserver()
 {
-	signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
+	// signal(SIGINT, signal_handler);
+	// signal(SIGTERM, signal_handler);
 	_instance = this;
 	
 	initialize(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 1024);
 }
 
-Webserver::Webserver(ConfigFile* config, int domain, int type, int protocol, int port, u_long interface, int backlog)
+Webserver::Webserver(ServerConfig* config, int domain, int type, int protocol, u_long interface, int backlog)
 {
-	signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
+	// signal(SIGINT, signal_handler);
+	// signal(SIGTERM, signal_handler);
 	_instance = this;
 	_config = config;
 
-	initialize(domain, type, protocol, port, interface, backlog);
+	initialize(domain, type, protocol, _config->getPort(), interface, backlog);
 }
 
 Webserver::Webserver( const Webserver & src ):
@@ -92,7 +93,7 @@ Webserver::~Webserver()
 	}
 	_clients.clear();
 
-	delete (_config);
+	// delete (_config);
 }
 
 /*

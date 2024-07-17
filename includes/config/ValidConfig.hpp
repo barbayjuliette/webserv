@@ -35,16 +35,17 @@ class ValidConfig
 
 		/* Values after parsing _directives */
 		int			_listen_port;
-		int			_client_max_body_size;
+		size_t		_client_max_body_size;
 		bool		_autoindex; //init false - toggles directory listing for when no index file is found
 
 		std::string	_host;
 		std::string	_root;
-		std::string	_return; //redirect uri
+		std::string	_redirect; //redirect uri
 
 		t_strvec	_server_name;
 		t_strvec	_index;
 		t_strvec	_allow_methods;
+		t_strvec	_cgi_ext; //cgi file extensions
 		// t_strvec	_cgi_path;
 
 		std::map<int, std::string>	_error_page;
@@ -79,6 +80,7 @@ class ValidConfig
 
 		/* Utils */
 		int		strToInt(const std::string& str);
+		int		strToSizet(const std::string& str);
 		bool	isStatusCode(const std::string& str);
 		int		isDirectory(const std::string& str);
 		int		isRegularFile(const std::string& str);
@@ -86,6 +88,7 @@ class ValidConfig
 
 		/* Accessors */
 		t_strmap&	getDirectives(void);
+		int			getPort(void);
 		int			getClientMaxBodySize(void);
 		bool		getAutoindex(void);
 		std::string	getHost(void);

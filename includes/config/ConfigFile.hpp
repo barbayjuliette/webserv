@@ -68,6 +68,9 @@ class ConfigFile
 		void	checkBraces(t_strvec& tokens);
 		int		checkContext(std::string& context);
 
+		/* Accessors */
+		std::vector<ServerConfig*>	getServers(void);
+
 		/* Exception handling */
 		class ConfigReadError : public std::exception
 		{

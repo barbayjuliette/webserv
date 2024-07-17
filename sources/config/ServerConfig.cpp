@@ -19,7 +19,6 @@
 ServerConfig::ServerConfig() : ValidConfig()
 {
 	initValidKeys();
-	std::cout << "ServerConfig was created.\n";
 }
 
 ServerConfig::ServerConfig(const ServerConfig& other) : ValidConfig(other)
@@ -38,7 +37,6 @@ ServerConfig::~ServerConfig()
 	{
 		delete *it;
 	}
-	std::cout << "ServerConfig was destroyed.\n";
 }
 
 /*
@@ -55,8 +53,8 @@ void	ServerConfig::initValidKeys(void)
 	this->_validKeys["root"] = &ServerConfig::setRoot;
 	this->_validKeys["server_name"] = &ServerConfig::setServerName;
 	this->_validKeys["index"] = &ServerConfig::setIndex;
-	this->_validKeys["return"] = &ServerConfig::setRedirect;
-	this->_validKeys["allow_methods"] = &ServerConfig::setAllowedMethods;
+	this->_validKeys["redirect"] = &ServerConfig::setRedirect;
+	this->_validKeys["allowed_methods"] = &ServerConfig::setAllowedMethods;
 }
 
 void	ServerConfig::setLocation(LocationConfig* location)
