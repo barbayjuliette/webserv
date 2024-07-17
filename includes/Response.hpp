@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/16 18:55:54 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/17 20:23:52 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,10 @@
 # include <stdlib.h>
 # include <map>
 # include <ctime>
+# include <cstdio>
+# include <cstdlib>
+# include <fstream>
+# include <iostream>
 
 class Response
 {
@@ -44,11 +48,13 @@ class Response
 		void		respond_get_request(const Request &request);
 		void		respond_post_request(const Request &request);
 		void		respond_delete_request(const Request &request);
-		void		respond_wrong_request(const Request &request);
+		void		respond_wrong_request();
 		std::string	intToString(int num);
 		void		getDate();
 		void		addToNewsletter(std::string data);
 		void		addToPeople(std::map<std::string, std::string> body);
+		int			check_permission(const Request &request);
+		void		set_error(int code, std::string text);
 
 
 		int			getStatusCode() const;
