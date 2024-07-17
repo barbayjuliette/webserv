@@ -32,7 +32,8 @@ Cluster::Cluster(ConfigFile* config_file)
 
 	for (size_t i = 0; i < servers.size(); i++)
 	{
-		Webserver *server = new Webserver(servers[i], AF_INET, SOCK_STREAM, 0, INADDR_ANY, 12);
+		// Webserver *server = new Webserver(servers[i], AF_INET, SOCK_STREAM, 0, INADDR_ANY, 12);
+		Webserver *server = new Webserver(servers[i]);
 		this->_servers.push_back(server);
 	}
 }

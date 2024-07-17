@@ -18,9 +18,10 @@
 
 ValidConfig::ValidConfig()
 {
-	this->_listen_port = 0;
+	this->_port = 0;
 	this->_client_max_body_size = 5000;
 	this->_autoindex = false;
+	this->_address_info = NULL;
 }
 
 ValidConfig::ValidConfig(const ValidConfig& other)
@@ -33,9 +34,10 @@ ValidConfig&	ValidConfig::operator=(const ValidConfig& other)
 	if (this != &other)
 	{
 		this->_directives = other._directives;
-		this->_listen_port = other._listen_port;
+		this->_port = other._port;
 		this->_client_max_body_size = other._client_max_body_size;
 		this->_autoindex = other._autoindex;
+		this->_address_info = other._address_info;
 		this->_host = other._host;
 		this->_root = other._root;
 		this->_redirect = other._redirect;
@@ -50,7 +52,11 @@ ValidConfig&	ValidConfig::operator=(const ValidConfig& other)
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
 
-ValidConfig::~ValidConfig() {}
+ValidConfig::~ValidConfig()
+{
+	if (this->_address_info)
+		freeaddrinfo(this->_address_info);
+}
 
 /*
 ** --------------------------------- METHODS ----------------------------------
@@ -62,6 +68,8 @@ void	ValidConfig::validateKeys(void)
 {
 	if (this->_directives.find("root") != this->_directives.end())
 		setRoot(this->_directives["root"]);
+	if (this->_directives.find("listen") != this->_directives.end())
+		setListenPort(this->_directives["listen"]);
 	for (t_strmap::iterator it = this->_directives.begin(); it != this->_directives.end(); it++)
 	{
 		if (DEBUG)
@@ -81,9 +89,9 @@ void	ValidConfig::setListenPort(const t_strvec& tokens)
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
 
-	this->_listen_port = strToInt(tokens[0]);
+	this->_port = strToInt(tokens[0]);
 
-	if (this->_listen_port < 0 || this->_listen_port > 65353)
+	if (this->_port < 0 || this->_port > 65353)
 		throw InvalidConfigError("Listening port must be a number from 0 to 65353");
 }
 
@@ -112,27 +120,28 @@ void	ValidConfig::setHost(const t_strvec& tokens)
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
 
-	struct addrinfo hints;
-	struct addrinfo	*res;
-	std::string	host;
 	if (tokens[0] == "localhost")
-		host = "127.0.0.1";
+		this->_host = "127.0.0.1";
 	else
-		host = tokens[0];
+		this->_host = tokens[0];
+
+	setAddressInfo(this->_host, intToStr(this->_port));
+}
+
+void	ValidConfig::setAddressInfo(std::string& host, std::string port)
+{
+	struct addrinfo hints;
+	struct addrinfo	*result;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 
-	int	result = getaddrinfo(host.c_str(), NULL, &hints, &res);
-	if (result != 0)
-		throw InvalidConfigError(gai_strerror(result));
+	int	res = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
+	if (res != 0)
+		throw InvalidConfigError(gai_strerror(res));
 
-	struct sockaddr_in *ip = (struct sockaddr_in *)res->ai_addr;
-	this->_host = ip->sin_addr.s_addr;
-    freeaddrinfo(res);
-
-	// this->_host = host;
+	this->_address_info = result;
 }
 
 void	ValidConfig::setRoot(const t_strvec& tokens)
@@ -231,6 +240,14 @@ int	ValidConfig::strToSizet(const std::string& str)
 	return (nb);
 }
 
+std::string	ValidConfig::intToStr(const int nb)
+{
+	std::stringstream	stream;
+	stream << nb;
+
+	return (stream.str());
+}
+
 bool	ValidConfig::isStatusCode(const std::string& str)
 {
 	std::stringstream	stream(str);
@@ -273,7 +290,7 @@ t_strmap&	ValidConfig::getDirectives(void)
 
 int	ValidConfig::getPort(void)
 {
-	return (this->_listen_port);
+	return (this->_port);
 }
 
 int	ValidConfig::getClientMaxBodySize(void)
@@ -286,7 +303,12 @@ bool	ValidConfig::getAutoindex(void)
 	return (this->_autoindex);
 }
 
-unsigned long	ValidConfig::getHost(void)
+struct addrinfo	*ValidConfig::getAddressInfo(void)
+{
+	return (this->_address_info);
+}
+
+std::string	ValidConfig::getHost(void)
 {
 	return (this->_host);
 }

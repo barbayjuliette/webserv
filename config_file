@@ -38,4 +38,10 @@ http
             #try_files $uri $uri/ =404;
         }
     }
+
+	server
+	{
+		listen 1024;
+		host localhost;
+	}
 }

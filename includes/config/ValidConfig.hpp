@@ -34,13 +34,14 @@ class ValidConfig
 		t_strmap	_directives;
 
 		/* Values after parsing _directives */
-		int			_listen_port;
+		int			_port;
 		size_t		_client_max_body_size;
 		bool		_autoindex; //init false - toggles directory listing for when no index file is found
 
-		unsigned long	_host;
+		struct addrinfo	*_address_info;
+		std::string	_host;
 		std::string	_root;
-		std::string	_redirect; //redirect uri
+		std::string	_redirect;
 
 		t_strvec	_server_name;
 		t_strvec	_index;
@@ -71,6 +72,7 @@ class ValidConfig
 		void	setClientMaxBodySize(const t_strvec& tokens);
 		void	setAutoindex(const t_strvec& tokens);
 		void	setHost(const t_strvec& tokens);
+		void	setAddressInfo(std::string& host, std::string port);
 		void	setRoot(const t_strvec& tokens);
 		void	setRedirect(const t_strvec& tokens);
 		void	setServerName(const t_strvec& tokens);
@@ -81,6 +83,7 @@ class ValidConfig
 		/* Utils */
 		int		strToInt(const std::string& str);
 		int		strToSizet(const std::string& str);
+		std::string	intToStr(const int nb);
 		bool	isStatusCode(const std::string& str);
 		int		isDirectory(const std::string& str);
 		int		isRegularFile(const std::string& str);
@@ -91,7 +94,8 @@ class ValidConfig
 		int			getPort(void);
 		int			getClientMaxBodySize(void);
 		bool		getAutoindex(void);
-		unsigned long	getHost(void);
+		struct addrinfo	*getAddressInfo(void);
+		std::string	getHost(void);
 		std::string	getRoot(void);
 		std::string	getRedirect(void);
 		t_strvec	getServerName(void);
