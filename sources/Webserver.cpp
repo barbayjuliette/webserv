@@ -62,6 +62,7 @@ Webserver::Webserver(ServerConfig* config, int domain, int type, int protocol, u
 	_instance = this;
 	_config = config;
 
+	// initialize(domain, type, protocol, _config->getPort(), interface, backlog);
 	initialize(domain, type, protocol, _config->getPort(), interface, backlog);
 }
 

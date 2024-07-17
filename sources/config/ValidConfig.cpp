@@ -127,9 +127,12 @@ void	ValidConfig::setHost(const t_strvec& tokens)
 	int	result = getaddrinfo(host.c_str(), NULL, &hints, &res);
 	if (result != 0)
 		throw InvalidConfigError(gai_strerror(result));
+
+	struct sockaddr_in *ip = (struct sockaddr_in *)res->ai_addr;
+	this->_host = ip->sin_addr.s_addr;
     freeaddrinfo(res);
 
-	this->_host = host;
+	// this->_host = host;
 }
 
 void	ValidConfig::setRoot(const t_strvec& tokens)
@@ -283,7 +286,7 @@ bool	ValidConfig::getAutoindex(void)
 	return (this->_autoindex);
 }
 
-std::string	ValidConfig::getHost(void)
+unsigned long	ValidConfig::getHost(void)
 {
 	return (this->_host);
 }

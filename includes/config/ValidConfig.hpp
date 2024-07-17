@@ -38,7 +38,7 @@ class ValidConfig
 		size_t		_client_max_body_size;
 		bool		_autoindex; //init false - toggles directory listing for when no index file is found
 
-		std::string	_host;
+		unsigned long	_host;
 		std::string	_root;
 		std::string	_redirect; //redirect uri
 
@@ -91,7 +91,7 @@ class ValidConfig
 		int			getPort(void);
 		int			getClientMaxBodySize(void);
 		bool		getAutoindex(void);
-		std::string	getHost(void);
+		unsigned long	getHost(void);
 		std::string	getRoot(void);
 		std::string	getRedirect(void);
 		t_strvec	getServerName(void);

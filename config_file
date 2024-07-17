@@ -2,7 +2,7 @@ http
 { #test skipping standalone open brace
 	server
 	{
-		listen 8081; #listening port
+		listen 8080; #listening port
 		host 127.0.0.1;
 		server_name test_name1 test_name2;
 		client_max_body_size 1024; #limit size of client request body
@@ -27,7 +27,7 @@ http
 
 	server 
 	{
-        listen 8080;
+        listen 8081;
         host localhost;
         server_name example.org www.example.org;
 
