@@ -32,7 +32,6 @@ Cluster::Cluster(ConfigFile* config_file)
 
 	for (size_t i = 0; i < servers.size(); i++)
 	{
-		// Webserver *server = new Webserver(servers[i], AF_INET, SOCK_STREAM, 0, INADDR_ANY, 12);
 		Webserver *server = new Webserver(servers[i]);
 		this->_servers.push_back(server);
 	}
@@ -59,16 +58,16 @@ void	Cluster::runServers(void)
 {
 	for (size_t i = 0; i < this->_servers.size(); i++)
 	{
-		int	pid = fork();
-		if (pid == 0)
-		{
+		// int	pid = fork();
+		// if (pid == 0)
+		// {
 			this->_servers[i]->run();
-		}
+		// }
 	}
-	for (size_t i = 0; i < this->_servers.size(); i++)
-	{
-		waitpid(-1, NULL, 0);
-	}
+	// for (size_t i = 0; i < this->_servers.size(); i++)
+	// {
+	// 	waitpid(-1, NULL, 0);
+	// }
 }
 
 void	Cluster::signal_handler(int signum)

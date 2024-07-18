@@ -13,8 +13,8 @@
 #include "Webserver.hpp"
 #include "webserv.hpp"
 
-Webserver* Webserver::_instance = NULL;
-ServerConfig*	Webserver::_config = NULL;
+// Webserver* Webserver::_instance = NULL;
+// ServerConfig*	Webserver::_config = NULL;
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -24,7 +24,7 @@ Webserver::Webserver()
 {
 	// signal(SIGINT, signal_handler);
 	// signal(SIGTERM, signal_handler);
-	_instance = this;
+	// _instance = this;
 	_port = 8080;
 
 	// initialize(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 1024);
@@ -32,7 +32,7 @@ Webserver::Webserver()
 
 Webserver::Webserver(ServerConfig* config)
 {
-	_instance = this;
+	// _instance = this;
 	_config = config;
 	_port = _config->getPort();
 
@@ -125,7 +125,7 @@ Webserver &				Webserver::operator=( Webserver const & rhs )
 	{
 		this->_server_socket = rhs._server_socket;
 		this->_address = rhs._address;
-		this->_instance = rhs._instance;
+		// this->_instance = rhs._instance;
 		this->_clients = rhs._clients;
 	}
 	return (*this);
@@ -155,15 +155,15 @@ void	Webserver::check(int num)
 	}
 }
 
-void Webserver::signal_handler(int signum)
-{
-	if (_instance)
-	{
-		delete (_instance);
-	}
-    std::cout << "\nSignal received, webserver closed. Bye bye!" << std::endl;
-    exit(signum);
-}
+// void Webserver::signal_handler(int signum)
+// {
+// 	if (_instance)
+// 	{
+// 		delete (_instance);
+// 	}
+//     std::cout << "\nSignal received, webserver closed. Bye bye!" << std::endl;
+//     exit(signum);
+// }
 
 void	Webserver::run(void)
 {
@@ -305,10 +305,10 @@ struct sockaddr_in	Webserver::getAddress()
 	return (_address);
 }
 
-Webserver* Webserver::getInstance()
-{
-	return (_instance);
-}
+// Webserver* Webserver::getInstance()
+// {
+// 	return (_instance);
+// }
 
 std::map<int, Client*>		Webserver::getClients()
 {

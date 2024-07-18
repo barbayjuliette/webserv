@@ -17,6 +17,10 @@
 # define DEBUG 1
 #endif
 
+#ifndef TRACE
+# define TRACE 0
+#endif
+
 /* C++ headers */
 # include <iostream>
 # include <sstream>

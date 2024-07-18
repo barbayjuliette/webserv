@@ -40,8 +40,8 @@ class Webserver
 		int						_server_socket;
 		int						_port;
 		struct sockaddr_in		_address;
-		static Webserver* 		_instance;
-		static ServerConfig*	_config;
+		// static Webserver* 		_instance;
+		ServerConfig*			_config;
 		std::map<int, Client*>	_clients;
 
 	public:
@@ -60,7 +60,7 @@ class Webserver
 		int				accept_new_connections();
 		void			handle_read_connection(int i);
 		void			handle_write_connection(int client_socket);
-		static void		signal_handler(int signum);
+		// static void		signal_handler(int signum);
 
 		void			initialize(struct addrinfo *addr, int backlog);
 		void			setAddress(struct addrinfo* addr);
@@ -68,7 +68,7 @@ class Webserver
 		// Accessors
 		int							getServerSocket();
 		struct sockaddr_in			getAddress();
-		Webserver*					getInstance();
+		// Webserver*					getInstance();
 		std::map<int, Client*>		getClients();
 		Client*						getClient(int socket);
 };

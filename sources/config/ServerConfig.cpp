@@ -46,7 +46,7 @@ ServerConfig::~ServerConfig()
 void	ServerConfig::initValidKeys(void)
 {
 	this->_validKeys["listen"] = &ServerConfig::setListenPort;
-	this->_validKeys["client_max_body_size"] = &ServerConfig::setClientMaxBodySize;
+	this->_validKeys["body_max_length"] = &ServerConfig::setBodyMaxLength;
 	this->_validKeys["autoindex"] = &ServerConfig::setAutoindex;
 	this->_validKeys["error_page"] = &ServerConfig::setErrorPages;
 	this->_validKeys["host"] = &ServerConfig::setHost;

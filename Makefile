@@ -19,9 +19,10 @@ CFLAGS	= -Wall -Wextra -Werror -std=c++98 -g
 DFLAGS	= -MMD -MP # handle header dependencies
 RM		= rm -fr
 
-# enable/disable debug mode
+# enable/disable debug modes
 DEBUG	?= 1
-MODE	= -DDEBUG=$(DEBUG)
+TRACE	?= 0
+MODE	= -DDEBUG=$(DEBUG) -DTRACE=$(TRACE)
 
 # directories
 INC_DIR = ./includes \
