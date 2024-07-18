@@ -47,6 +47,7 @@
 # include <netdb.h>
 /* System calls */
 # include <unistd.h>
+# include <poll.h>
 # include <sys/select.h>
 # include <sys/time.h>
 # include <sys/types.h>

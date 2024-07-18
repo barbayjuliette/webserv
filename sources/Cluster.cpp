@@ -35,6 +35,8 @@ Cluster::Cluster(ConfigFile* config_file)
 		Webserver *server = new Webserver(servers[i]);
 		this->_servers.push_back(server);
 	}
+
+	setSocketFds();
 }
 
 /*
@@ -54,19 +56,30 @@ Cluster::~Cluster()
 ** --------------------------------- METHODS ----------------------------------
 */
 
-void	Cluster::runServers(void)
+/*
+	struct pollfd {
+	   int   fd;         //file descriptor
+	   short events;     //requested events
+	   short revents;    //returned events
+	};
+*/
+void	Cluster::setSocketFds(void)
 {
 	for (size_t i = 0; i < this->_servers.size(); i++)
 	{
-		// int	pid = fork();
-		// if (pid == 0)
-		// {
-			this->_servers[i]->run();
-		// }
+		struct pollfd	pfd;
+
+		pfd.fd = this->_servers[i]->getServerSocket();
+		pfd.events = POLLIN;
+		this->_poll_fds.push_back(pfd);
 	}
-	// for (size_t i = 0; i < this->_servers.size(); i++)
+}
+
+void	Cluster::runServers(void)
+{
+	// while (true)
 	// {
-	// 	waitpid(-1, NULL, 0);
+	// 	int	no_of_events = poll
 	// }
 }
 

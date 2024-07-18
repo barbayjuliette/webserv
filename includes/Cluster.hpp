@@ -27,6 +27,7 @@ class Cluster
 		static Cluster* 			_instance;
 		static ConfigFile*			_config_file;
 		std::vector<Webserver*>		_servers;
+		std::vector<struct pollfd>	_poll_fds;
 
 	public:
 		/* Constructors */
@@ -42,6 +43,7 @@ class Cluster
 
 		/* Methods */
 		static void	signal_handler(int signum);
+		void		setSocketFds(void);
 		void		runServers(void);
 };
 
