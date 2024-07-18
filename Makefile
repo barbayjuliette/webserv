@@ -19,21 +19,32 @@ CFLAGS	= -Wall -Wextra -Werror -std=c++98 -g
 DFLAGS	= -MMD -MP # handle header dependencies
 RM		= rm -fr
 
+# enable/disable debug mode
+DEBUG	?= 1
+MODE	= -DDEBUG=$(DEBUG)
+
 # directories
-INC_DIR = ./includes
-INC 	= -I $(INC_DIR)
+INC_DIR = ./includes \
+		./includes/config
+INC 	= $(addprefix -I, $(INC_DIR))
 SRC_DIR = ./sources
 BUILD_DIR = ./sources/temp
+CONFIG_DIR = ./sources/config
 
 # build files
+CONFIG_SRCS = $(addprefix $(CONFIG_DIR)/, \
+		ConfigFile.cpp \
+		ValidConfig.cpp \
+		ServerConfig.cpp \
+		LocationConfig.cpp)
 SRCS	= $(addprefix $(SRC_DIR)/, \
 		main.cpp \
 		Webserver.cpp \
+		Cluster.cpp \
 		Client.cpp \
 		Request.cpp \
-		Response.cpp \
-		ConfigFile.cpp)
-OBJS    = $(SRCS:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
+		Response.cpp) $(CONFIG_SRCS)
+OBJS    = $(addprefix $(BUILD_DIR)/, $(notdir $(SRCS:.cpp=.o)))
 DEPS    = $(OBJS:.o=.d)
 
 #------------------------------------------------------------------------
@@ -56,7 +67,11 @@ $(NAME): $(OBJS)
 
 # build objects
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
-	@$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@ $(INC)
+	@$(CC) $(CFLAGS) $(DFLAGS) $(MODE) -c $< -o $@ $(INC)
+	@echo "$(B_GREEN)$< compiled.$(END)"
+
+$(BUILD_DIR)/%.o: $(CONFIG_DIR)/%.cpp | $(BUILD_DIR)
+	@$(CC) $(CFLAGS) $(DFLAGS) $(MODE) -c $< -o $@ $(INC)
 	@echo "$(B_GREEN)$< compiled.$(END)"
 
 # build directory to store objects and dependency files

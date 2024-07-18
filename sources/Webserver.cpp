@@ -14,52 +14,74 @@
 #include "webserv.hpp"
 
 Webserver* Webserver::_instance = NULL;
+ServerConfig*	Webserver::_config = NULL;
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-void	Webserver::initialize(int domain, int type, int protocol, int port, u_long interface, int backlog)
-{
-	// Address
-	_address.sin_family = domain;
-	_address.sin_port = htons(port);
-	_address.sin_addr.s_addr = htonl(interface);
-	
-	// Create socket
-	_server_socket = socket(domain, type, protocol);
-	check(_server_socket);
-
-	// Make it non-blocking
-	check(fcntl(_server_socket, F_SETFL, O_NONBLOCK));
-
-	// Options to be able to reuse address.
-	int	yes = 1;
-	check(setsockopt(_server_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)));
-
-	// Bind the socket to an address and a port
-	check(bind(_server_socket, (struct sockaddr*)&_address, sizeof(_address)));
-
-	// Listen: wait for the client to make a connection
-	check(listen(_server_socket, backlog) < 0);
-}
-
 Webserver::Webserver()
 {
-	signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
+	// signal(SIGINT, signal_handler);
+	// signal(SIGTERM, signal_handler);
 	_instance = this;
-	
-	initialize(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 1024);
+	_port = 8080;
+
+	// initialize(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 1024);
 }
 
-Webserver::Webserver(int domain, int type, int protocol, int port, u_long interface, int backlog)
+Webserver::Webserver(ServerConfig* config)
 {
-	signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
 	_instance = this;
+	_config = config;
+	_port = _config->getPort();
 
-	initialize(domain, type, protocol, port, interface, backlog);
+	initialize(_config->getAddressInfo(), 12);
+}
+
+void	Webserver::initialize(struct addrinfo *addr, int backlog)
+{
+	struct addrinfo *tmp;
+
+	// Try binding to each address in the addrinfo linked list until a match is found
+	for (tmp = addr; tmp != NULL; tmp = tmp->ai_next)
+	{
+		// Create socket
+		_server_socket = socket(tmp->ai_family, tmp->ai_socktype, tmp->ai_protocol);
+		check(_server_socket);
+
+		// Make it non-blocking
+		check(fcntl(_server_socket, F_SETFL, O_NONBLOCK));
+
+		// Options to be able to reuse address.
+		int	yes = 1;
+		check(setsockopt(_server_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)));
+
+		// Bind the socket to an address and a port
+		if (bind(_server_socket, tmp->ai_addr, tmp->ai_addrlen) < 0)
+			close(_server_socket);
+		else
+			break ;
+	}
+	if (!tmp) // if no bind attempt is successful
+	{
+		std::cerr << strerror(errno);
+		exit(1);
+	}
+	// Listen: wait for the client to make a connection
+	check(listen(_server_socket, backlog) < 0);
+	setAddress(tmp);
+}
+
+void	Webserver::setAddress(struct addrinfo *addr)
+{
+	if (addr->ai_family == AF_INET)
+	{
+		struct sockaddr_in* host = (struct sockaddr_in*)addr->ai_addr;
+		_address.sin_family = host->sin_family;
+		_address.sin_port = host->sin_port;
+		_address.sin_addr = host->sin_addr;
+	}
 }
 
 Webserver::Webserver( const Webserver & src ):
@@ -89,6 +111,8 @@ Webserver::~Webserver()
 		delete (it->second);
 	}
 	_clients.clear();
+
+	// delete (_config);
 }
 
 /*

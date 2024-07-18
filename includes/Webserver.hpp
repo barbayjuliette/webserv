@@ -13,6 +13,8 @@
 #pragma once
 
 # include "Client.hpp"
+# include "ConfigFile.hpp"
+# include "Cluster.hpp"
 
 # include <iostream>
 # include <string>
@@ -36,15 +38,18 @@ class Webserver
 {
 	protected:
 		int						_server_socket;
+		int						_port;
 		struct sockaddr_in		_address;
 		static Webserver* 		_instance;
+		static ServerConfig*	_config;
 		std::map<int, Client*>	_clients;
+
 	public:
 		fd_set	read_sockets;
 		fd_set	write_sockets;
 		
 		Webserver();
-		Webserver(int domain, int type, int protocol, int port, u_long interface, int backlog);
+		Webserver(ServerConfig *config);
 		Webserver( Webserver const & src );
 		~Webserver();
 
@@ -56,7 +61,9 @@ class Webserver
 		void			handle_read_connection(int i);
 		void			handle_write_connection(int client_socket);
 		static void		signal_handler(int signum);
-		void			initialize(int domain, int type, int protocol, int port, u_long interface, int backlog);
+
+		void			initialize(struct addrinfo *addr, int backlog);
+		void			setAddress(struct addrinfo* addr);
 
 		// Accessors
 		int							getServerSocket();
