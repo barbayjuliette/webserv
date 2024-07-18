@@ -43,7 +43,7 @@ class Cluster
 
 		/* Methods */
 		static void	signal_handler(int signum);
-		void		setSocketFds(void);
+		void		setPollFds(void);
 		void		runServers(void);
 };
 

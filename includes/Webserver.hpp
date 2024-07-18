@@ -43,6 +43,7 @@ class Webserver
 		// static Webserver* 		_instance;
 		ServerConfig*			_config;
 		std::map<int, Client*>	_clients;
+		std::vector<struct pollfd>	_poll_fds;
 
 	public:
 		fd_set	read_sockets;
@@ -57,9 +58,11 @@ class Webserver
 
 		void			run(void);
 		void			check(int num);
-		int				accept_new_connections();
+		void			accept_new_connections(void);
+		void			handle_connections(std::vector<struct pollfd> poll_fds);
 		void			handle_read_connection(int i);
 		void			handle_write_connection(int client_socket);
+		void			update_client_event(int client_socket, short event);
 		// static void		signal_handler(int signum);
 
 		void			initialize(struct addrinfo *addr, int backlog);
