@@ -40,17 +40,18 @@ class Request
 	private:
 
 		std::string							_raw;
-		// char								_buf[10000];
-		// size_t							_header_length;
-		// bool								_req_complete;
-		// size_t							_body_max_length;
-		// size_t							_content_length;
-		// bool								_is_chunked;
+		char								*_buf;
+		ssize_t								_header_length;
+		bool								_req_complete;
+		ssize_t								_body_max_length;
+		ssize_t								_content_length;
+		bool								_is_chunked;
 		std::string							_method;
 		std::string							_path;
 		std::string							_http_version;
 		int									_port;
-		// size_t								_curr_length;
+		ssize_t								_curr_length;
+		ssize_t								_curr_bytes_read;
 		std::map<std::string, std::string>	_headers;
 		std::string							_body;
 		error_type							_error;
@@ -58,21 +59,31 @@ class Request
 		Request();
 
 		// Member functions
-		int parseRequest();
-		void parseHeader();
-		void parsePort();
-		void parseBody();
+		int 		parseRequest();
+		void 		parseHeader();
+		void 		parsePort();
+		void 		parseBody();
 
-		void checkMethod();
-		void checkPath();
+		void 		checkMethod();
+		void 		checkPath();
 		std::string extractHeader();
 
+		void 		initRequest();
+
+		// Helper function
+		size_t		convert_sizet(std::string str);
+		void		ft_strcpy(char *full_request, int bytes_read, size_t start_index);
+		bool 		is_header_complete();
+
 		// Error handling
-		void printError(std::string error_msg);
-		void printHeaders(const std::map<std::string, std::string>& headers);
+		void 		printError(std::string error_msg);
+		void 		printHeaders(const std::map<std::string, std::string>& headers);
+
+		// Debug
+		void 		print_variables() const;
 
 	public:
-		Request(std::string request);
+		Request(char *full_request, int bytes_read);
 		Request( Request const & src );
 		~Request();
 
@@ -83,4 +94,8 @@ class Request
 		std::string							getMethod() const;
 		std::string							getBody() const;
 		std::map<std::string, std::string>	getHeaders() const;
+		ssize_t								getHeaderLength() const;
+		bool								getReqComplete() const;
+
+		void		handle_incomplete_header(int bytes_read, char *buffer);
 };

@@ -183,35 +183,129 @@ int Request::parseRequest()
 	return 0;
 }
 
-void Request::initRequest(size_t bytes_read)
+size_t Request::convert_sizet(std::string str)
 {
-	// Set curr_length
-	_curr_length = bytes_read
-	// Check if body max length exceeded
-		// Arbitrary body max length -> to be set by config file
-	_body_max_length = 100;
-	if (_curr_length > _body_max_length)
+	std::stringstream ss(str);
+	size_t num;
+	ss >> num;
+
+	if (ss.fail())
 	{
 		_error = INVALID;
-		_req_complete = TRUE;
 	}
-	// Find end of header
+	return num;
+}
+
+bool Request::is_header_complete()
+{
+	// Check if header is complete
 	size_t headerEnd = _raw.find("\r\n\r\n");
 	if (headerEnd != std::string::npos)
+	{
 		_header_length = headerEnd + 4;
+		// Set curr_length
+		_curr_length = _curr_bytes_read - _header_length;
+		// Check if body max length exceeded
+			// Arbitrary body max length -> to be set by config file
+		if (_curr_length > _body_max_length)
+		{
+			_error = INVALID;
+			return true;
+		}
+		return true;
+	}
+	return false;
+}
+
+void Request::initRequest()
+{
+	// Check if header is complete
+	if (!is_header_complete())
+		return ;
 	// Check if encoding chunked
 	if (this->_headers.find("transfer-encoding") != this->_headers.end())
 	{
 		if (_headers["transfer-encoding"] == "chunked")
-			_is_chunked = TRUE;
+			_is_chunked = true;
 	}
 	// Check if curr read >= content length
 	if (this->_headers.find("content-length") != this->_headers.end())
 	{
-		if (_is_chunked == TRUE)
+		if (_is_chunked == true)
 			_error = INVALID;
 		else
+		{
+			_content_length = convert_sizet(_headers["content-length"]);
+			// If no error, check if content length met
+			if (_error != NO_ERR)
+			{
+				if (_curr_length - _header_length <= _content_length)
+					_req_complete = true;
+				else if (_curr_length - _header_length > _content_length) // if body length longer than content length, ret invalid
+					_error = INVALID;
+			}
+		}
 	}
+	if ((_is_chunked == false && _content_length == -1) || _error == INVALID)
+		_req_complete = true;
+}
+
+/* Function to handle incomplete header
+	start copying to end of buf of previous read */
+void	Request::handle_incomplete_header(int bytes_read, char *buffer)
+{
+	std::string new_raw;
+	ft_strcpy(buffer, bytes_read, _curr_bytes_read);
+	new_raw = _raw + buffer;
+	_raw = new_raw;
+	_curr_bytes_read += bytes_read; // update curr bytes read to new buf length
+
+	// Check if header is complete
+	if (!is_header_complete())
+		return ;
+	else
+	{
+		this->initRequest();
+		this->parseRequest();
+		this->parsePort();
+		this->parseHeader();
+		this->parseBody();
+	}
+}
+
+void Request::ft_strcpy(char *full_request, int bytes_read, size_t start_index)
+{
+	for (int i = 0; i < bytes_read; i++)
+	{
+		_buf[i + start_index] = full_request[i];
+	}
+}
+
+void Request::print_variables() const 
+{
+  std::cout << "Request Variables:\n";
+    std::cout << "Raw: " << _raw << "\n";
+    // std::cout << "Buffer: ";  // Print first 100 characters of buffer for practicality
+    // for (int i = 0; i < 100 && _buf[i] != '\0'; ++i) {
+    //     std::cout << _buf[i];
+    // }
+    // std::cout << "\n";
+    std::cout << "Header Length: " << _header_length << "\n";
+    std::cout << "Request Complete: " << (_req_complete ? "true" : "false") << "\n";
+    std::cout << "Body Max Length: " << _body_max_length << "\n";
+    std::cout << "Content Length: " << _content_length << "\n";
+    std::cout << "Is Chunked: " << (_is_chunked ? "true" : "false") << "\n";
+    std::cout << "Method: " << _method << "\n";
+    std::cout << "Path: " << _path << "\n";
+    std::cout << "HTTP Version: " << _http_version << "\n";
+    std::cout << "Port: " << _port << "\n";
+    std::cout << "Current Length: " << _curr_length << "\n";
+    std::cout << "Headers:\n";
+    for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
+        std::cout << "  " << it->first << ": " << it->second << "\n";
+    }
+    std::cout << "Body: " << _body << "\n";
+    std::cout << "Error: " << (_error == NO_ERR ? "NO_ERR" : "ERR") << "\n";
 }
 
 /*
@@ -220,23 +314,35 @@ void Request::initRequest(size_t bytes_read)
 
 Request::Request() {}
 
-Request::Request(std::string full_request) : 
+Request::Request(char *full_request, int bytes_read) : 
 	_raw(full_request),
-	// _header_length(-1),
-	// _body_max_length(1000),
-	// _content_length(-1),
-	// _is_chunked(false),
+	_header_length(-1),
+	_req_complete(false),
+	_body_max_length(10000),
+	_content_length(-1),
+	_is_chunked(false),
+	_curr_bytes_read(bytes_read),
 	_error(NO_ERR)
 {
 	if (this->_raw.length() == 0)
-		 std::cerr << "Error: empty request" << std::endl;
-	this->parseRequest();
-	this->parsePort();
-	this->parseHeader();
-	// this->initRequest(bytes_read);
-	this->parseBody();
+		_error = INVALID;
+	_buf = new char[1000 + _body_max_length];
+	std::memset(_buf, 0, 1000 + _body_max_length);
+	// copies buffer to request's buf
+	ft_strcpy(full_request, bytes_read, 0);
+	this->initRequest();
+	if (_header_length != -1)
+	{
+		this->parseRequest();
+		this->parsePort();
+		this->parseHeader();
+		this->parseBody();
+	}
 	if (VERBOSE)
+	{
 		printHeaders(_headers);
+		print_variables();
+	}
 }
 
 Request::Request( const Request & src ):
@@ -252,7 +358,10 @@ Request::Request( const Request & src ):
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
 
-Request::~Request() {}
+Request::~Request() 
+{
+	delete _buf;
+}
 
 /*
 ** --------------------------------- OVERLOAD ---------------------------------
@@ -271,10 +380,6 @@ Request &				Request::operator=( Request const & rhs )
 	}
 	return (*this);
 }
-
-/*
-** --------------------------------- METHODS ----------------------------------
-*/
 
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
@@ -310,5 +415,14 @@ std::string		Request::getBody() const
 	return (this->_body);
 }
 
+ssize_t		Request::getHeaderLength() const
+{
+	return (this->_header_length);
+}
+
+bool	Request::getReqComplete() const
+{
+	return (this->_req_complete);
+}
 
 /* ************************************************************************** */

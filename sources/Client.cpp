@@ -86,9 +86,9 @@ Response*	Client::getResponse()
 	return (this->_response);
 }
 
-void	Client::setRequest(Request& request)
+void	Client::setRequest(Request* request)
 {
-	_request = &request;
+	_request = request;
 }
 
 void	Client::setResponse(Response& response)

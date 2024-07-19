@@ -36,6 +36,6 @@ class Client
 		Response*		getResponse();
 		int				getSocket();
 		void			reset();
-		void			setRequest(Request& request);
+		void			setRequest(Request* request);
 		void			setResponse(Response& response);
 };

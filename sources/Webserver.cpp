@@ -189,24 +189,14 @@ void	Webserver::run(void)
 	}
 }
 
-// void	Webserver::handle_chunk(int client_socket)
-// {
-// 	if (_content_length != -1)
-// 	{
-
-// 	}
-// 	else if (_is_chunked)
-// 	{
-
-// 	}
-// }
-
 void	Webserver::create_response(Request &request, int client_socket)
 {
 	Response	*_response = new Response(request);
 	getClient(client_socket)->setResponse(*_response);
 	FD_CLR(client_socket, &read_sockets);
 	FD_SET(client_socket, &write_sockets);
+	// Delete request
+	getClient(client_socket)->setRequest(NULL);
 }
 
 void	Webserver::handle_read_connection(int client_socket)
@@ -231,20 +221,27 @@ void	Webserver::handle_read_connection(int client_socket)
 		// If not existing request -> create new request
 		if (!_clients[client_socket]->getRequest())
 		{
-			Request*	new_request = new Request(buffer);
-			getClient(client_socket)->setRequest(*new_request);
-			// if (DEBUG)
-			// {
-			// 	std::cout << RED << "---- Request received from client " << client_socket << " ----\n" << RESET;
-			// 	std::cout << request->getRaw();
-			// 	std::cout << RED << "End of request\n\n" << RESET;
-			// }
-			// if (request._req_complete == TRUE)
-			create_response(*new_request, client_socket);
+			Request*	new_request = new Request(buffer, bytes_read);
+			getClient(client_socket)->setRequest(new_request);
+			if (new_request->getReqComplete() == true)
+				create_response(*new_request, client_socket);
 		}
 
-		// // If existing request -> waiting for new chunks
-		// handle_chunk(client_socket);
+		/* If existing request -> check if header is complete
+			-> If incomplete, handle header
+				-> Check again if header complete */
+		else if (_clients[client_socket]->getRequest()->getHeaderLength() == -1)
+		{
+			_clients[client_socket]->getRequest()->handle_incomplete_header(bytes_read, buffer);
+			if (_clients[client_socket]->getRequest()->getReqComplete()) // If request complete, create response
+				create_response(*_clients[client_socket]->getRequest(), client_socket);
+		}
+		// else
+		// {
+		// 	// if chunked -> process chunk -> create response
+		// 	handle_chunk(client_socket);
+		// 	// if not chunked -> process body
+		// }
 	}
 }
 
