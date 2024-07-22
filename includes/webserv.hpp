@@ -17,6 +17,10 @@
 # define DEBUG 1
 #endif
 
+#ifndef TRACE
+# define TRACE 0
+#endif
+
 /* C++ headers */
 # include <iostream>
 # include <sstream>
@@ -43,6 +47,9 @@
 # include <netdb.h>
 /* System calls */
 # include <unistd.h>
+# include <fcntl.h>
+# include <poll.h>
+# include <sys/epoll.h>
 # include <sys/select.h>
 # include <sys/time.h>
 # include <sys/types.h>

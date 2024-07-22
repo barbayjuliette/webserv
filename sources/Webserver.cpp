@@ -11,10 +11,6 @@
 /* ************************************************************************** */
 
 #include "Webserver.hpp"
-#include "webserv.hpp"
-
-Webserver* Webserver::_instance = NULL;
-ServerConfig*	Webserver::_config = NULL;
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -24,64 +20,57 @@ Webserver::Webserver()
 {
 	// signal(SIGINT, signal_handler);
 	// signal(SIGTERM, signal_handler);
-	_instance = this;
+	// _instance = this;
 	_port = 8080;
 
-	// initialize(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 1024);
+	// initServerSocket(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 1024);
 }
 
 Webserver::Webserver(ServerConfig* config)
 {
-	_instance = this;
 	_config = config;
 	_port = _config->getPort();
 
-	initialize(_config->getAddressInfo(), 12);
+	initServerSocket(_config->getAddressInfo(), 12);
 }
 
-void	Webserver::initialize(struct addrinfo *addr, int backlog)
+/* Try binding to each address in the addrinfo linked list until a match is found
+- Create socket and make it non-blocking
+- Set socket options to be able to reuse address
+- Bind the socket to an address and a port
+- Listen: wait for the client to make a connection */
+void	Webserver::initServerSocket(struct addrinfo *addr, int backlog)
 {
 	struct addrinfo *tmp;
 
-	// Try binding to each address in the addrinfo linked list until a match is found
 	for (tmp = addr; tmp != NULL; tmp = tmp->ai_next)
 	{
-		// Create socket
 		_server_socket = socket(tmp->ai_family, tmp->ai_socktype, tmp->ai_protocol);
 		check(_server_socket);
 
-		// Make it non-blocking
 		check(fcntl(_server_socket, F_SETFL, O_NONBLOCK));
 
-		// Options to be able to reuse address.
 		int	yes = 1;
 		check(setsockopt(_server_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)));
 
-		// Bind the socket to an address and a port
 		if (bind(_server_socket, tmp->ai_addr, tmp->ai_addrlen) < 0)
 			close(_server_socket);
 		else
 			break ;
 	}
-	if (!tmp) // if no bind attempt is successful
+	if (!tmp) // no bind attempt is successful
 	{
-		std::cerr << strerror(errno);
+		std::cerr << strerror(errno) << std::endl;
 		exit(1);
 	}
-	// Listen: wait for the client to make a connection
+
 	check(listen(_server_socket, backlog) < 0);
-	setAddress(tmp);
+	setAddress((struct sockaddr_in*)(tmp->ai_addr));
 }
 
-void	Webserver::setAddress(struct addrinfo *addr)
+void	Webserver::setAddress(struct sockaddr_in *addr)
 {
-	if (addr->ai_family == AF_INET)
-	{
-		struct sockaddr_in* host = (struct sockaddr_in*)addr->ai_addr;
-		_address.sin_family = host->sin_family;
-		_address.sin_port = host->sin_port;
-		_address.sin_addr = host->sin_addr;
-	}
+	_address = addr;
 }
 
 Webserver::Webserver( const Webserver & src ):
@@ -93,124 +82,67 @@ _clients(src._clients)
 }
 
 /*
-** -------------------------------- DESTRUCTOR --------------------------------
-*/
-
-Webserver::~Webserver()
-{
-	close(_server_socket);
-	FD_CLR(_server_socket, &read_sockets);
-	FD_ZERO(&read_sockets);
-	FD_CLR(_server_socket, &write_sockets);
-	FD_ZERO(&write_sockets);
-
-	std::map<int, Client*>::iterator	it;
-	
-	for (it = _clients.begin() ; it != _clients.end(); it++)
-	{
-		delete (it->second);
-	}
-	_clients.clear();
-
-	// delete (_config);
-}
-
-/*
 ** --------------------------------- OVERLOAD ---------------------------------
 */
 
-Webserver &				Webserver::operator=( Webserver const & rhs )
+Webserver&	Webserver::operator=( Webserver const & rhs )
 {
 	if ( this != &rhs )
 	{
 		this->_server_socket = rhs._server_socket;
 		this->_address = rhs._address;
-		this->_instance = rhs._instance;
+		this->_config = rhs._config;
 		this->_clients = rhs._clients;
 	}
 	return (*this);
 }
 
 /*
+** -------------------------------- DESTRUCTOR --------------------------------
+*/
+
+Webserver::~Webserver()
+{
+	close(_server_socket);
+
+	std::map<int, Client*>::iterator	it;
+	for (it = _clients.begin() ; it != _clients.end(); it++)
+	{
+		delete (it->second);
+	}
+	_clients.clear();
+}
+
+/*
 ** --------------------------------- METHODS ----------------------------------
 */
 
-int	Webserver::accept_new_connections(void)
+/* Add new client to the clients map
+- Create epoll_event struct for the new client socket and register it to be monitored */
+void	Webserver::accept_new_connections(void)
 {
-	socklen_t addrlen = sizeof(_address);
-
-	int	new_socket = accept(_server_socket, (struct sockaddr*)&_address, &addrlen);
-	check(new_socket);
+	int	client_socket = accept(_server_socket, NULL, NULL);
+	check(client_socket);
 	check(fcntl(_server_socket, F_SETFL, O_NONBLOCK));
-	_clients[new_socket] = new Client(new_socket);
-	return (new_socket);
+
+	struct epoll_event	ep_event;
+
+	ep_event.data.fd = client_socket;
+	ep_event.events = EPOLLIN | EPOLLOUT;
+	Cluster::addToEpoll(client_socket, &ep_event);
+
+    _clients[client_socket] = new Client(client_socket);
 }
 
-void	Webserver::check(int num)
+/* Process events for the server's clients
+- If EPOLLIN is set for client socket: there is data to read from that client socket
+- If EPOLLOUT is set: the socket is ready to send data */
+void	Webserver::handle_connections(int client_socket, uint32_t event_type)
 {
-	if (num < 0)
-	{
-		std::cerr << strerror(errno);
-		exit(1);
-	}
-}
-
-void Webserver::signal_handler(int signum)
-{
-	if (_instance)
-	{
-		delete (_instance);
-	}
-    std::cout << "\nSignal received, webserver closed. Bye bye!" << std::endl;
-    exit(signum);
-}
-
-void	Webserver::run(void)
-{
-	fd_set	read_sockets_copy;
-	fd_set	write_sockets_copy;
-
-	int		client_socket;
-	int		max_socket = _server_socket;
-
-	FD_ZERO(&read_sockets);
-	FD_ZERO(&write_sockets);
-	FD_SET(_server_socket, &read_sockets);
-
-	while (true)
-	{
-		read_sockets_copy = read_sockets;
-		write_sockets_copy = write_sockets;
-		
-		if (select(max_socket + 1, &read_sockets_copy, &write_sockets_copy, NULL, NULL) < 0)
-		{
-			std::cerr << strerror(errno);
-			exit(1);
-		}
-		int	i = 0;
-		while (i <= max_socket)
-		{
-			if (FD_ISSET(i, &read_sockets_copy))
-			{
-				if (i == _server_socket) // New connection
-				{
-					client_socket = accept_new_connections();
-					FD_SET(client_socket, &read_sockets);
-					if (client_socket > max_socket)
-						max_socket = client_socket;
-				}
-				else
-				{
-					handle_read_connection(i);
-				}
-			}
-			if (FD_ISSET(i, &write_sockets_copy))
-			{
-				handle_write_connection(i);
-			}
-			i++;
-		}
-	}
+	if (event_type & EPOLLIN)
+		handle_read_connection(client_socket);
+	if (event_type & EPOLLOUT)
+		handle_write_connection(client_socket);
 }
 
 void	Webserver::handle_read_connection(int client_socket)
@@ -222,25 +154,18 @@ void	Webserver::handle_read_connection(int client_socket)
 	if (bytes_read < 0)
 	{
 		std::cerr << strerror(errno) << std::endl;
-		close(client_socket);
-		FD_CLR(client_socket, &read_sockets);
-		FD_CLR(client_socket, &write_sockets);
-		_clients.erase(_clients.find(client_socket));
+		removeClient(client_socket);
 	}
 	else if (bytes_read == 0)
 	{
 		if (DEBUG)
 			std::cout << "Client closed the connection\n";
-		close(client_socket);
-		FD_CLR(client_socket, &read_sockets);
-		FD_CLR(client_socket, &write_sockets);
-		_clients.erase(_clients.find(client_socket));
+		removeClient(client_socket);
 	}
 	else
 	{
 		Request*	request = new Request(buffer);
 		getClient(client_socket)->setRequest(*request);
-
 
 		if (DEBUG)
 		{
@@ -250,8 +175,6 @@ void	Webserver::handle_read_connection(int client_socket)
 		}
 		Response	*response = new Response(*request);
 		getClient(client_socket)->setResponse(*response);
-		FD_CLR(client_socket, &read_sockets);
-		FD_SET(client_socket, &write_sockets);
 	}
 
 }
@@ -276,19 +199,32 @@ void		Webserver::handle_write_connection(int client_socket)
 		}
 		if ((response->getHeaders())["Connection"] == "keep-alive")
 		{
-			FD_CLR(client_socket, &write_sockets);
-			FD_SET(client_socket, &read_sockets);
 			client->reset();
 		}
 		else
 		{
-			FD_CLR(client_socket, &write_sockets);
-			close(client_socket);
-			_clients.erase(_clients.find(client_socket));
+			removeClient(client_socket);
 		}
 	}
 	else
 		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
+}
+
+void	Webserver::removeClient(int client_socket)
+{
+	close(client_socket);
+	Cluster::removeFromEpoll(client_socket);
+	delete _clients[client_socket];
+	_clients.erase(client_socket);
+}
+
+void	Webserver::check(int num)
+{
+	if (num < 0)
+	{
+		std::cerr << strerror(errno) << std::endl;
+		exit(1);
+	}
 }
 
 /*
@@ -300,14 +236,9 @@ int	Webserver::getServerSocket()
 	return (_server_socket);
 }
 
-struct sockaddr_in	Webserver::getAddress()
+struct sockaddr_in*	Webserver::getAddress()
 {
 	return (_address);
-}
-
-Webserver* Webserver::getInstance()
-{
-	return (_instance);
 }
 
 std::map<int, Client*>		Webserver::getClients()
@@ -317,6 +248,8 @@ std::map<int, Client*>		Webserver::getClients()
 
 Client*		Webserver::getClient(int socket)
 {
+	if (_clients.find(socket) == _clients.end())
+		return (NULL);
 	return (_clients[socket]);
 }
 

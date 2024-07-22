@@ -35,7 +35,7 @@ class ValidConfig
 
 		/* Values after parsing _directives */
 		int			_port;
-		size_t		_client_max_body_size;
+		size_t		_body_max_length;
 		bool		_autoindex; //init false - toggles directory listing for when no index file is found
 
 		struct addrinfo	*_address_info;
@@ -69,7 +69,7 @@ class ValidConfig
 		/* Validation functions */
 		void	validateKeys(void);
 		void	setListenPort(const t_strvec& tokens);
-		void	setClientMaxBodySize(const t_strvec& tokens);
+		void	setBodyMaxLength(const t_strvec& tokens);
 		void	setAutoindex(const t_strvec& tokens);
 		void	setHost(const t_strvec& tokens);
 		void	setAddressInfo(std::string& host, std::string port);
@@ -92,7 +92,7 @@ class ValidConfig
 		/* Accessors */
 		t_strmap&	getDirectives(void);
 		int			getPort(void);
-		int			getClientMaxBodySize(void);
+		int			getBodyMaxLength(void);
 		bool		getAutoindex(void);
 		struct addrinfo	*getAddressInfo(void);
 		std::string	getHost(void);

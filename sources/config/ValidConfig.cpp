@@ -19,7 +19,7 @@
 ValidConfig::ValidConfig()
 {
 	this->_port = 0;
-	this->_client_max_body_size = 5000;
+	this->_body_max_length = 5000;
 	this->_autoindex = false;
 	this->_address_info = NULL;
 }
@@ -35,7 +35,7 @@ ValidConfig&	ValidConfig::operator=(const ValidConfig& other)
 	{
 		this->_directives = other._directives;
 		this->_port = other._port;
-		this->_client_max_body_size = other._client_max_body_size;
+		this->_body_max_length = other._body_max_length;
 		this->_autoindex = other._autoindex;
 		this->_address_info = other._address_info;
 		this->_host = other._host;
@@ -68,11 +68,13 @@ void	ValidConfig::validateKeys(void)
 {
 	if (this->_directives.find("root") != this->_directives.end())
 		setRoot(this->_directives["root"]);
+
 	if (this->_directives.find("listen") != this->_directives.end())
 		setListenPort(this->_directives["listen"]);
+
 	for (t_strmap::iterator it = this->_directives.begin(); it != this->_directives.end(); it++)
 	{
-		if (DEBUG)
+		if (TRACE)
 			std::cout << "current key: " << it->first << '\n';
 
 		t_dirmap::iterator found = this->_validKeys.find(it->first);
@@ -95,12 +97,12 @@ void	ValidConfig::setListenPort(const t_strvec& tokens)
 		throw InvalidConfigError("Listening port must be a number from 0 to 65353");
 }
 
-void	ValidConfig::setClientMaxBodySize(const t_strvec& tokens)
+void	ValidConfig::setBodyMaxLength(const t_strvec& tokens)
 {
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
 
-	this->_client_max_body_size = strToSizet(tokens[0]);
+	this->_body_max_length = strToSizet(tokens[0]);
 }
 
 void	ValidConfig::setAutoindex(const t_strvec& tokens)
@@ -293,9 +295,9 @@ int	ValidConfig::getPort(void)
 	return (this->_port);
 }
 
-int	ValidConfig::getClientMaxBodySize(void)
+int	ValidConfig::getBodyMaxLength(void)
 {
-	return (this->_client_max_body_size);
+	return (this->_body_max_length);
 }
 
 bool	ValidConfig::getAutoindex(void)

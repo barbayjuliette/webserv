@@ -5,7 +5,7 @@ http
 		listen 8080; #listening port
 		host 127.0.0.1;
 		server_name test_name1 test_name2;
-		client_max_body_size 1024; #limit size of client request body
+		body_max_length 1024; #limit size of client request body
 
 		root wwwroot/; #maps all requests to this directory if location block does not include its own root directive
 		index index.html;
