@@ -23,6 +23,8 @@ void Request::printError(std::string error_msg)
 
 void Request::parseBody()
 {
+	if (!_req_complete)
+		return ;
 	size_t headerEnd = _raw.find("\r\n\r\n");
 	if (headerEnd != std::string::npos && headerEnd + 4 != _raw.size())
 		this->_body = _raw.substr(headerEnd + 4);
@@ -250,15 +252,20 @@ void Request::initRequest()
 		_req_complete = true;
 }
 
-/* Function to handle incomplete header
-	start copying to end of buf of previous read */
-void	Request::handle_incomplete_header(int bytes_read, char *buffer)
+void	Request::copy_partial_buffer(int bytes_read, char *buffer)
 {
 	std::string new_raw;
 	ft_strcpy(buffer, bytes_read, _curr_bytes_read);
 	new_raw = _raw + buffer;
 	_raw = new_raw;
 	_curr_bytes_read += bytes_read; // update curr bytes read to new buf length
+}
+
+/* Function to handle incomplete header
+	start copying to end of buf of previous read */
+void	Request::handle_incomplete_header(int bytes_read, char *buffer)
+{
+	this->copy_partial_buffer(bytes_read, buffer);
 
 	// Check if header is complete
 	if (!is_header_complete())
@@ -270,6 +277,28 @@ void	Request::handle_incomplete_header(int bytes_read, char *buffer)
 		this->parsePort();
 		this->parseHeader();
 		this->parseBody();
+	}
+}
+
+int 	Request::ft_strcmp(char *buf, char *buf2, size_t num)
+{
+	while (int i = 0; i < num; i++)
+	{
+		if (buf[i] != buf2[i])
+			return buf[i] - buf2[i];
+	}
+	return buf[i] - buf2[i];
+}
+
+void	Request::handle_chunk(int bytes_read, char *buffer)
+{
+	if (_is_chunked == true)
+		copy_partial_buffer(bytes_read, buffer);
+	// Last chunk received
+	if (bytes_read == 5 && !ft_strcmp(buffer, "0\r\n\r\n", 5))
+	{
+		_req_complete = true;
+		// parse body
 	}
 }
 

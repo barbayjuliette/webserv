@@ -225,12 +225,13 @@ void	Webserver::handle_read_connection(int client_socket)
 			getClient(client_socket)->setRequest(new_request);
 			if (new_request->getReqComplete() == true)
 				create_response(*new_request, client_socket);
+			return ;
 		}
 
 		/* If existing request -> check if header is complete
 			-> If incomplete, handle header
 				-> Check again if header complete */
-		else if (_clients[client_socket]->getRequest()->getHeaderLength() == -1)
+		if (_clients[client_socket]->getRequest()->getHeaderLength() == -1)
 		{
 			_clients[client_socket]->getRequest()->handle_incomplete_header(bytes_read, buffer);
 			if (_clients[client_socket]->getRequest()->getReqComplete()) // If request complete, create response
