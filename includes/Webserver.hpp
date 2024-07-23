@@ -29,22 +29,31 @@ class Webserver
 		std::map<int, Client*>	_clients;
 
 	public:
+		/* Constructors */
 		Webserver();
 		Webserver(ServerConfig *config);
 		Webserver( Webserver const & src );
+
+		/* Destructor */
 		~Webserver();
 
+		/* Operator overload */
 		Webserver &		operator=( Webserver const & rhs );
 
-		void			check(int num);
+		/* Init sockets */
+		void			initServerSocket(struct addrinfo *addr, int backlog);
+		void			setAddress(struct sockaddr_in* addr);
+
+		/* Connections */
 		void			accept_new_connections(void);
 		void			handle_connections(int client_socket, uint32_t event_type);
 		void			handle_read_connection(int client_socket);
 		void			handle_write_connection(int client_socket);
-
-		void			initServerSocket(struct addrinfo *addr, int backlog);
+		void			create_response(Request &request, int client_socket);
 		void			removeClient(int client_socket);
-		void			setAddress(struct sockaddr_in* addr);
+
+		/* Error checking */
+		void			check(int num);
 
 		// Accessors
 		int							getServerSocket();
