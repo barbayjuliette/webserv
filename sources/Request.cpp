@@ -206,7 +206,7 @@ bool Request::is_header_complete()
 	{
 		_header_length = headerEnd + 4;
 		// Set curr_length
-		_curr_length = _curr_bytes_read - _header_length;
+		_curr_length = _raw.length() - _header_length;
 		// Check if body max length exceeded
 			// Arbitrary body max length -> to be set by config file
 		if (_curr_length > _body_max_length)
@@ -217,6 +217,49 @@ bool Request::is_header_complete()
 		return true;
 	}
 	return false;
+}
+
+bool	Request::handle_chunk(char *buffer, int bytes_read)
+{
+    if (!_is_chunked)
+    {
+        return false;
+    }
+ 	// Parse the new chunked data
+ 	_raw.append(buffer, bytes_read);
+    int i = 0;
+    while (i < bytes_read) 
+    {
+        // Find the chunk size in hexadecimal format
+        char *chunk_size_start = buffer + i;
+        char *chunk_size_end = std::strstr(chunk_size_start, "\r\n");
+        if (!chunk_size_end)
+            break;
+
+        // Convert chunk size from hexadecimal to integer
+        *chunk_size_end = '\0';
+        int chunk_size = std::strtol(chunk_size_start, NULL, 16);
+        if (chunk_size == 0) 
+        {
+            // Last chunk received
+            _req_complete = true;
+            return true;
+        }
+
+        // Move the pointer past the chunk size and \r\n
+        i += (chunk_size_end - chunk_size_start) + 2;
+
+        // Ensure there are enough bytes in the buffer for the chunk data and \r\n
+        if (i + chunk_size + 2 > bytes_read) 
+            break;
+
+        // Append the chunk data to the body
+        _body.append(buffer + i, chunk_size);
+
+        // Move the pointer past the chunk data and \r\n
+        i += chunk_size;
+    }
+    return _req_complete;
 }
 
 void Request::initRequest()
@@ -230,9 +273,10 @@ void Request::initRequest()
 		if (_headers["transfer-encoding"] == "chunked")
 			_is_chunked = true;
 	}
-	// Check if curr read >= content length
+	// If content length key found
 	if (this->_headers.find("content-length") != this->_headers.end())
 	{
+		// If chunked -> invalid
 		if (_is_chunked == true)
 			_error = INVALID;
 		else
@@ -248,25 +292,16 @@ void Request::initRequest()
 			}
 		}
 	}
+	// If not chunked and no content length -> req complete
 	if ((_is_chunked == false && _content_length == -1) || _error == INVALID)
 		_req_complete = true;
-}
-
-void	Request::copy_partial_buffer(int bytes_read, char *buffer)
-{
-	std::string new_raw;
-	ft_strcpy(buffer, bytes_read, _curr_bytes_read);
-	new_raw = _raw + buffer;
-	_raw = new_raw;
-	_curr_bytes_read += bytes_read; // update curr bytes read to new buf length
 }
 
 /* Function to handle incomplete header
 	start copying to end of buf of previous read */
 void	Request::handle_incomplete_header(int bytes_read, char *buffer)
 {
-	this->copy_partial_buffer(bytes_read, buffer);
-
+	_raw.append(buffer, bytes_read);
 	// Check if header is complete
 	if (!is_header_complete())
 		return ;
@@ -277,36 +312,6 @@ void	Request::handle_incomplete_header(int bytes_read, char *buffer)
 		this->parsePort();
 		this->parseHeader();
 		this->parseBody();
-	}
-}
-
-int 	Request::ft_strcmp(char *buf, char *buf2, size_t num)
-{
-	while (int i = 0; i < num; i++)
-	{
-		if (buf[i] != buf2[i])
-			return buf[i] - buf2[i];
-	}
-	return buf[i] - buf2[i];
-}
-
-void	Request::handle_chunk(int bytes_read, char *buffer)
-{
-	if (_is_chunked == true)
-		copy_partial_buffer(bytes_read, buffer);
-	// Last chunk received
-	if (bytes_read == 5 && !ft_strcmp(buffer, "0\r\n\r\n", 5))
-	{
-		_req_complete = true;
-		// parse body
-	}
-}
-
-void Request::ft_strcpy(char *full_request, int bytes_read, size_t start_index)
-{
-	for (int i = 0; i < bytes_read; i++)
-	{
-		_buf[i + start_index] = full_request[i];
 	}
 }
 
@@ -343,22 +348,17 @@ void Request::print_variables() const
 
 Request::Request() {}
 
-Request::Request(char *full_request, int bytes_read) : 
+Request::Request(char *full_request) : 
 	_raw(full_request),
 	_header_length(-1),
 	_req_complete(false),
 	_body_max_length(10000),
 	_content_length(-1),
 	_is_chunked(false),
-	_curr_bytes_read(bytes_read),
 	_error(NO_ERR)
 {
 	if (this->_raw.length() == 0)
 		_error = INVALID;
-	_buf = new char[1000 + _body_max_length];
-	std::memset(_buf, 0, 1000 + _body_max_length);
-	// copies buffer to request's buf
-	ft_strcpy(full_request, bytes_read, 0);
 	this->initRequest();
 	if (_header_length != -1)
 	{
@@ -388,9 +388,7 @@ Request::Request( const Request & src ):
 */
 
 Request::~Request() 
-{
-	delete _buf;
-}
+{}
 
 /*
 ** --------------------------------- OVERLOAD ---------------------------------

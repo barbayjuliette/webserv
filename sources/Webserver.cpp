@@ -221,7 +221,7 @@ void	Webserver::handle_read_connection(int client_socket)
 		// If not existing request -> create new request
 		if (!_clients[client_socket]->getRequest())
 		{
-			Request*	new_request = new Request(buffer, bytes_read);
+			Request*	new_request = new Request(buffer);
 			getClient(client_socket)->setRequest(new_request);
 			if (new_request->getReqComplete() == true)
 				create_response(*new_request, client_socket);
@@ -237,12 +237,8 @@ void	Webserver::handle_read_connection(int client_socket)
 			if (_clients[client_socket]->getRequest()->getReqComplete()) // If request complete, create response
 				create_response(*_clients[client_socket]->getRequest(), client_socket);
 		}
-		// else
-		// {
-		// 	// if chunked -> process chunk -> create response
-		// 	handle_chunk(client_socket);
-		// 	// if not chunked -> process body
-		// }
+		else // if chunked -> process chunk -> create response
+			_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read);
 	}
 }
 

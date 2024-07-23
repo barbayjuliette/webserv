@@ -40,7 +40,6 @@ class Request
 	private:
 
 		std::string							_raw;
-		char								*_buf;
 		ssize_t								_header_length;
 		bool								_req_complete;
 		ssize_t								_body_max_length;
@@ -51,7 +50,6 @@ class Request
 		std::string							_http_version;
 		int									_port;
 		ssize_t								_curr_length;
-		ssize_t								_curr_bytes_read;
 		std::map<std::string, std::string>	_headers;
 		std::string							_body;
 		error_type							_error;
@@ -72,7 +70,6 @@ class Request
 
 		// Helper function
 		size_t		convert_sizet(std::string str);
-		void		ft_strcpy(char *full_request, int bytes_read, size_t start_index);
 		bool 		is_header_complete();
 
 		// Error handling
@@ -83,7 +80,7 @@ class Request
 		void 		print_variables() const;
 
 	public:
-		Request(char *full_request, int bytes_read);
+		Request(char *full_request);
 		Request( Request const & src );
 		~Request();
 
@@ -98,4 +95,5 @@ class Request
 		bool								getReqComplete() const;
 
 		void		handle_incomplete_header(int bytes_read, char *buffer);
+		bool		handle_chunk(char *buffer, int bytes_read);
 };
