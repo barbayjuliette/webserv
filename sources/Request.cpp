@@ -21,21 +21,6 @@ void Request::printError(std::string error_msg)
 	std::cout << RED << error_msg << RESET << std::endl;
 }
 
-void Request::parseBody()
-{
-	if (!_req_complete)
-		return ;
-	size_t headerEnd = _raw.find("\r\n\r\n");
-	if (headerEnd != std::string::npos && headerEnd + 4 != _raw.size())
-		this->_body = _raw.substr(headerEnd + 4);
-	else if (_method == "POST")
-	{
-		_error = INVALID;
-		if (VERBOSE)
-			printError("invalid POST as body is missing");
-	}
-}
-
 // Testing function
 void Request::printHeaders(const std::map<std::string, std::string>& headers)
 {
@@ -297,6 +282,33 @@ void Request::initRequest()
 		_req_complete = true;
 }
 
+void Request::initBody()
+{
+	// If chunked -> copy body to _body -> continue appending from subsequent chunked reqs
+	// If not chunked -> copy body and parse only if req is complete
+	if ((this->_header_length != -1 && _is_chunked) || (!_is_chunked && _req_complete))
+	{
+		std::string::size_type body_start = _raw.find("\r\n\r\n");
+		// Find start of body for chunked
+		if (_is_chunked && body_start != std::string::npos)
+        {
+            body_start += 4;
+            _body = _raw.substr(body_start);
+       	}
+       	else if (!_is_chunked && body_start != std::string::npos)
+        {
+            body_start += 4;
+            // Post method missing body error
+            if (body_start == _raw.size() && _method == "POST")
+            	_error = INVALID;
+            else if (body_start + _content_length <= _raw.size()) // Check if there is enough length in _raw
+                _body = _raw.substr(body_start, _content_length);
+            else
+                _error = INVALID; // Error: insufficient length in _raw
+        }
+	}
+}
+
 /* Function to handle incomplete header
 	start copying to end of buf of previous read */
 void	Request::handle_incomplete_header(int bytes_read, char *buffer)
@@ -311,7 +323,7 @@ void	Request::handle_incomplete_header(int bytes_read, char *buffer)
 		this->parseRequest();
 		this->parsePort();
 		this->parseHeader();
-		this->parseBody();
+		this->initBody();
 	}
 }
 
@@ -365,7 +377,7 @@ Request::Request(char *full_request) :
 		this->parseRequest();
 		this->parsePort();
 		this->parseHeader();
-		this->parseBody();
+		this->initBody();
 	}
 	if (VERBOSE)
 	{
@@ -399,11 +411,19 @@ Request &				Request::operator=( Request const & rhs )
 	if (this != &rhs)
 	{
 		this->_raw = rhs._raw;
+		this->_header_length = rhs._header_length;
+		this->_req_complete = rhs._req_complete;
+		this->_body_max_length = rhs._body_max_length;
+		this->_content_length = rhs._content_length;
+		this->_is_chunked = rhs._is_chunked;
+		this->_method = rhs._method;
 		this->_path = rhs._path;
 		this->_http_version = rhs._http_version;
-		this->_method = rhs._method;
+		this->_port = rhs._port;
+		this->_curr_length = rhs._curr_length;
 		this->_headers = rhs._headers;
 		this->_body = rhs._body;
+		this->_error = rhs._error;
 	}
 	return (*this);
 }

@@ -38,7 +38,6 @@ enum error_type {
 class Request
 {
 	private:
-
 		std::string							_raw;
 		ssize_t								_header_length;
 		bool								_req_complete;
@@ -60,12 +59,13 @@ class Request
 		int 		parseRequest();
 		void 		parseHeader();
 		void 		parsePort();
-		void 		parseBody();
+		// void 		parseBody();
 
 		void 		checkMethod();
 		void 		checkPath();
 		std::string extractHeader();
 
+		void		initBody();
 		void 		initRequest();
 
 		// Helper function
