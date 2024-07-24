@@ -122,7 +122,7 @@ void Request::checkMethod()
 	else if (validMethods.find(searchMethod) != std::string::npos)
 		this->_error = NOT_SUPPORTED;
 	else
-		this->_error = INVALID;
+		this->_error = INVALID_METHOD;
 }
 
 void Request::checkPath()
@@ -252,6 +252,9 @@ void Request::initRequest()
 	// Check if header is complete
 	if (!is_header_complete())
 		return ;
+	this->parseRequest();
+	this->parsePort();
+	this->parseHeader();
 	// Check if encoding chunked
 	if (this->_headers.find("transfer-encoding") != this->_headers.end())
 	{
@@ -263,22 +266,26 @@ void Request::initRequest()
 	{
 		// If chunked -> invalid
 		if (_is_chunked == true)
-			_error = INVALID;
+			_error = CHUNK_AND_LENGTH;
 		else
 		{
 			_content_length = convert_sizet(_headers["content-length"]);
 			// If no error, check if content length met
-			if (_error != NO_ERR)
+			if (_error == NO_ERR)
 			{
 				if (_curr_length - _header_length <= _content_length)
 					_req_complete = true;
 				else if (_curr_length - _header_length > _content_length) // if body length longer than content length, ret invalid
-					_error = INVALID;
+					_error = REQ_TOO_LONG;
 			}
 		}
 	}
+    if (_headers.find("content-type") != _headers.end() &&
+        _headers["content-type"].find("multipart/form-data") != std::string::npos) {
+        _is_chunked = true;
+    }
 	// If not chunked and no content length -> req complete
-	if ((_is_chunked == false && _content_length == -1) || _error == INVALID)
+	if ((_is_chunked == false && _content_length == -1) || _error != NO_ERR)
 		_req_complete = true;
 }
 
@@ -300,14 +307,27 @@ void Request::initBody()
             body_start += 4;
             // Post method missing body error
             if (body_start == _raw.size() && _method == "POST")
-            	_error = INVALID;
+            	_error = POST_MISSING_BODY;
             else if (body_start + _content_length <= _raw.size()) // Check if there is enough length in _raw
                 _body = _raw.substr(body_start, _content_length);
             else
-                _error = INVALID; // Error: insufficient length in _raw
+                _error = REQ_TOO_LONG; // Error: insufficient length in _raw
         }
 	}
 }
+
+// void	Request::parseForm()
+// {
+
+// }
+
+// void	Request::parseBody()
+// {
+// 	if (_method != "POST")
+// 		return ;
+// 	if (_path.includes("subscribe.html")) // If form, parse form
+
+// }
 
 /* Function to handle incomplete header
 	start copying to end of buf of previous read */
@@ -320,9 +340,6 @@ void	Request::handle_incomplete_header(int bytes_read, char *buffer)
 	else
 	{
 		this->initRequest();
-		this->parseRequest();
-		this->parsePort();
-		this->parseHeader();
 		this->initBody();
 	}
 }
@@ -330,12 +347,13 @@ void	Request::handle_incomplete_header(int bytes_read, char *buffer)
 void Request::print_variables() const 
 {
   std::cout << "Request Variables:\n";
-    std::cout << "Raw: " << _raw << "\n";
+    std::cout << "Raw: " << _raw << "\n\n";
     // std::cout << "Buffer: ";  // Print first 100 characters of buffer for practicality
     // for (int i = 0; i < 100 && _buf[i] != '\0'; ++i) {
     //     std::cout << _buf[i];
     // }
     // std::cout << "\n";
+    std::cout << GREEN << "start printing variables after raw" << RESET << std::endl;
     std::cout << "Header Length: " << _header_length << "\n";
     std::cout << "Request Complete: " << (_req_complete ? "true" : "false") << "\n";
     std::cout << "Body Max Length: " << _body_max_length << "\n";
@@ -351,7 +369,8 @@ void Request::print_variables() const
         std::cout << "  " << it->first << ": " << it->second << "\n";
     }
     std::cout << "Body: " << _body << "\n";
-    std::cout << "Error: " << (_error == NO_ERR ? "NO_ERR" : "ERR") << "\n";
+    std::cout << "Request complete: " << (_req_complete ? "true" : "false") << "\n";
+    std::cout << "Error: " << (_error) << "\n";
 }
 
 /*
@@ -376,14 +395,12 @@ Request::Request(char *full_request, ServerConfig *config) :
 	this->initRequest();
 	if (_header_length != -1)
 	{
-		this->parseRequest();
-		this->parsePort();
-		this->parseHeader();
 		this->initBody();
 	}
 	if (VERBOSE)
 	{
-		printHeaders(_headers);
+		// std::cout << _raw << std::endl << RED << "end of req" << RESET << std::endl;
+		// printHeaders(_headers);
 		print_variables();
 	}
 }

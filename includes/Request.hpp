@@ -32,8 +32,12 @@ enum connection_type {
 
 enum error_type {
 	NO_ERR,
+	INVALID_METHOD,
 	INVALID, // 400
-	NOT_SUPPORTED // 405
+	NOT_SUPPORTED, // 405
+	CHUNK_AND_LENGTH,
+	REQ_TOO_LONG,
+	POST_MISSING_BODY,
 };
 
 class Request
@@ -54,6 +58,7 @@ class Request
 		std::string							_body;
 		error_type							_error;
 		ServerConfig*						_config;
+		std::map<std::string, std::string>	_formData;
 
 		Request();
 
