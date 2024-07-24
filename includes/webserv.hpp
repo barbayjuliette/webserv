@@ -13,7 +13,13 @@
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
 
-#define DEBUG 1
+#ifndef DEBUG
+# define DEBUG 1
+#endif
+
+#ifndef TRACE
+# define TRACE 0
+#endif
 
 /* C++ headers */
 # include <iostream>
@@ -38,11 +44,17 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>
+# include <netdb.h>
 /* System calls */
 # include <unistd.h>
+# include <fcntl.h>
+# include <poll.h>
+# include <sys/epoll.h>
 # include <sys/select.h>
 # include <sys/time.h>
 # include <sys/types.h>
+# include <sys/stat.h>
+# include <sys/wait.h>
 
 /* Colours */
 # define CYAN "\001\033[1;36m\002"
