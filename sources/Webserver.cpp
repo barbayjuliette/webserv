@@ -145,38 +145,55 @@ void	Webserver::handle_connections(int client_socket, uint32_t event_type)
 		handle_write_connection(client_socket);
 }
 
+void	Webserver::create_response(Request &request, int client_socket)
+{
+	Response	*_response = new Response(request);
+	getClient(client_socket)->setResponse(*_response);
+	// FD_CLR(client_socket, &read_sockets);
+	// FD_SET(client_socket, &write_sockets);
+	// Delete request
+	getClient(client_socket)->setRequest(NULL);
+}
+
 void	Webserver::handle_read_connection(int client_socket)
 {
 	char	buffer[BUFFER_SIZE];
 	memset(buffer, 0, sizeof(buffer));
 	int		bytes_read = recv(client_socket, buffer, BUFFER_SIZE, 0);
 
-	if (bytes_read < 0)
+	if (bytes_read <= 0)
 	{
-		std::cerr << strerror(errno) << std::endl;
-		removeClient(client_socket);
-	}
-	else if (bytes_read == 0)
-	{
-		if (DEBUG)
+		if (bytes_read < 0)
+			std::cerr << strerror(errno) << std::endl;
+		else if (DEBUG)
 			std::cout << "Client closed the connection\n";
 		removeClient(client_socket);
 	}
-	else
+	else // valid bytes read
 	{
-		Request*	request = new Request(buffer);
-		getClient(client_socket)->setRequest(*request);
-
-		if (DEBUG)
+		// If not existing request -> create new request
+		if (!_clients[client_socket]->getRequest())
 		{
-			std::cout << RED << "---- Request received from client " << client_socket << " ----\n" << RESET;
-			std::cout << request->getRaw();
-			std::cout << RED << "End of request\n\n" << RESET;
+			Request*	new_request = new Request(buffer, _config);
+			getClient(client_socket)->setRequest(new_request);
+			if (new_request->getReqComplete() == true)
+				create_response(*new_request, client_socket);
+			return ;
 		}
-		Response	*response = new Response(*request);
-		getClient(client_socket)->setResponse(*response);
-	}
 
+		/* If existing request -> check if header is complete
+			-> If incomplete, handle header
+				-> Check again if header complete */
+		Request*	request = _clients[client_socket]->getRequest();
+		if (request->getHeaderLength() == -1)
+		{
+			request->handle_incomplete_header(bytes_read, buffer);
+			if (request->getReqComplete()) // If request complete, create response
+				create_response(*request, client_socket);
+		}
+		else // if chunked -> process chunk -> create response
+			_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read);
+	}
 }
 
 void		Webserver::handle_write_connection(int client_socket)
