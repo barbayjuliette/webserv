@@ -360,15 +360,17 @@ void Request::print_variables() const
 
 Request::Request() {}
 
-Request::Request(char *full_request) : 
+Request::Request(char *full_request, ServerConfig *config) : 
 	_raw(full_request),
 	_header_length(-1),
 	_req_complete(false),
 	_body_max_length(10000),
 	_content_length(-1),
 	_is_chunked(false),
-	_error(NO_ERR)
+	_error(NO_ERR),
+	_config(config)
 {
+	(void)_config;
 	if (this->_raw.length() == 0)
 		_error = INVALID;
 	this->initRequest();

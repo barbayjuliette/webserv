@@ -21,6 +21,7 @@
 # include <cstdlib>
 # include <algorithm>
 # include "webserv.hpp"
+# include "ServerConfig.hpp"
 
 # define VERBOSE 1
 
@@ -52,6 +53,7 @@ class Request
 		std::map<std::string, std::string>	_headers;
 		std::string							_body;
 		error_type							_error;
+		ServerConfig*						_config;
 
 		Request();
 
@@ -80,7 +82,7 @@ class Request
 		void 		print_variables() const;
 
 	public:
-		Request(char *full_request);
+		Request(char *full_request, ServerConfig *config);
 		Request( Request const & src );
 		~Request();
 

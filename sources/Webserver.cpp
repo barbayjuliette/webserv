@@ -174,7 +174,7 @@ void	Webserver::handle_read_connection(int client_socket)
 		// If not existing request -> create new request
 		if (!_clients[client_socket]->getRequest())
 		{
-			Request*	new_request = new Request(buffer);
+			Request*	new_request = new Request(buffer, _config);
 			getClient(client_socket)->setRequest(new_request);
 			if (new_request->getReqComplete() == true)
 				create_response(*new_request, client_socket);
