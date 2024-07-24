@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/17 20:26:18 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/24 20:04:38 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,11 @@
 
 Response::Response() {}
 
-Response::Response(Request &request)
+Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 {
+	std::cout << RED << "This is the original path: " << _config->getRoot() << RESET;
 	setContentType(request);
+	// TODO Check allowed methods 
 	if (request.getMethod() == "GET")
 		this->respond_get_request(request);
 
@@ -36,7 +38,7 @@ Response::Response(Request &request)
 	_headers["Cache-Control"] = "no-cache, private";
 	this->_http_version = request.getHttpVersion();
 
-	if (this->_http_version == "HTTP/1.1" && request.getHeaders()["Connection"] != "close")
+	if (this->_http_version == "HTTP/1.1" && request.getHeaders()["connection"] != "close")
 		_headers["Connection"] = "keep-alive";
 	else
 		_headers["Connection"] = "close";
@@ -54,7 +56,8 @@ _status_text(src._status_text),
 _http_version(src._http_version),
 _body(src._body),
 _full_response(src._full_response),
-_headers(src._headers)
+_headers(src._headers),
+_config(src._config)
 {
 
 }
@@ -91,13 +94,16 @@ void	Response::respond_post_request(const Request &request)
 {
 	std::string	name = "Juliette";
 	std::string	email = "hello@gmail.com";
+	std::ifstream				page(request.getPath().c_str());
 
-	if (request.getHeaders()["Content-Type"] == "application/x-www-form-urlencoded")
-		std::cout << "Wrong type\n"; // DO something else here, error page??
-	else if ((request.getHeaders()["Content-Type"]).substr(0, 19) == "multipart/form-data")
+	if (request.getHeaders()["content-type"] == "application/x-www-form-urlencoded")
 	{
-		std::cout << RED << "HERE\n" << RESET;
-		if (request.getPath() == "./wwwroot/simple-form.html")
+		std::cout << RED << "Wrong type\n" << RESET; // DO something else here, error page??
+		set_error(404, "Not Found"); // change to another error
+	}
+	else if ((request.getHeaders()["content-type"]).substr(0, 19) == "multipart/form-data")
+	{
+		if (request.getPath() == "./" + _config->getRoot() + "simple-form.html")
 		{
 			std::map<std::string, std::string> map;
 			map["name"] = "Juliette";
@@ -106,22 +112,45 @@ void	Response::respond_post_request(const Request &request)
 			_body = "<p>Saved " + name + "</p>";
 			_headers["Content-Length"] = intToString(this->_body.size());
 		}
-		else if (request.getPath() == "./wwwroot/subscribe.html")
+		else if (request.getPath() == "./" + _config->getRoot() + "subscribe.html")
 		{
 			addToNewsletter(email);
 			_body = "<p>Thanks for subscribing to our newsletter!</p>";
 			_headers["Content-Length"] = intToString(this->_body.size());
 		}
+		else if (!page.good())// Path does not exist : 404
+		{
+			set_error(404, "Not Found");
+		}
+		else // Page exists but not allowed to do POST
+		{
+			set_allow_headers(request);
+		}
 	}
 	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
+void	Response::set_allow_headers(const Request &request)
+{
+	set_error(405, "Method Not Allowed");
+	_headers["Allow"] = "GET";
+
+	std::string		database = _config->getRoot() + "database";
+	int				length = database.size();
+
+	if (request.getPath().substr(0, length) != database)
+		_headers["Allow"] = "GET";
+	else
+		_headers["Allow"] = "GET, DELETE";
+
+}
+
 int	Response::check_permission(const Request &request)
 {
-	std::string		root = "./wwwroot/database";
-	int				length = root.size();
+	std::string		database = _config->getRoot() + "database";
+	int				length = database.size();
 
-	if (request.getPath().substr(0, length) != root)
+	if (request.getPath().substr(0, length) != database)
 	{
 		set_error(403, "Forbidden");
 		_headers["Content-Length"] = intToString(this->_body.size());
@@ -139,6 +168,7 @@ void	Response::set_error(int code, std::string text)
 
 void	Response::respond_delete_request(const Request &request)
 {
+	// We can delete anything from root/database/
 	if (!check_permission(request))
 		return ;
 
@@ -162,7 +192,7 @@ void	Response::respond_delete_request(const Request &request)
 }
 
 void	Response::respond_wrong_request(void)
-{
+{	//TO DO return the allow_methods from config
 	set_error(405, "Method Not Allowed");
 	_headers["Allow"] = "GET, POST, DELETE";
 }
@@ -182,12 +212,15 @@ void		Response::getDate()
 
 void	Response::addToNewsletter(std::string data)
 {
-	std::ofstream file;
-	file.open("./database/newsletter.txt", std::ios::app);
-	if (!file.is_open())
-		std::cout << strerror(errno);
-	file << data << "\n";
-	file.close();
+	(void)data;
+	// std::ofstream 	file;
+	// std::string		filename = _config->getRoot() + "database/newsletter.txt";
+
+	// file.open(filename, std::ios::app);
+	// if (!file.is_open())
+	// 	std::cout << strerror(errno);
+	// file << data << "\n";
+	// file.close();
 }
 
 void	Response::addToPeople(std::map<std::string, std::string> body)

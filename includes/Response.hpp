@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/17 20:23:52 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/24 20:01:38 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@
 # include <cstdlib>
 # include <fstream>
 # include <iostream>
+# include "ConfigFile.hpp"
 
 class Response
 {
@@ -35,10 +36,11 @@ class Response
 		std::string							_body;
 		std::string							_full_response;
 		std::map<std::string, std::string>	_headers;
+		ServerConfig						*_config;
 		Response();
 
 	public:
-		Response(Request &request);
+		Response(Request &request, ServerConfig *conf);
 		Response( Response const & src );
 		~Response();
 
@@ -55,15 +57,16 @@ class Response
 		void		addToPeople(std::map<std::string, std::string> body);
 		int			check_permission(const Request &request);
 		void		set_error(int code, std::string text);
+		void		set_allow_headers(const Request &request);
 
 
-		int			getStatusCode() const;
-		std::string	getStatusText() const;
-		std::string	getHttpVersion() const;
+		int									getStatusCode() const;
+		std::string							getStatusText() const;
+		std::string							getHttpVersion() const;
 		std::map<std::string, std::string>	getHeaders() const;
-		std::string	getBody() const;
-		std::string	getFullResponse() const;
-		void		setFullResponse();
-		void		setContentType(Request &request);
+		std::string							getBody() const;
+		std::string							getFullResponse() const;
+		void								setFullResponse();
+		void								setContentType(Request &request);
 
 };

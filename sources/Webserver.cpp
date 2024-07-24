@@ -147,10 +147,8 @@ void	Webserver::handle_connections(int client_socket, uint32_t event_type)
 
 void	Webserver::create_response(Request &request, int client_socket)
 {
-	Response	*_response = new Response(request);
+	Response	*_response = new Response(request, this->_config);
 	getClient(client_socket)->setResponse(*_response);
-	// FD_CLR(client_socket, &read_sockets);
-	// FD_SET(client_socket, &write_sockets);
 	// Delete request
 	getClient(client_socket)->setRequest(NULL);
 }
