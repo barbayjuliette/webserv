@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:33 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/16 16:35:49 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/25 17:55:06 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,11 +127,11 @@ void Request::checkMethod()
 
 void Request::checkPath()
 {
-	if (_path == "/")
-		_path = "/index.html";
+
+	if (_path[_path.size() - 1] == '/')
+		_path += "/index.html";
 	_path = "./wwwroot" + _path;
 	this->_http_version = "HTTP/1.1";
-	// std::cout << this->_full_request << std::endl;
 }
 
 int Request::parseRequest()
