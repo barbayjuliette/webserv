@@ -84,6 +84,7 @@ class Request
 		// Helper function
 		size_t		convert_sizet(std::string str);
 		bool 		is_header_complete();
+		void		boundary_found();
 
 		// Error handling
 		void 		printError(std::string error_msg);

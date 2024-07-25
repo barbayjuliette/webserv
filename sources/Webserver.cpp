@@ -172,7 +172,6 @@ void	Webserver::handle_read_connection(int client_socket)
 	}
 	else // valid bytes read
 	{
-		std::cout << "NEW REQUEST" << std::endl;
 		// If not existing request -> create new request
 		if (!_clients[client_socket]->getRequest())
 		{
@@ -184,21 +183,26 @@ void	Webserver::handle_read_connection(int client_socket)
 				return ;
 			}
 		}
-
-		/* If existing request -> check if header is complete
-			-> If incomplete, handle header
-				-> Check again if header complete */
-		Request*	request = _clients[client_socket]->getRequest();
-		if (request->getHeaderLength() == -1)
-		{
-			request->handle_incomplete_header(bytes_read, buffer);
-			if (request->getReqComplete()) // If request complete, create response
-				create_response(*request, client_socket);
-		}
 		else
-		{ // if chunked -> process chunk -> create response
-			if (_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read))
-				create_response(*request, client_socket);
+		{
+			/* If existing request -> check if header is complete
+				-> If incomplete, handle header
+					-> Check again if header complete */
+			Request*	request = _clients[client_socket]->getRequest();
+			if (request->getHeaderLength() == -1)
+			{
+				request->handle_incomplete_header(bytes_read, buffer);
+				if (request->getReqComplete()) // If request complete, create response
+					create_response(*request, client_socket);
+			}
+			else
+			{ // if chunked -> process chunk -> create response
+				// std::cout << _clients[client_socket]->getRequest()->getBody() << std::endl;
+				if (_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read))
+				{
+					create_response(*request, client_socket);
+				}
+			}
 		}
 	}
 }

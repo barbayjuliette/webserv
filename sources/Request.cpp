@@ -212,6 +212,21 @@ bool Request::is_header_complete()
 	return false;
 }
 
+void	Request::boundary_found()
+{
+	if (_content_type != "multipart/form-data")
+	{
+		return ;
+	}
+	if (_body.find("--" + _boundary + "--") != std::string::npos)
+    {
+    	if (VERBOSE)
+    		std::cout << GREEN "set req complete 5" << RESET << std::endl;
+    	std::cout << "\n" << "\n" << _body << "\n\n";
+    	_req_complete = true;
+    }
+}
+
 bool	Request::handle_chunk(char *buffer, int bytes_read)
 {
     if (!_is_chunked)
@@ -223,12 +238,8 @@ bool	Request::handle_chunk(char *buffer, int bytes_read)
     int i = 0;
     if (_content_type == "multipart/form-data") 
     {
-        if (_body.find("--" + _boundary + "--") != std::string::npos)
-        {
-        	if (VERBOSE)
-        		std::cout << GREEN "set req complete 5" << RESET << std::endl;
-        	_req_complete = true;
-        }
+    	_body.append(buffer);
+    	boundary_found();
     }
     else
     {
@@ -308,12 +319,6 @@ void Request::initRequest()
     if (_content_type == "multipart/form-data") 
     {
         _is_chunked = true;
-        if (_body.find("--" + _boundary + "--") != std::string::npos)
-        {
-        	if (VERBOSE)
-        		std::cout << GREEN "set req complete 2" << RESET << std::endl;
-        	_req_complete = true;
-        }
     }
 	// If not chunked and no content length -> req complete
 	if (_is_chunked == false && _content_length == -1)
@@ -336,6 +341,7 @@ void Request::initBody()
         {
             body_start += 4;
             _body = _raw.substr(body_start);
+            boundary_found();
        	}
        	else if (!_is_chunked && body_start != std::string::npos)
         {
