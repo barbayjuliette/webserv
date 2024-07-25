@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/24 20:04:38 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/25 14:07:08 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,8 @@ Response::Response() {}
 
 Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 {
-	std::cout << RED << "This is the original path: " << _config->getRoot() << RESET;
+	// std::cout << RED << "This is the original path: " << _config->getRoot() << RESET;
+	std::cout << RED << "Request path: " << request.getPath() << std::endl << RESET;
 	setContentType(request);
 	// TODO Check allowed methods 
 	if (request.getMethod() == "GET")
@@ -213,14 +214,14 @@ void		Response::getDate()
 void	Response::addToNewsletter(std::string data)
 {
 	(void)data;
-	// std::ofstream 	file;
-	// std::string		filename = _config->getRoot() + "database/newsletter.txt";
+	std::ofstream 	file;
+	std::string		filename = _config->getRoot() + "database/newsletter.txt";
 
-	// file.open(filename, std::ios::app);
-	// if (!file.is_open())
-	// 	std::cout << strerror(errno);
-	// file << data << "\n";
-	// file.close();
+	file.open(filename.c_str(), std::ios::app);
+	if (!file.is_open())
+		std::cout << strerror(errno);
+	file << data << "\n";
+	file.close();
 }
 
 void	Response::addToPeople(std::map<std::string, std::string> body)
