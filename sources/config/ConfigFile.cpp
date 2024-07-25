@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigFile.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yliew <marvin@42.fr>                       +#+  +:+       +#+        */
+/*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/10 19:33:34 by yliew             #+#    #+#             */
-/*   Updated: 2024/07/10 19:33:35 by yliew            ###   ########.fr       */
+/*   Updated: 2024/07/25 16:34:06 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,10 @@ void	ConfigFile::openFile(const char *file)
 {
 	this->_config.open(file, std::ios::in);
 	if (!this->_config)
+	{
+		std::cout << file << std::endl;
 		throw ConfigReadError("Failed to open configuration file");
+	}
 }
 
 /*
@@ -269,6 +272,7 @@ void	ConfigFile::printContexts(std::vector<ServerConfig*>& vec)
 			printMap(locations[i]->getDirectives());
 		}
 	}
+
 }
 
 void	ConfigFile::printMap(t_strmap& map)

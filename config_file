@@ -25,23 +25,4 @@ http
 		}
 	}
 
-	server 
-	{
-        listen 8081;
-        host localhost;
-        server_name example.org www.example.org;
-
-        root wwwroot/;
-        index index.html;
-
-        location / {
-            #try_files $uri $uri/ =404;
-        }
-    }
-
-	server
-	{
-		listen 1024;
-		host localhost;
-	}
 }

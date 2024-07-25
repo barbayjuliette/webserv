@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/25 14:07:08 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/25 17:30:41 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,10 +20,22 @@ Response::Response() {}
 
 Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 {
-	// std::cout << RED << "This is the original path: " << _config->getRoot() << RESET;
-	std::cout << RED << "Request path: " << request.getPath() << std::endl << RESET;
 	setContentType(request);
-	// TODO Check allowed methods 
+	// _config->getAllowedMethods();
+	// && method_is_allowed("GET", conf->getAllowedMethods())
+	// TODO Check allowed methods
+
+	// if (!method_is_allowed(request.getMethod(), conf->getAllowedMethods()))
+	// {
+	// 	this->respond_wrong_request();
+	// 	std::cout << "Response wrong request\n";
+	// }
+	
+	// std::cout << "TEST\n";
+	// std::cout << conf->getErrorPage(404) << std::endl;
+	// std::cout << conf->getIndex()[0] << std::endl;
+	// std::cout << conf->getAllowedMethods()[0] << std::endl;
+
 	if (request.getMethod() == "GET")
 		this->respond_get_request(request);
 
@@ -32,7 +44,6 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 
 	else if (request.getMethod() == "DELETE")
 		this->respond_delete_request(request);
-		
 	else
 		this->respond_wrong_request();
 
@@ -72,6 +83,21 @@ Response::~Response() {}
 /*
 ** --------------------------------- METHODS ----------------------------------
 */
+
+int		Response::method_is_allowed(std::string method, std::vector<std::string> allowed)
+{
+	std::cout << RED << "ALLOWED:\n" << RESET;
+	for (unsigned long i = 0; i < allowed.size(); i++)
+    std::cout << CYAN << "*" << allowed[i] << "*" << RESET << std::endl;
+
+	std::vector<std::string>::iterator it = std::find(allowed.begin(), allowed.end(), method);
+	if (it != allowed.end())
+	{
+		return (1);
+	}
+	std::cout << RED << "Method not allowed\n" << RESET;
+	return (0);
+}
 
 void	Response::respond_get_request(const Request &request)
 {
@@ -249,12 +275,14 @@ Response &				Response::operator=( Response const & rhs )
 }
 
 std::string		Response::get_error_page(int num)
-{
-	std::stringstream 			ss;
-	ss << num;
-	std::string					string_code = ss.str();
+{	
+	std::string					error_path = _config->getErrorPage(num);
 	
-	std::string					error_path = "./errors/" + intToString(num) + ".html";
+	if (error_path.empty())
+		error_path = "./default_errors/" + intToString(num) + ".html";
+	else
+		error_path = "./" + error_path;
+
 	std::ifstream				error_page(error_path.c_str());
 	std::string					str;
 	char						c;

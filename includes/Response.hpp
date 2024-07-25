@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/24 20:01:38 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/25 15:41:08 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,5 +68,6 @@ class Response
 		std::string							getFullResponse() const;
 		void								setFullResponse();
 		void								setContentType(Request &request);
+		int									method_is_allowed(std::string, std::vector<std::string> allowed);
 
 };
