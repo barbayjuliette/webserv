@@ -136,6 +136,11 @@ void	Cluster::runServers(void)
 			int	fd = ep_events[i].data.fd;
 			int	event_type = ep_events[i].events;
 
+			if (event_type & EPOLLERR || event_type & EPOLLHUP)
+			{
+				std::cerr << strerror(errno) << std::endl;
+			}
+
 			if (is_server_socket(fd) && (event_type & EPOLLIN))
 				_servers[fd]->accept_new_connections();
 			else

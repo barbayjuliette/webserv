@@ -66,8 +66,8 @@ Client &				Client::operator=( Client const & rhs )
 */
 void	Client::reset(void)
 {
-	delete (_request);
-	_request = NULL;
+	// delete (_request);
+	// _request = NULL;
 	delete (_response);
 	_response = NULL;
 }

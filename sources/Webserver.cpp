@@ -128,7 +128,8 @@ void	Webserver::accept_new_connections(void)
 	struct epoll_event	ep_event;
 
 	ep_event.data.fd = client_socket;
-	ep_event.events = EPOLLIN | EPOLLOUT;
+	ep_event.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP;
+
 	Cluster::addToEpoll(client_socket, &ep_event);
 
     _clients[client_socket] = new Client(client_socket);
@@ -171,14 +172,17 @@ void	Webserver::handle_read_connection(int client_socket)
 	}
 	else // valid bytes read
 	{
+		std::cout << "NEW REQUEST" << std::endl;
 		// If not existing request -> create new request
 		if (!_clients[client_socket]->getRequest())
 		{
 			Request*	new_request = new Request(buffer, _config);
 			getClient(client_socket)->setRequest(new_request);
-			if (new_request->getReqComplete() == true)
+			if (new_request->getReqComplete())
+			{
 				create_response(*new_request, client_socket);
-			return ;
+				return ;
+			}
 		}
 
 		/* If existing request -> check if header is complete
@@ -191,8 +195,11 @@ void	Webserver::handle_read_connection(int client_socket)
 			if (request->getReqComplete()) // If request complete, create response
 				create_response(*request, client_socket);
 		}
-		else // if chunked -> process chunk -> create response
-			_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read);
+		else
+		{ // if chunked -> process chunk -> create response
+			if (_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read))
+				create_response(*request, client_socket);
+		}
 	}
 }
 
@@ -201,7 +208,6 @@ void		Webserver::handle_write_connection(int client_socket)
 	Client			*client = getClient(client_socket);
 	Response		*response = client->getResponse();
 	unsigned int	bytes_sent;
-
 	if (!response)
 		return ;
 

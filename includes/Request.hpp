@@ -23,8 +23,6 @@
 # include "webserv.hpp"
 # include "ServerConfig.hpp"
 
-# define VERBOSE 1
-
 enum connection_type {
 	KEEP_ALIVE,
 	CLOSE
@@ -38,6 +36,11 @@ enum error_type {
 	CHUNK_AND_LENGTH,
 	REQ_TOO_LONG,
 	POST_MISSING_BODY,
+	INVALID_SIZE,
+	INVALID_EMPTY_REQ,
+	CURR_LENGTH_TOO_LONG,
+	NO_HOST,
+	INVALID_PORT,
 };
 
 class Request
@@ -52,6 +55,8 @@ class Request
 		std::string							_method;
 		std::string							_path;
 		std::string							_http_version;
+		std::string							_content_type;
+		std::string							_boundary;
 		int									_port;
 		ssize_t								_curr_length;
 		std::map<std::string, std::string>	_headers;
@@ -66,6 +71,7 @@ class Request
 		int 		parseRequest();
 		void 		parseHeader();
 		void 		parsePort();
+		void		parseContentType();
 		// void 		parseBody();
 
 		void 		checkMethod();
