@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:33 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/25 17:55:06 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/26 17:59:42 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,7 +113,7 @@ void Request::parsePort()
 
 void Request::checkMethod()
 {
-    const std::string validMethods = ",PUT,PATCH,CONNECT,OPTIONS,TRACE,";
+    const std::string validMethods = ",HEAD,PUT,PATCH,CONNECT,OPTIONS,TRACE,";
     std::string searchMethod = "," + _method + ",";
 
 	if (this->_method == "GET" || this->_method == "POST" 
@@ -127,9 +127,6 @@ void Request::checkMethod()
 
 void Request::checkPath()
 {
-
-	if (_path[_path.size() - 1] == '/')
-		_path += "/index.html";
 	_path = "./wwwroot" + _path;
 	this->_http_version = "HTTP/1.1";
 }

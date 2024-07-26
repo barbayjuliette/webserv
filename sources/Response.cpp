@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/25 17:30:41 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/26 17:54:12 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,34 +18,26 @@
 
 Response::Response() {}
 
-Response::Response(Request &request, ServerConfig *conf) : _config(conf)
+Response::Response(Request &request, ServerConfig *conf) :  _path(request.getPath()), _config(conf)
 {
-	setContentType(request);
-	// _config->getAllowedMethods();
-	// && method_is_allowed("GET", conf->getAllowedMethods())
-	// TODO Check allowed methods
+	setContentType();
+	std::vector<LocationConfig*> location_vector = _config->getLocations();
+	LocationConfig*	location = location_vector[0];
+	// location->getAllowedMethods();
+	// TO DO change the PATH based on the location
 
-	// if (!method_is_allowed(request.getMethod(), conf->getAllowedMethods()))
-	// {
-	// 	this->respond_wrong_request();
-	// 	std::cout << "Response wrong request\n";
-	// }
-	
-	// std::cout << "TEST\n";
-	// std::cout << conf->getErrorPage(404) << std::endl;
-	// std::cout << conf->getIndex()[0] << std::endl;
-	// std::cout << conf->getAllowedMethods()[0] << std::endl;
-
-	if (request.getMethod() == "GET")
-		this->respond_get_request(request);
+	if (!method_is_allowed(request.getMethod(), location->getAllowedMethods()))
+		this->respond_wrong_request(location->getAllowedMethods());
+	else if (request.getMethod() == "GET")
+		this->respond_get_request();
 
 	else if (request.getMethod() == "POST")
 		this->respond_post_request(request);
 
 	else if (request.getMethod() == "DELETE")
-		this->respond_delete_request(request);
+		this->respond_delete_request();
 	else
-		this->respond_wrong_request();
+		this->respond_wrong_request(location->getAllowedMethods());
 
 	_headers["Cache-Control"] = "no-cache, private";
 	this->_http_version = request.getHttpVersion();
@@ -86,26 +78,104 @@ Response::~Response() {}
 
 int		Response::method_is_allowed(std::string method, std::vector<std::string> allowed)
 {
-	std::cout << RED << "ALLOWED:\n" << RESET;
-	for (unsigned long i = 0; i < allowed.size(); i++)
-    std::cout << CYAN << "*" << allowed[i] << "*" << RESET << std::endl;
-
 	std::vector<std::string>::iterator it = std::find(allowed.begin(), allowed.end(), method);
 	if (it != allowed.end())
-	{
 		return (1);
-	}
-	std::cout << RED << "Method not allowed\n" << RESET;
 	return (0);
 }
 
-void	Response::respond_get_request(const Request &request)
+void	Response::create_directory_listing(std::string path)
 {
-	char						c;
-	std::ifstream				page(request.getPath().c_str());
+	std::string		no_slash = path.substr(0, path.size() - 1);
+	
+	// std::size_t		pos = no_slash.find_last_of("/");
+	// if (pos == std::string::npos)
+	// 	return ;
+	// std::string		directory = no_slash.substr(pos + 1, no_slash.size() - pos);
+	// std::cout << "Directory: " << directory << std::endl;
 
+	DIR* dir = opendir(no_slash.c_str());
+	if (!dir)
+	{
+		set_error(404, "Not Found");
+		_headers["Content-Length"] = intToString(this->_body.size());
+		return ;
+	}
+	struct dirent*	dr;
+
+
+	std::stringstream		index;
+	index << "<h1>Index</h1>";
+	index << "<ul>";
+
+	while ((dr = readdir(dir)))
+	{
+		std::string	name = dr->d_name;
+		if (name == "." || name == "..")
+			continue;
+		index << "<li><a href=\"./" << dr->d_name << "\">" << dr->d_name << "</a></li>";
+	}
+	index << "</ul>";
+	closedir(dir);
+
+	_body = index.str();
+	_headers["Content-Length"] = intToString(this->_body.size());
+	this->_status_code = 200;
+	this->_status_text = "OK";
+}
+
+int		Response::is_directory()
+{
+
+	std::vector<LocationConfig*> location_vector = _config->getLocations();
+	LocationConfig*				location = location_vector[0];
+	bool						autoIndex = location->getAutoindex();
+	std::string					dir_path = _path;
+
+	if (this->_path[this->_path.size() - 1] == '/')
+	{
+		setPath(this->_path + "index.html");
+		std::cout << "added index to path\n";
+		std::cout << "New path: " << this->_path << std::endl;
+		_headers["Content-Type"] = "text/html";
+	}
+	else
+		return (1);
+
+	if (access(this->_path.c_str(), F_OK) == 0) // Index exists, we show that one
+	{
+		_headers["Content-Type"] = "text/html";
+		return (1); // Continue the respond_get request
+	}
+	else if (autoIndex == true)
+	{
+		std::cout << "Auto index is on\n";
+		create_directory_listing(dir_path);
+		_headers["Content-Length"] = intToString(this->_body.size());
+		return (0);
+	}
+	else
+	{
+		std::cout << "No auto index\n";
+		set_error(404, "Not Found");
+		_headers["Content-Length"] = intToString(this->_body.size());
+		return (0);
+	}
+}
+
+void	Response::respond_get_request()
+{
+
+	if (is_directory() == 0)
+		return ;
+		
+	char						c;
+	std::ifstream				page(this->_path.c_str());
+	
+	std::cout << this->_path << std::endl;
 	if (page.good())
 	{
+		std::cout << "Page is good\n";
 		while (page.get(c))
 			_body += c;
 		this->_status_code = 200;
@@ -119,9 +189,9 @@ void	Response::respond_get_request(const Request &request)
 
 void	Response::respond_post_request(const Request &request)
 {
-	std::string	name = "Juliette";
-	std::string	email = "hello@gmail.com";
-	std::ifstream				page(request.getPath().c_str());
+	std::string					name = "Juliette";
+	std::string					email = "hello@gmail.com";
+	std::ifstream				page(this->_path.c_str());
 
 	if (request.getHeaders()["content-type"] == "application/x-www-form-urlencoded")
 	{
@@ -130,7 +200,7 @@ void	Response::respond_post_request(const Request &request)
 	}
 	else if ((request.getHeaders()["content-type"]).substr(0, 19) == "multipart/form-data")
 	{
-		if (request.getPath() == "./" + _config->getRoot() + "simple-form.html")
+		if (this->_path == "./" + _config->getRoot() + "simple-form.html")
 		{
 			std::map<std::string, std::string> map;
 			map["name"] = "Juliette";
@@ -139,7 +209,7 @@ void	Response::respond_post_request(const Request &request)
 			_body = "<p>Saved " + name + "</p>";
 			_headers["Content-Length"] = intToString(this->_body.size());
 		}
-		else if (request.getPath() == "./" + _config->getRoot() + "subscribe.html")
+		else if (this->_path == "./" + _config->getRoot() + "subscribe.html")
 		{
 			addToNewsletter(email);
 			_body = "<p>Thanks for subscribing to our newsletter!</p>";
@@ -151,13 +221,13 @@ void	Response::respond_post_request(const Request &request)
 		}
 		else // Page exists but not allowed to do POST
 		{
-			set_allow_headers(request);
+			set_allow_headers();
 		}
 	}
 	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
-void	Response::set_allow_headers(const Request &request)
+void	Response::set_allow_headers(void)
 {
 	set_error(405, "Method Not Allowed");
 	_headers["Allow"] = "GET";
@@ -165,19 +235,20 @@ void	Response::set_allow_headers(const Request &request)
 	std::string		database = _config->getRoot() + "database";
 	int				length = database.size();
 
-	if (request.getPath().substr(0, length) != database)
+	// TO DO: Change headers Allow
+	if (this->_path.substr(0, length) != database)
 		_headers["Allow"] = "GET";
 	else
 		_headers["Allow"] = "GET, DELETE";
 
 }
 
-int	Response::check_permission(const Request &request)
+int	Response::check_permission(void)
 {
 	std::string		database = _config->getRoot() + "database";
 	int				length = database.size();
 
-	if (request.getPath().substr(0, length) != database)
+	if (this->_path.substr(0, length) != database)
 	{
 		set_error(403, "Forbidden");
 		_headers["Content-Length"] = intToString(this->_body.size());
@@ -193,15 +264,15 @@ void	Response::set_error(int code, std::string text)
 	_body = get_error_page(_status_code);
 }
 
-void	Response::respond_delete_request(const Request &request)
+void	Response::respond_delete_request()
 {
 	// We can delete anything from root/database/
-	if (!check_permission(request))
+	if (!check_permission())
 		return ;
 
-	if (access(request.getPath().c_str(), F_OK) == -1)
+	if (access(this->_path.c_str(), F_OK) == -1)
 		set_error(404, "Not found");
-	else if (remove(request.getPath().c_str()) == 0)
+	else if (remove(this->_path.c_str()) == 0)
 	{
 		this->_status_code = 200;
 		this->_status_text = "OK";
@@ -218,10 +289,25 @@ void	Response::respond_delete_request(const Request &request)
 	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
-void	Response::respond_wrong_request(void)
-{	//TO DO return the allow_methods from config
+void	Response::respond_wrong_request(std::vector<std::string> allowed_methods)
+{	
 	set_error(405, "Method Not Allowed");
-	_headers["Allow"] = "GET, POST, DELETE";
+	set_allow_methods(allowed_methods);
+}
+
+void	Response::set_allow_methods(std::vector<std::string> allowed_methods)
+{
+	std::vector<std::string>::iterator it;
+	std::string							methods;
+
+	for (it = allowed_methods.begin(); it != allowed_methods.end(); it++)
+	{
+		methods += *it;
+		if (it + 1 != allowed_methods.end())
+			methods += ", ";
+	}
+	_headers["Allow"] = methods;
+	// std::cout << "ALLOWED METHODS: " << methods << std::endl;
 }
 
 void		Response::getDate()
@@ -338,6 +424,16 @@ std::string	Response::getBody() const
 	return (this->_body);
 }
 
+std::string	Response::getPath() const
+{
+	return (this->_path);
+}
+
+void	Response::setPath(std::string new_path)
+{
+	this->_path = new_path;
+}
+
 std::string	Response::getFullResponse() const
 {
 	return (this->_full_response);
@@ -360,9 +456,9 @@ void	Response::setFullResponse()
 	this->_full_response = stream.str();
 }
 
-void	Response::setContentType(Request &request)
+void	Response::setContentType(void)
 {
-	std::string		path = request.getPath();
+	std::string		path = this->_path;
 	std::size_t		pos = path.find_last_of(".");
 	std::string		ext;
 

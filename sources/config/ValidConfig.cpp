@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/12 18:47:56 by yliew             #+#    #+#             */
-/*   Updated: 2024/07/25 15:56:49 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/26 15:32:23 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -198,10 +198,6 @@ void	ValidConfig::setAllowedMethods(const t_strvec& tokens)
 			throw InvalidConfigError("Invalid method");
 	}
 	this->_allow_methods = tokens;
-
-	std::cout << RED << "ALLOWED after setting it, size:"  << _allow_methods.size() << std::endl << RESET;
-	for (unsigned long i = 0; i < this->_allow_methods.size(); i++)
-   		std::cout << CYAN << "*" << this->_allow_methods[i] << "*" << RESET << std::endl;
 }
 
 void	ValidConfig::setErrorPages(const t_strvec& tokens)
@@ -341,9 +337,6 @@ t_strvec	ValidConfig::getIndex(void)
 
 t_strvec	ValidConfig::getAllowedMethods(void)
 {
-	std::cout << RED << "ALLOWED in getAllowedMethods, size:"  << _allow_methods.size() << std::endl << RESET;
-	for (unsigned long i = 0; i < this->_allow_methods.size(); i++)
-   		std::cout << CYAN << "*" << this->_allow_methods[i] << "*" << RESET << std::endl;
 	return (this->_allow_methods);
 }
 
