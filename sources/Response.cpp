@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/26 17:54:12 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/26 19:39:46 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,11 +20,11 @@ Response::Response() {}
 
 Response::Response(Request &request, ServerConfig *conf) :  _path(request.getPath()), _config(conf)
 {
-	setContentType();
 	std::vector<LocationConfig*> location_vector = _config->getLocations();
 	LocationConfig*	location = location_vector[0];
 	// location->getAllowedMethods();
 	// TO DO change the PATH based on the location
+	setContentType(_path);
 
 	if (!method_is_allowed(request.getMethod(), location->getAllowedMethods()))
 		this->respond_wrong_request(location->getAllowedMethods());
@@ -87,13 +87,6 @@ int		Response::method_is_allowed(std::string method, std::vector<std::string> al
 void	Response::create_directory_listing(std::string path)
 {
 	std::string		no_slash = path.substr(0, path.size() - 1);
-	
-	// std::size_t		pos = no_slash.find_last_of("/");
-	// if (pos == std::string::npos)
-	// 	return ;
-	// std::string		directory = no_slash.substr(pos + 1, no_slash.size() - pos);
-	// std::cout << "Directory: " << directory << std::endl;
-
 	DIR* dir = opendir(no_slash.c_str());
 	if (!dir)
 	{
@@ -101,12 +94,10 @@ void	Response::create_directory_listing(std::string path)
 		_headers["Content-Length"] = intToString(this->_body.size());
 		return ;
 	}
-	struct dirent*	dr;
-
-
+	
+	struct dirent*			dr;
 	std::stringstream		index;
-	index << "<h1>Index</h1>";
-	index << "<ul>";
+	index << "<h1>Index</h1><ul>";
 
 	while ((dr = readdir(dir)))
 	{
@@ -132,50 +123,48 @@ int		Response::is_directory()
 	bool						autoIndex = location->getAutoindex();
 	std::string					dir_path = _path;
 
+	struct	stat				filename;
+	stat(_path.c_str(), &filename);
+
 	if (this->_path[this->_path.size() - 1] == '/')
 	{
 		setPath(this->_path + "index.html");
-		std::cout << "added index to path\n";
-		std::cout << "New path: " << this->_path << std::endl;
-		_headers["Content-Type"] = "text/html";
+	}
+	else if (S_ISDIR(filename.st_mode))
+	{
+		setPath(this->_path + "/index.html");
+		dir_path += "/";
 	}
 	else
 		return (1);
 
 	if (access(this->_path.c_str(), F_OK) == 0) // Index exists, we show that one
 	{
-		_headers["Content-Type"] = "text/html";
-		return (1); // Continue the respond_get request
+		setContentType(_path);
+		return (1); // Continue the respond_get_request
 	}
 	else if (autoIndex == true)
 	{
-		std::cout << "Auto index is on\n";
 		create_directory_listing(dir_path);
-		_headers["Content-Length"] = intToString(this->_body.size());
-		return (0);
 	}
 	else
 	{
-		std::cout << "No auto index\n";
 		set_error(404, "Not Found");
-		_headers["Content-Length"] = intToString(this->_body.size());
-		return (0);
 	}
+	_headers["Content-Length"] = intToString(this->_body.size());
+	setContentType(_path);
+	return (0);
 }
 
 void	Response::respond_get_request()
 {
-
 	if (is_directory() == 0)
 		return ;
 		
 	char						c;
 	std::ifstream				page(this->_path.c_str());
-	
-	std::cout << this->_path << std::endl;
 	if (page.good())
 	{
-		std::cout << "Page is good\n";
 		while (page.get(c))
 			_body += c;
 		this->_status_code = 200;
@@ -195,7 +184,7 @@ void	Response::respond_post_request(const Request &request)
 
 	if (request.getHeaders()["content-type"] == "application/x-www-form-urlencoded")
 	{
-		std::cout << RED << "Wrong type\n" << RESET; // DO something else here, error page??
+		std::cout << RED << "Wrong type\n" << RESET; // TO DO something else here, error page??
 		set_error(404, "Not Found"); // change to another error
 	}
 	else if ((request.getHeaders()["content-type"]).substr(0, 19) == "multipart/form-data")
@@ -456,9 +445,8 @@ void	Response::setFullResponse()
 	this->_full_response = stream.str();
 }
 
-void	Response::setContentType(void)
+void	Response::setContentType(std::string path)
 {
-	std::string		path = this->_path;
 	std::size_t		pos = path.find_last_of(".");
 	std::string		ext;
 
@@ -486,6 +474,7 @@ void	Response::setContentType(void)
 		_headers["Content-Type"] = "text/plain";
 	// std::cout << "Extension: " << ext << std::endl;
 	// std::cout << "Path: " << path << std::endl;
+	// std::cout << "Content-type: " << _headers["Content-Type"] << std::endl;
 }
 
 /* ************************************************************************** */

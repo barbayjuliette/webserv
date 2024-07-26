@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/26 16:39:41 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/26 19:11:43 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,7 @@ class Response
 		std::string							getFullResponse() const;
 		void								setFullResponse();
 		void								setPath(std::string new_path);
-		void								setContentType(void);
+		void								setContentType(std::string path);
 		int									method_is_allowed(std::string, std::vector<std::string> allowed);
 
 };
