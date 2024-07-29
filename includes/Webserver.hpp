@@ -22,11 +22,13 @@
 class Webserver
 {
 	protected:
-		int						_server_socket;
-		int						_port;
-		struct sockaddr_in*		_address;
-		ServerConfig*			_config;
-		std::map<int, Client*>	_clients;
+		int							_server_socket;
+		std::string					_host;
+		int							_port;
+		std::vector<std::string>	_server_name;
+		struct sockaddr_in*			_address;
+		ServerConfig*				_config;
+		std::map<int, Client*>		_clients;
 
 	public:
 		/* Constructors */
@@ -57,6 +59,7 @@ class Webserver
 
 		// Accessors
 		int							getServerSocket();
+		int							getPort();
 		struct sockaddr_in*			getAddress();
 		std::map<int, Client*>		getClients();
 		Client*						getClient(int socket);

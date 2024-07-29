@@ -25,4 +25,26 @@ http
 		}
 	}
 
+	server 
+	{
+		listen 8081;
+		host localhost;
+		server_name example.org www.example.org;
+	}
+
+	server 
+	{
+		listen 8081; #same port
+		host localhost; #same host
+		server_name example.com www.example.com;
+
+		root wwwroot/database/;
+		index newsletter.txt;
+	}
+
+	server
+	{
+		listen 1024;
+		host localhost;
+	}
 }

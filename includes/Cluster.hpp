@@ -26,13 +26,19 @@ class ServerConfig;
 class Webserver;
 class Client;
 
+struct PortInfo
+{
+	int						fd;
+	std::vector<Webserver*>	servers;
+};
+
 class Cluster
 {
 	private:
-		static Cluster* 			_instance;
-		static ConfigFile*			_config_file;
-		static int					_epoll_fd;
-		std::map<int, Webserver*>	_servers;
+		static Cluster* 							_instance;
+		static ConfigFile*							_config_file;
+		static int									_epoll_fd;
+		std::map<int/*port no.*/, struct PortInfo>	_server_sockets;
 
 	public:
 		/* Constructors */
@@ -46,10 +52,16 @@ class Cluster
 		/* Destructor */
 		~Cluster();
 
-		/* Epoll utils */
+		/* Epoll methods */
 		void			initEpoll(void);
 		static void		addToEpoll(int socket_fd, struct epoll_event *ep_event);
 		static void		removeFromEpoll(int socket_fd);
+
+		/* Server socket methods */
+		bool			portIsFound(int port);
+		void			initServerSocket(int port, struct addrinfo *addr, int backlog);
+		void			addServerSocket(int port, int socket_fd);
+		void			addServer(int port, Webserver *new_server);
 
 		/* Methods */
 		void			runServers(void);
@@ -59,6 +71,8 @@ class Cluster
 		bool			is_server_socket(int fd);
 		void			check(int num);
 		static void		signal_handler(int signum);
+		int				countServers(int port);
+		void			printServerSockets(void);
 };
 
 #endif

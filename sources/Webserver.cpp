@@ -29,9 +29,11 @@ Webserver::Webserver()
 Webserver::Webserver(ServerConfig* config)
 {
 	_config = config;
+	_host = _config->getHost();
 	_port = _config->getPort();
+	_server_name = _config->getServerName();
 
-	initServerSocket(_config->getAddressInfo(), 12);
+	// initServerSocket(_config->getAddressInfo(), 12);
 }
 
 /* Try binding to each address in the addrinfo linked list until a match is found
@@ -39,39 +41,39 @@ Webserver::Webserver(ServerConfig* config)
 - Set socket options to be able to reuse address
 - Bind the socket to an address and a port
 - Listen: wait for the client to make a connection */
-void	Webserver::initServerSocket(struct addrinfo *addr, int backlog)
-{
-	struct addrinfo *tmp;
+// void	Webserver::initServerSocket(struct addrinfo *addr, int backlog)
+// {
+// 	struct addrinfo *tmp;
 
-	for (tmp = addr; tmp != NULL; tmp = tmp->ai_next)
-	{
-		_server_socket = socket(tmp->ai_family, tmp->ai_socktype, tmp->ai_protocol);
-		check(_server_socket);
+// 	for (tmp = addr; tmp != NULL; tmp = tmp->ai_next)
+// 	{
+// 		_server_socket = socket(tmp->ai_family, tmp->ai_socktype, tmp->ai_protocol);
+// 		check(_server_socket);
 
-		check(fcntl(_server_socket, F_SETFL, O_NONBLOCK));
+// 		check(fcntl(_server_socket, F_SETFL, O_NONBLOCK));
 
-		int	yes = 1;
-		check(setsockopt(_server_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)));
+// 		int	yes = 1;
+// 		check(setsockopt(_server_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)));
 
-		if (bind(_server_socket, tmp->ai_addr, tmp->ai_addrlen) < 0)
-			close(_server_socket);
-		else
-			break ;
-	}
-	if (!tmp) // no bind attempt is successful
-	{
-		std::cerr << strerror(errno) << std::endl;
-		exit(1);
-	}
+// 		if (bind(_server_socket, tmp->ai_addr, tmp->ai_addrlen) < 0)
+// 			close(_server_socket);
+// 		else
+// 			break ;
+// 	}
+// 	if (!tmp) // no bind attempt is successful
+// 	{
+// 		std::cerr << strerror(errno) << std::endl;
+// 		exit(1);
+// 	}
 
-	check(listen(_server_socket, backlog) < 0);
-	setAddress((struct sockaddr_in*)(tmp->ai_addr));
-}
+// 	check(listen(_server_socket, backlog) < 0);
+// 	setAddress((struct sockaddr_in*)(tmp->ai_addr));
+// }
 
-void	Webserver::setAddress(struct sockaddr_in *addr)
-{
-	_address = addr;
-}
+// void	Webserver::setAddress(struct sockaddr_in *addr)
+// {
+// 	_address = addr;
+// }
 
 Webserver::Webserver( const Webserver & src ):
 _server_socket(src._server_socket),
@@ -249,6 +251,11 @@ void	Webserver::check(int num)
 int	Webserver::getServerSocket()
 {
 	return (_server_socket);
+}
+
+int	Webserver::getPort()
+{
+	return (_port);
 }
 
 struct sockaddr_in*	Webserver::getAddress()
