@@ -105,6 +105,21 @@ t_mmap::iterator	Cluster::findHostPort(std::string& host, int port)
 	return (_server_sockets.end());
 }
 
+Webserver*	Cluster::getServer(std::string& host, int port)
+{
+	t_mmap::iterator	it = findHostPort(host, port);
+	if (it == _server_sockets.end())
+		return (NULL);
+
+	int	count = countServers(it);
+	if (count <= 0)
+		return (NULL);
+	else if (count == 1)
+		return (it->second.servers[0]);
+	return (NULL);
+	//match server
+}
+
 /* Try binding to each address in the addrinfo linked list until a match is found
 - Create socket and make it non-blocking
 - Set socket options to be able to reuse address
@@ -221,34 +236,17 @@ void	Cluster::runServers(void)
 
 		for (int i = 0; i < num_of_events; i++)
 		{
-			int	fd = ep_events[i].data.fd;
+			int	event_fd = ep_events[i].data.fd;
 			int	event_type = ep_events[i].events;
+			int	client_socket;
 
-			if (is_server_socket(fd) && (event_type & EPOLLIN))
-			{
-				int	client_socket = accept_new_connections(fd);
-				std::cout << client_socket << '\n';
-			}
+			if (is_server_socket(event_fd) && (event_type & EPOLLIN))
+				client_socket = accept_new_connections(event_fd);
 			else
-			{
-				char	buffer[BUFFER_SIZE];
-				memset(buffer, 0, sizeof(buffer));
-				int		bytes_read = recv(fd, buffer, BUFFER_SIZE, 0);
+				client_socket = event_fd;
 
-				if (bytes_read <= 0)
-				{
-					if (bytes_read < 0)
-						std::cerr << strerror(errno) << std::endl;
-					else if (DEBUG)
-						std::cout << "Client closed the connection\n";
-				}
-				else
-				{
-					Request*	new_request = new Request(buffer, configs[0]);
-					delete new_request;
-				}
-			}
-			// 	handle_client_events(fd, event_type);
+			if (event_type & EPOLLIN)
+				handle_read_connection(client_socket);
 		}
 	}
 }
@@ -271,19 +269,36 @@ int	Cluster::accept_new_connections(int server_socket)
     return (client_socket);
 }
 
-// Webserver*	Cluster::get_server_instance(int fd)
-// {
-// 	t_mmap::iterator	it = _server_sockets.find(fd);
-// 	if (it == _server_sockets.end())
-// 		return (NULL);
+/* Preliminary request parsing: extract host and port to determine which server to route to */
+void	Cluster::handle_read_connection(int client_socket)
+{
+	char	buffer[BUFFER_SIZE];
+	memset(buffer, 0, sizeof(buffer));
+	int		bytes_read = recv(client_socket, buffer, BUFFER_SIZE, 0);
 
-// 	int	count = countServers(it->second.servers);
-// 	if (count <= 0)
-// 		return (NULL);
-// 	else if (count == 1)
-// 		return (it->second.servers[0]);
-// 	//match server
-// }
+	if (bytes_read <= 0)
+	{
+		if (bytes_read < 0)
+			std::cerr << strerror(errno) << std::endl;
+		else if (DEBUG)
+			std::cout << "Client closed the connection\n";
+		// removeClient(client_socket);
+	}
+	else // valid bytes read
+	{
+		std::string	host;
+		int			port;
+
+		Request::parseHostPort(buffer, host, port);
+		if (host == "localhost")
+			host = "127.0.0.1";
+		std::cout << "host: " << host << "; port: " << port << '\n';
+		Webserver	*server = getServer(host, port);
+		if (!server)
+			throw std::runtime_error("No server matched the request");
+		std::cout << "\nRAW BUFFER:\n\n" << buffer << "\n\n";
+	}
+}
 
 /* Search each server's clients map for the current client socket fd
 - Call handle_connections() on the corresponding server */
@@ -371,7 +386,7 @@ void	Cluster::printServerSockets(void)
 
 	for (it = _server_sockets.begin(); it != _server_sockets.end(); it++)
 	{
-		std::cout << CYAN << "\nHOST:PORT: " << it->second.host << ':' << it->first << '\n' << RESET;
+		std::cout << CYAN << "\nHOST: " << it->second.host << "; PORT: " << it->first << '\n' << RESET;
 		std::cout << "- Socket fd: " << it->second.fd << '\n';
 		std::cout << "- No. of servers listening: " << countServers(it) << "\n\n";
 	}

@@ -63,6 +63,7 @@ class Cluster
 
 		/* Server socket methods */
 		t_mmap::iterator	findHostPort(std::string& host, int port);
+		Webserver*			getServer(std::string& host, int port);
 		void				initServerSocket(std::string& host, int port, struct addrinfo *addr);
 		void				addServerSocket(std::string& host, int port, int socket_fd);
 		void				addServer(std::string& host, int port, Webserver *new_server);
@@ -70,6 +71,7 @@ class Cluster
 		/* Methods */
 		void			runServers(void);
 		int				accept_new_connections(int server_socket);
+		void			handle_read_connection(int client_socket);
 		void			handle_client_events(int client_socket, uint32_t event_type);
 
 		/* Utils */

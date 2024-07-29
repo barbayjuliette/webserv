@@ -48,6 +48,7 @@ class Request
 		std::string							_method;
 		std::string							_path;
 		std::string							_http_version;
+		std::string							_host;
 		int									_port;
 		ssize_t								_curr_length;
 		std::map<std::string, std::string>	_headers;
@@ -92,10 +93,13 @@ class Request
 		std::string							getHttpVersion() const;
 		std::string							getMethod() const;
 		std::string							getBody() const;
+		std::string							getHost() const;
+		int									getPort() const;
 		std::map<std::string, std::string>	getHeaders() const;
 		ssize_t								getHeaderLength() const;
 		bool								getReqComplete() const;
 
 		void		handle_incomplete_header(int bytes_read, char *buffer);
 		bool		handle_chunk(char *buffer, int bytes_read);
+		static void	parseHostPort(char *buffer, std::string& host, int& port);
 };

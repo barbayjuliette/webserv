@@ -28,6 +28,7 @@ void Request::printHeaders(const std::map<std::string, std::string>& headers)
 		"method: " << _method << std::endl << 
 		"path:   " << _path << std::endl <<
 		"http:   " << _http_version << std::endl <<
+		"host:   " << _host << std::endl <<
 		"port:   " << _port << std::endl <<
 		GREEN << "END OF VARS" << RESET << std::endl;
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
@@ -100,7 +101,10 @@ void Request::parsePort()
 			std::string host = _raw.substr(hostStart, hostEnd - hostStart);
 			size_t colon = host.find(":");
 			if (colon != std::string::npos)
+			{
+				this->_host = host.substr(0, colon);
 				this->_port = std::atoi(host.substr(colon + 1).c_str());
+			}
 			else
 				_error = INVALID;
 		}
@@ -109,6 +113,36 @@ void Request::parsePort()
 	}
 	else
 		_error = INVALID;
+}
+
+/* Static method to extract host/port before the Request instance is created
+- Used in Cluster to determine which server to send the request to */
+void	Request::parseHostPort(char *buffer, std::string& host, int& port)
+{
+	std::string	raw(buffer);
+	size_t hostStart = raw.find("Host: ");
+
+	if (hostStart != std::string::npos)
+	{
+		hostStart += 6;
+		size_t hostEnd = raw.find("\r\n", hostStart);
+		if (hostEnd != std::string::npos)
+		{
+			std::string str = raw.substr(hostStart, hostEnd - hostStart);
+			size_t colon = str.find(":");
+			if (colon != std::string::npos)
+			{
+				host = str.substr(0, colon);
+				port = std::atoi(str.substr(colon + 1).c_str());
+			}
+			else
+				throw std::runtime_error("Could not parse request host:port");
+		}
+		else
+			throw std::runtime_error("Could not parse request host:port");
+	}
+	else
+		throw std::runtime_error("Could not parse request host:port");
 }
 
 void Request::checkMethod()
@@ -458,6 +492,16 @@ std::map<std::string, std::string>		Request::getHeaders() const
 std::string		Request::getBody() const
 {
 	return (this->_body);
+}
+
+std::string		Request::getHost() const
+{
+	return (this->_host);
+}
+
+int		Request::getPort() const
+{
+	return (this->_port);
 }
 
 ssize_t		Request::getHeaderLength() const
