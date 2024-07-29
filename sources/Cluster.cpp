@@ -226,7 +226,8 @@ void	Cluster::runServers(void)
 
 			if (is_server_socket(fd) && (event_type & EPOLLIN))
 			{
-				// _servers[fd]->accept_new_connections();
+				int	client_socket = accept_new_connections(fd);
+				std::cout << client_socket << '\n';
 			}
 			else
 			{
@@ -250,6 +251,24 @@ void	Cluster::runServers(void)
 			// 	handle_client_events(fd, event_type);
 		}
 	}
+}
+
+/* Add new client to the clients map
+- Create epoll_event struct for the new client socket and register it to be monitored */
+int	Cluster::accept_new_connections(int server_socket)
+{
+	int	client_socket = accept(server_socket, NULL, NULL);
+	check(client_socket);
+	check(fcntl(server_socket, F_SETFL, O_NONBLOCK));
+
+	struct epoll_event	ep_event;
+
+	ep_event.data.fd = client_socket;
+	ep_event.events = EPOLLIN | EPOLLOUT;
+	addToEpoll(client_socket, &ep_event);
+
+    _clients[client_socket] = new Client(client_socket);
+    return (client_socket);
 }
 
 // Webserver*	Cluster::get_server_instance(int fd)

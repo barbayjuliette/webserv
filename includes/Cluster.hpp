@@ -41,7 +41,8 @@ class Cluster
 		static Cluster* 								_instance;
 		static ConfigFile*								_config_file;
 		static int										_epoll_fd;
-		std::multimap<int/*port*/, struct SocketInfo>	_server_sockets;
+		std::multimap<int /*port*/, struct SocketInfo>	_server_sockets;
+		std::map<int /*socket fd*/, Client*>			_clients;
 
 	public:
 		/* Constructors */
@@ -68,6 +69,7 @@ class Cluster
 
 		/* Methods */
 		void			runServers(void);
+		int				accept_new_connections(int server_socket);
 		void			handle_client_events(int client_socket, uint32_t event_type);
 
 		/* Utils */
