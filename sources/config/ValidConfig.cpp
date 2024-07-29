@@ -18,7 +18,8 @@
 
 ValidConfig::ValidConfig()
 {
-	this->_port = 0;
+	this->_port = 8080;
+	this->_host = "localhost";
 	this->_body_max_length = 5000;
 	this->_autoindex = false;
 	this->_address_info = NULL;
