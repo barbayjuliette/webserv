@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/29 14:23:46 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/29 15:57:35 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -233,7 +233,7 @@ void	Response::set_allow_headers(void)
 	set_error(405, "Method Not Allowed");
 	_headers["Allow"] = "GET";
 
-	std::string		database = _config->getRoot() + "database";
+	std::string		database = "./" + _config->getRoot() + "database";
 	int				length = database.size();
 
 	// TO DO: Change headers Allow
@@ -246,12 +246,13 @@ void	Response::set_allow_headers(void)
 
 int	Response::check_permission(void)
 {
-	std::string		database = _config->getRoot() + "database";
+	std::string		database = "./" + _config->getRoot() + "database";
 	int				length = database.size();
 
 	if (this->_path.substr(0, length) != database)
 	{
 		set_error(403, "Forbidden");
+		std::cout << "in check_permission\n";
 		_headers["Content-Length"] = intToString(this->_body.size());
 		return (0);
 	}
@@ -282,7 +283,10 @@ void	Response::respond_delete_request()
 	else
 	{
 		if (errno == EACCES || errno == EPERM)
+		{
 			set_error(403, "Forbidden");
+			std::cout << "checking error number\n";
+		}
 		else
 			set_error(500, "Internal Server Error");
 		std::cout << "Error deleting resource\n";
@@ -294,6 +298,7 @@ void	Response::respond_wrong_request(std::vector<std::string> allowed_methods)
 {	
 	set_error(405, "Method Not Allowed");
 	set_allow_methods(allowed_methods);
+	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
 void	Response::set_allow_methods(std::vector<std::string> allowed_methods)
@@ -328,7 +333,7 @@ void	Response::addToNewsletter(std::string data)
 {
 	(void)data;
 	std::ofstream 	file;
-	std::string		filename = _config->getRoot() + "database/newsletter.txt";
+	std::string		filename = "./" + _config->getRoot() + "database/newsletter.txt";
 
 	file.open(filename.c_str(), std::ios::app);
 	if (!file.is_open())
@@ -340,7 +345,9 @@ void	Response::addToNewsletter(std::string data)
 void	Response::addToPeople(std::map<std::string, std::string> body)
 {
 	std::ofstream file;
-	file.open("./database/people.txt", std::ios::app);
+	std::string		filename = "./" + _config->getRoot() + "database/people.txt";
+	
+	file.open(filename.c_str(), std::ios::app);
 	if (!file.is_open())
 		std::cout << strerror(errno);
 	file << "First name: " << body["name"] << ", Last name: " << body["last-name"] << "\n";
