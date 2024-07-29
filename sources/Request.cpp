@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:33 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/26 17:59:42 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/29 14:27:01 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,7 +127,6 @@ void Request::checkMethod()
 
 void Request::checkPath()
 {
-	_path = "./wwwroot" + _path;
 	this->_http_version = "HTTP/1.1";
 }
 

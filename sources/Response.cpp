@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/26 19:39:46 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/29 14:23:46 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,18 +18,20 @@
 
 Response::Response() {}
 
-Response::Response(Request &request, ServerConfig *conf) :  _path(request.getPath()), _config(conf)
+Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 {
 	std::vector<LocationConfig*> location_vector = _config->getLocations();
 	LocationConfig*	location = location_vector[0];
 	// location->getAllowedMethods();
 	// TO DO change the PATH based on the location
+	_path = "./" + _config->getRoot() + request.getPath().substr(1, request.getPath().size() - 1);
+	
 	setContentType(_path);
 
 	if (!method_is_allowed(request.getMethod(), location->getAllowedMethods()))
 		this->respond_wrong_request(location->getAllowedMethods());
 	else if (request.getMethod() == "GET")
-		this->respond_get_request();
+		this->respond_get_request(request.getPath());
 
 	else if (request.getMethod() == "POST")
 		this->respond_post_request(request);
@@ -49,7 +51,7 @@ Response::Response(Request &request, ServerConfig *conf) :  _path(request.getPat
 
 	getDate();
 	setFullResponse();
-
+	// std::cout << this->_path << std::endl;
 	//  Content-Length if there is a body
 	// /!\ Body can be empty string, would be valid request
 }
@@ -84,7 +86,17 @@ int		Response::method_is_allowed(std::string method, std::vector<std::string> al
 	return (0);
 }
 
-void	Response::create_directory_listing(std::string path)
+std::string	Response::create_item(std::string source, std::string req_path)
+{
+	if (req_path[req_path.size() - 1] != '/')
+		req_path += '/';
+
+	std::string	link = req_path + source;
+	std::string	html = "<li><a href=\"" + link + "\">" + source + "</a></li>";
+	return (html);
+}
+
+void	Response::create_directory_listing(std::string path, std::string req_path)
 {
 	std::string		no_slash = path.substr(0, path.size() - 1);
 	DIR* dir = opendir(no_slash.c_str());
@@ -104,7 +116,7 @@ void	Response::create_directory_listing(std::string path)
 		std::string	name = dr->d_name;
 		if (name == "." || name == "..")
 			continue;
-		index << "<li><a href=\"./" << dr->d_name << "\">" << dr->d_name << "</a></li>";
+		index << create_item(dr->d_name, req_path);
 	}
 	index << "</ul>";
 	closedir(dir);
@@ -115,7 +127,7 @@ void	Response::create_directory_listing(std::string path)
 	this->_status_text = "OK";
 }
 
-int		Response::is_directory()
+int		Response::is_directory(std::string req_path)
 {
 
 	std::vector<LocationConfig*> location_vector = _config->getLocations();
@@ -145,7 +157,7 @@ int		Response::is_directory()
 	}
 	else if (autoIndex == true)
 	{
-		create_directory_listing(dir_path);
+		create_directory_listing(dir_path, req_path);
 	}
 	else
 	{
@@ -156,9 +168,9 @@ int		Response::is_directory()
 	return (0);
 }
 
-void	Response::respond_get_request()
+void	Response::respond_get_request(std::string req_path)
 {
-	if (is_directory() == 0)
+	if (is_directory(req_path) == 0)
 		return ;
 		
 	char						c;

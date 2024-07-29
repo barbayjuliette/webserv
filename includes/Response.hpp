@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/26 19:11:43 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/29 13:55:39 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ class Response
 		Response &		operator=( Response const & rhs );
 
 		std::string	get_error_page(int num);
-		void		respond_get_request();
+		void		respond_get_request(std::string req_path);
 		void		respond_post_request(const Request &request);
 		void		respond_delete_request(void);
 		void		respond_wrong_request(std::vector<std::string> allowed_methods);
@@ -61,8 +61,9 @@ class Response
 		void		set_error(int code, std::string text);
 		void		set_allow_headers(void);
 		void		set_allow_methods(std::vector<std::string> allowed_methods);
-		int			is_directory();
-		void		create_directory_listing(std::string path);
+		int			is_directory(std::string req_path);
+		void		create_directory_listing(std::string path, std::string req_path);
+		std::string	create_item(std::string source, std::string path);
 
 		int									getStatusCode() const;
 		std::string							getStatusText() const;
