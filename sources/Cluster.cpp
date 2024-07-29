@@ -33,18 +33,20 @@ Cluster::Cluster(ConfigFile* config_file)
 	signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 
-	std::vector<ServerConfig*>	server_configs = _config_file->getServers();
+	std::vector<ServerConfig*>	configs = _config_file->getServers();
 
-	for (size_t i = 0; i < server_configs.size(); i++)
+	for (size_t i = 0; i < configs.size(); i++)
 	{
-		int	port = server_configs[i]->getPort();
-		std::cout << CYAN << "\ncurrent server config: port " << port << '\n' << RESET;
+		std::string	host = configs[i]->getHost();
+		int	port = configs[i]->getPort();
+		std::cout << CYAN << "\ncurrent server config: " << host << ':' << port << '\n' << RESET;
 
-		if (!portIsFound(port))
-			initServerSocket(port, server_configs[i]->getAddressInfo(), 12);
+		t_mmap::iterator	res = findHostPort(host, port);
+		if (res == _server_sockets.end())
+			initServerSocket(host, port, configs[i]->getAddressInfo());
 
-		Webserver	*new_server = new Webserver(server_configs[i]);
-		addServer(port, new_server);
+		Webserver	*new_server = new Webserver(configs[i]);
+		addServer(host, port, new_server);
 	}
 
 	printServerSockets();
@@ -72,7 +74,7 @@ Cluster&	Cluster::operator=(const Cluster& src)
 
 Cluster::~Cluster()
 {
-	std::map<int, struct PortInfo>::iterator	it;
+	t_mmap::iterator	it;
 
 	for (it = _server_sockets.begin(); it != _server_sockets.end(); it++)
 	{
@@ -89,18 +91,26 @@ Cluster::~Cluster()
 ** ------------------------------- INIT SOCKETS -------------------------------
 */
 
-bool	Cluster::portIsFound(int port)
+/* Check if a socket has been created for a specific host:port combination
+- Return iterator to the _server_sockets element if it exists */
+t_mmap::iterator	Cluster::findHostPort(std::string& host, int port)
 {
-	return (_server_sockets.find(port) != _server_sockets.end());
-}
+	t_mmap::iterator	it;
 
+	for (it = _server_sockets.begin(); it != _server_sockets.end(); it++)
+	{
+		if (it->first == port && it->second.host == host)
+			return (it);
+	}
+	return (_server_sockets.end());
+}
 
 /* Try binding to each address in the addrinfo linked list until a match is found
 - Create socket and make it non-blocking
 - Set socket options to be able to reuse address
 - Bind the socket to an address and a port
 - Listen: wait for the client to make a connection */
-void	Cluster::initServerSocket(int port, struct addrinfo *addr, int backlog)
+void	Cluster::initServerSocket(std::string& host, int port, struct addrinfo *addr)
 {
 	int				socket_fd;
 	struct addrinfo *tmp;
@@ -125,24 +135,27 @@ void	Cluster::initServerSocket(int port, struct addrinfo *addr, int backlog)
 		std::cerr << strerror(errno) << std::endl;
 		exit(1);
 	}
-	check(listen(socket_fd, backlog) < 0);
+	check(listen(socket_fd, 12) < 0);
 
-	addServerSocket(port, socket_fd);
+	addServerSocket(host, port, socket_fd);
 }
 
-void	Cluster::addServerSocket(int port, int socket_fd)
+void	Cluster::addServerSocket(std::string& host, int port, int socket_fd)
 {
-	struct PortInfo	info;
+	struct SocketInfo	socket;
 
-	info.fd = socket_fd;
-	_server_sockets[port] = info;
-	std::cout << GREEN << "created socket for port: " << port << ", socket_fd: " << _server_sockets[port].fd << '\n' << RESET;
+	socket.fd = socket_fd;
+	socket.host = host;
+	_server_sockets.insert(std::make_pair(port, socket));
+	std::cout << GREEN << "created socket for port: " << port << ", socket_fd: " << findHostPort(host, port)->second.fd << '\n' << RESET;
 }
 
-void	Cluster::addServer(int port, Webserver *new_server)
+void	Cluster::addServer(std::string& host, int port, Webserver *new_server)
 {
-	_server_sockets[port].servers.push_back(new_server);
-	std::cout << GREEN << "there are now " << countServers(port) << " servers listening to port " << port << ".\n" << RESET;
+	t_mmap::iterator	it = findHostPort(host, port);
+	it->second.servers.push_back(new_server);
+	std::cout << GREEN << "there are now " << countServers(it)
+		<< " servers listening to " << host << ':' << port << ".\n" << RESET;
 }
 
 /*
@@ -156,7 +169,7 @@ void	Cluster::initEpoll(void)
 	_epoll_fd = epoll_create(1);
 	check(_epoll_fd);
 
-	std::map<int, struct PortInfo>::iterator	it;
+	t_mmap::iterator	it;
 	for (it = _server_sockets.begin(); it != _server_sockets.end(); it++)
 	{
 		struct epoll_event	ep_event;
@@ -199,7 +212,7 @@ void	Cluster::runServers(void)
 {
 	initEpoll();
 	struct epoll_event	ep_events[MAX_EVENTS];
-	std::vector<ServerConfig*>	server_configs = _config_file->getServers();
+	std::vector<ServerConfig*>	configs = _config_file->getServers();
 
 	while (true)
 	{
@@ -230,7 +243,7 @@ void	Cluster::runServers(void)
 				}
 				else
 				{
-					Request*	new_request = new Request(buffer, server_configs[0]);
+					Request*	new_request = new Request(buffer, configs[0]);
 					delete new_request;
 				}
 			}
@@ -241,7 +254,7 @@ void	Cluster::runServers(void)
 
 // Webserver*	Cluster::get_server_instance(int fd)
 // {
-// 	std::map<int, struct PortInfo>::iterator	it = _server_sockets.find(fd);
+// 	t_mmap::iterator	it = _server_sockets.find(fd);
 // 	if (it == _server_sockets.end())
 // 		return (NULL);
 
@@ -257,7 +270,7 @@ void	Cluster::runServers(void)
 - Call handle_connections() on the corresponding server */
 // void	Cluster::handle_client_events(int client_socket, uint32_t event_type)
 // {
-// 	std::map<int, Webserver*>::iterator	it;
+// 	std::multimap<int, Webserver*>::iterator	it;
 // 	for (it = _servers.begin(); it != _servers.end(); it++)
 // 	{
 // 		Webserver	*server = it->second;
@@ -277,7 +290,7 @@ void	Cluster::runServers(void)
 
 bool	Cluster::is_server_socket(int fd)
 {
-	std::map<int, struct PortInfo>::iterator	it;
+	t_mmap::iterator	it;
 
 	for (it = _server_sockets.begin(); it != _server_sockets.end(); it++)
 	{
@@ -307,12 +320,27 @@ void	Cluster::signal_handler(int signum)
     exit(signum);
 }
 
-int	Cluster::countServers(int port)
+int	Cluster::countServers(std::string& host, int port)
+{
+	int	count = 0;
+	t_mmap::iterator	res = findHostPort(host, port);
+	if (res == _server_sockets.end())
+		return (-1);
+
+	std::vector<Webserver*>::iterator	it;
+
+	for (it = res->second.servers.begin(); it != res->second.servers.end(); it++)
+		count++;
+
+	return (count);
+}
+
+int	Cluster::countServers(t_mmap::iterator res)
 {
 	int	count = 0;
 	std::vector<Webserver*>::iterator	it;
 
-	for (it = _server_sockets[port].servers.begin(); it != _server_sockets[port].servers.end(); it++)
+	for (it = res->second.servers.begin(); it != res->second.servers.end(); it++)
 		count++;
 
 	return (count);
@@ -320,12 +348,12 @@ int	Cluster::countServers(int port)
 
 void	Cluster::printServerSockets(void)
 {
-	std::map<int, struct PortInfo>::iterator	it;
+	t_mmap::iterator	it;
 
 	for (it = _server_sockets.begin(); it != _server_sockets.end(); it++)
 	{
-		std::cout << CYAN << "\nPORT: " << it->first << '\n' << RESET;
+		std::cout << CYAN << "\nHOST:PORT: " << it->second.host << ':' << it->first << '\n' << RESET;
 		std::cout << "- Socket fd: " << it->second.fd << '\n';
-		std::cout << "- No. of servers listening: " << countServers(it->first) << "\n\n";
+		std::cout << "- No. of servers listening: " << countServers(it) << "\n\n";
 	}
 }

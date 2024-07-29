@@ -26,19 +26,22 @@ class ServerConfig;
 class Webserver;
 class Client;
 
-struct PortInfo
+struct SocketInfo
 {
 	int						fd;
+	std::string				host;
 	std::vector<Webserver*>	servers;
 };
+
+typedef std::multimap<int, struct SocketInfo> t_mmap;
 
 class Cluster
 {
 	private:
-		static Cluster* 							_instance;
-		static ConfigFile*							_config_file;
-		static int									_epoll_fd;
-		std::map<int/*port no.*/, struct PortInfo>	_server_sockets;
+		static Cluster* 								_instance;
+		static ConfigFile*								_config_file;
+		static int										_epoll_fd;
+		std::multimap<int/*port*/, struct SocketInfo>	_server_sockets;
 
 	public:
 		/* Constructors */
@@ -58,10 +61,10 @@ class Cluster
 		static void		removeFromEpoll(int socket_fd);
 
 		/* Server socket methods */
-		bool			portIsFound(int port);
-		void			initServerSocket(int port, struct addrinfo *addr, int backlog);
-		void			addServerSocket(int port, int socket_fd);
-		void			addServer(int port, Webserver *new_server);
+		t_mmap::iterator	findHostPort(std::string& host, int port);
+		void				initServerSocket(std::string& host, int port, struct addrinfo *addr);
+		void				addServerSocket(std::string& host, int port, int socket_fd);
+		void				addServer(std::string& host, int port, Webserver *new_server);
 
 		/* Methods */
 		void			runServers(void);
@@ -71,7 +74,8 @@ class Cluster
 		bool			is_server_socket(int fd);
 		void			check(int num);
 		static void		signal_handler(int signum);
-		int				countServers(int port);
+		int				countServers(std::string& host, int port);
+		int				countServers(t_mmap::iterator res);
 		void			printServerSockets(void);
 };
 
