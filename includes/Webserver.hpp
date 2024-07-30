@@ -65,5 +65,6 @@ class Webserver
 		struct sockaddr_in*			getAddress();
 		std::map<int, Client*>		getClients();
 		Client*						getClient(int socket);
+		ServerConfig*				getConfig();
 };
 

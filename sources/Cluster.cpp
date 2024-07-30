@@ -293,7 +293,6 @@ void	Cluster::handle_read_connection(int client_socket)
 		Webserver	*server = getServerByPort(name, host, port);
 		if (!server)
 			throw std::runtime_error("No server matched the request");
-
 		if (CTRACE)
 		{
 			std::cout << GREEN << "found server match\n" << RESET;

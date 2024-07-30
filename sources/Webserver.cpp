@@ -294,4 +294,9 @@ Client*		Webserver::getClient(int socket)
 	return (_clients[socket]);
 }
 
+ServerConfig*	Webserver::getConfig()
+{
+	return (_config);
+}
+
 /* ************************************************************************** */
