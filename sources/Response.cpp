@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/29 15:57:35 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/30 19:37:52 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -188,13 +188,85 @@ void	Response::respond_get_request(std::string req_path)
 	page.close();
 }
 
+void	Response::child_process(std::string path, int pipe_fd[])
+{
+		std::cout << "In Child process\n";
+		close(pipe_fd[0]);
+		dup2(pipe_fd[1], STDOUT_FILENO);
+		path = "/home/jbarbay/webserv" + path;
+		// std::cout << "Path: " << path << std::endl;
+		char* const argv[] = 
+		{
+			const_cast<char*>("/usr/bin/python3"),
+			const_cast<char*>(path.c_str()),
+			NULL
+		};
+
+		const char* env[] = {
+			"red=on",
+			"blue=off",
+			NULL
+		};
+		execve("/usr/bin/python3", argv, const_cast<char* const*>(env));
+		std::cout << "Execve failed\n";
+}
+
+void	Response::handle_cgi(std::string path)
+{
+	int	pipe_fd[2];
+	if (pipe(pipe_fd) == -1)
+	{
+		std::cout << "Error: " << strerror(errno) << std::endl;
+		return ;
+	}
+
+
+	int	pid = fork();
+	if (pid == -1)
+	{
+		std::cout << "Error: " << strerror(errno) << std::endl;
+	}
+	if (pid == 0)
+	{	
+		child_process(path, pipe_fd);
+	}
+	else
+	{
+		close(pipe_fd[1]);
+
+        int status;
+        waitpid(pid, &status, 0);
+		std::cout << "In Parent process\n";
+
+		char buffer[4096];
+        ssize_t bytesRead;
+        std::string output;
+        while ((bytesRead = read(pipe_fd[0], buffer, sizeof(buffer) - 1)) > 0) {
+            buffer[bytesRead] = '\0';
+            output += buffer;
+        }
+		close(pipe_fd[0]);
+		std::cout << RED << "Result CGI: " << output << RESET << std::endl;
+		_body = output;
+		_headers["Content-Length"] = intToString(this->_body.size());
+		_headers["Content-Type"] = "text/html";
+		_headers["Location"] = path;
+	}
+}
+
 void	Response::respond_post_request(const Request &request)
 {
 	std::string					name = "Juliette";
 	std::string					email = "hello@gmail.com";
 	std::ifstream				page(this->_path.c_str());
 
-	if (request.getHeaders()["content-type"] == "application/x-www-form-urlencoded")
+	if (request.getPath().substr(0, 8) == "/cgi-bin")
+	{
+		std::cout << RED << "This is CGI\n" << RESET;
+		handle_cgi(request.getPath());
+		std::cout << RED << "CGI DONE\n" << RESET;
+	}
+	else if (request.getHeaders()["content-type"] == "application/x-www-form-urlencoded")
 	{
 		std::cout << RED << "Wrong type\n" << RESET; // TO DO something else here, error page??
 		set_error(404, "Not Found"); // change to another error

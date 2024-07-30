@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/29 13:55:39 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/30 19:17:57 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,10 @@ class Response
 		int			is_directory(std::string req_path);
 		void		create_directory_listing(std::string path, std::string req_path);
 		std::string	create_item(std::string source, std::string path);
+		void		handle_cgi(std::string path);
+		void		child_process(std::string path, int pipe_fd[]);
+
+
 
 		int									getStatusCode() const;
 		std::string							getStatusText() const;
