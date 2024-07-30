@@ -39,7 +39,8 @@ Cluster::Cluster(ConfigFile* config_file)
 	{
 		std::string	host = configs[i]->getHost();
 		int	port = configs[i]->getPort();
-		std::cout << CYAN << "\ncurrent server config: " << host << ':' << port << '\n' << RESET;
+		if (CTRACE)
+			std::cout << CYAN << "\ncurrent server config: " << host << ':' << port << '\n' << RESET;
 
 		t_mmap::iterator	res = findHostPort(host, port);
 		if (res == _server_sockets.end())
@@ -49,7 +50,8 @@ Cluster::Cluster(ConfigFile* config_file)
 		addServer(host, port, new_server);
 	}
 
-	printServerSockets();
+	if (CTRACE)
+		printServerSockets();
 }
 
 /*
@@ -105,21 +107,6 @@ t_mmap::iterator	Cluster::findHostPort(std::string& host, int port)
 	return (_server_sockets.end());
 }
 
-Webserver*	Cluster::getServer(std::string& host, int port)
-{
-	t_mmap::iterator	it = findHostPort(host, port);
-	if (it == _server_sockets.end())
-		return (NULL);
-
-	int	count = countServers(it);
-	if (count <= 0)
-		return (NULL);
-	else if (count == 1)
-		return (it->second.servers[0]);
-	return (NULL);
-	//match server
-}
-
 /* Try binding to each address in the addrinfo linked list until a match is found
 - Create socket and make it non-blocking
 - Set socket options to be able to reuse address
@@ -162,15 +149,18 @@ void	Cluster::addServerSocket(std::string& host, int port, int socket_fd)
 	socket.fd = socket_fd;
 	socket.host = host;
 	_server_sockets.insert(std::make_pair(port, socket));
-	std::cout << GREEN << "created socket for port: " << port << ", socket_fd: " << findHostPort(host, port)->second.fd << '\n' << RESET;
+
+	if (CTRACE)
+		std::cout << GREEN << "created socket for port: " << port << ", socket_fd: " << findHostPort(host, port)->second.fd << '\n' << RESET;
 }
 
 void	Cluster::addServer(std::string& host, int port, Webserver *new_server)
 {
 	t_mmap::iterator	it = findHostPort(host, port);
 	it->second.servers.push_back(new_server);
-	std::cout << GREEN << "there are now " << countServers(it)
-		<< " servers listening to " << host << ':' << port << ".\n" << RESET;
+
+	if (CTRACE)
+		std::cout << GREEN << "there are now " << countServers(it) << " servers listening to " << host << ':' << port << ".\n" << RESET;
 }
 
 /*
@@ -286,43 +276,71 @@ void	Cluster::handle_read_connection(int client_socket)
 	}
 	else // valid bytes read
 	{
-		std::string	host;
+		std::string	host, name;
 		int			port;
 
 		Request::parseHostPort(buffer, host, port);
-		if (host == "localhost")
-			host = "127.0.0.1";
-		std::cout << "host: " << host << "; port: " << port << '\n';
-		Webserver	*server = getServer(host, port);
+		name = host;
+		if (CTRACE)
+			std::cout << "host: " << host << "; port: " << port << '\n';
+		if (!isIPAddress(host))
+		{
+			host = getClientIPAddress(client_socket);
+			if (CTRACE)
+				std::cout << "IP address: " << host << '\n';
+		}
+
+		Webserver	*server = getServerByPort(name, host, port);
 		if (!server)
 			throw std::runtime_error("No server matched the request");
-		std::cout << "\nRAW BUFFER:\n\n" << buffer << "\n\n";
+
+		if (CTRACE)
+		{
+			std::cout << GREEN << "found server match\n" << RESET;
+			server->printServerNames();
+		}
 	}
 }
 
-/* Search each server's clients map for the current client socket fd
-- Call handle_connections() on the corresponding server */
-// void	Cluster::handle_client_events(int client_socket, uint32_t event_type)
-// {
-// 	std::multimap<int, Webserver*>::iterator	it;
-// 	for (it = _servers.begin(); it != _servers.end(); it++)
-// 	{
-// 		Webserver	*server = it->second;
-// 		Client		*found_client = server->getClient(client_socket);
+Webserver*	Cluster::getServerByPort(std::string& name, std::string& host, int port)
+{
+	t_mmap::iterator	it = findHostPort(host, port);
+	if (it == _server_sockets.end())
+		return (NULL);
 
-// 		if (found_client)
-// 		{
-// 			server->handle_connections(client_socket, event_type);
-// 			break ;
-// 		}
-// 	}
-// }
+	int	count = countServers(it);
+	if (count <= 0)
+		return (NULL);
+	else if (count == 1)
+		return (it->second.servers[0]);
+	return (getServerByName(it->second.servers, name));
+}
+
+Webserver*	Cluster::getServerByName(std::vector<Webserver*>& servers, std::string& name)
+{
+	if (servers.empty())
+		return (NULL);
+
+	for (size_t i = 0; i < servers.size(); i++)
+	{
+		std::vector<std::string>	server_names = servers[i]->getServerName();
+
+		for (size_t j = 0; j < server_names.size(); j++)
+		{
+			if (CTRACE)
+				std::cout << "now comparing " << server_names[j] << " with " << name << '\n';
+			if (server_names[j] == name)
+				return (servers[i]);
+		}
+	}
+	return (servers[0]);
+}
 
 /*
 ** ---------------------------------- UTILS -----------------------------------
 */
 
-bool	Cluster::is_server_socket(int fd)
+bool	Cluster::is_server_socket(const int fd)
 {
 	t_mmap::iterator	it;
 
@@ -334,6 +352,51 @@ bool	Cluster::is_server_socket(int fd)
 	return (false);
 }
 
+bool	Cluster::isIPAddress(const std::string& str)
+{
+	std::stringstream			stream(str);
+	std::vector<std::string>	tokens;
+	std::string					token;
+
+	while (std::getline(stream, token, '.'))
+	{
+		for (size_t i = 0; i < token.size(); i++)
+		{
+			if (!std::isdigit(token[i]))
+				return (false);
+		}
+		tokens.push_back(token);
+	}
+	if (tokens.size() == 4)
+		return (true);
+	return (false);
+}
+
+/* Get the client's address from the socket and convert it to a string
+- Used if the Host header specifies the server url instead of the IP address */
+std::string	Cluster::getClientIPAddress(const int client_socket)
+{
+	struct sockaddr_in	client_addr;
+	socklen_t			client_len = sizeof(client_addr);
+
+	if (getsockname(client_socket, (struct sockaddr*)&client_addr, &client_len) == -1)
+	{
+		std::cout << strerror(errno) << std::endl;
+		return ("");
+	}
+
+	unsigned char	*ip_bytes = (unsigned char *)&client_addr.sin_addr.s_addr;
+	size_t	size = sizeof(client_addr.sin_addr.s_addr);
+	std::stringstream	stream;
+
+	for (size_t i = 0; i < size; i++)
+	{
+		stream << (int)ip_bytes[i];
+		if (i != size - 1)
+			stream << '.';
+	}
+	return (stream.str());
+}
 
 void	Cluster::check(int num)
 {
@@ -350,8 +413,8 @@ void	Cluster::signal_handler(int signum)
 	{
 		delete (_instance);
 	}
-    std::cout << "\nSignal received, webserver closed. Bye bye!" << std::endl;
-    exit(signum);
+	std::cout << "\nSignal received, webserver closed. Bye bye!" << std::endl;
+	exit(signum);
 }
 
 int	Cluster::countServers(std::string& host, int port)

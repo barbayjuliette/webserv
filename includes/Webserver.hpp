@@ -54,12 +54,14 @@ class Webserver
 		void			create_response(Request &request, int client_socket);
 		void			removeClient(int client_socket);
 
-		/* Error checking */
+		/* Utils */
 		void			check(int num);
+		void			printServerNames(void);
 
 		// Accessors
 		int							getServerSocket();
 		int							getPort();
+		std::vector<std::string>	getServerName();
 		struct sockaddr_in*			getAddress();
 		std::map<int, Client*>		getClients();
 		Client*						getClient(int socket);

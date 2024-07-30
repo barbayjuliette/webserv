@@ -23,7 +23,7 @@ Client::Client()
 
 Client::Client(int socket) : _socket(socket), _request(NULL), _response(NULL)
 {
-	if (DEBUG)
+	if (CTRACE)
 		std::cout << CYAN << "Client created: " << socket << std::endl << RESET;
 }
 

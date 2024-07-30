@@ -21,6 +21,10 @@
 # define TRACE 0
 #endif
 
+#ifndef CTRACE
+# define CTRACE 1
+#endif
+
 /* C++ headers */
 # include <iostream>
 # include <sstream>

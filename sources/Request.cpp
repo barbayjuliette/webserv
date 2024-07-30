@@ -133,6 +133,8 @@ void	Request::parseHostPort(char *buffer, std::string& host, int& port)
 			if (colon != std::string::npos)
 			{
 				host = str.substr(0, colon);
+				if (host == "localhost")
+					host = "127.0.0.1";
 				port = std::atoi(str.substr(colon + 1).c_str());
 			}
 			else

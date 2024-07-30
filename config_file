@@ -29,24 +29,28 @@ http
 	{
 		listen 8081;
 		host localhost;
-		server_name server1.example.org www.server1.example.org;
+		server_name example.org www.example.org;
 	}
 
 	server 
 	{
 		listen 8081; #same port
 		host localhost; #same host
-		server_name server1.example.com www.server1.example.com;
+		server_name example.com www.example.com;
+	}
 
-		root wwwroot/database/;
-		index newsletter.txt;
+	server 
+	{
+		listen 8081; #same port
+		host localhost; #same host
+		server_name example.co www.example.co;
 	}
 
 	server 
 	{
 		listen 8081; #same port
 		host 127.42.42.42; #diff host
-		server_name server1.example.com www.server1.example.com;
+		server_name another.eg www.another.eg;
 
 		root wwwroot/database/;
 		index newsletter.txt;

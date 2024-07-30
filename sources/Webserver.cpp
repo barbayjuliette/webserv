@@ -244,6 +244,20 @@ void	Webserver::check(int num)
 	}
 }
 
+void	Webserver::printServerNames(void)
+{
+	std::cout << CYAN << "SERVER NAME(S): " << RESET;
+
+	for (size_t i = 0; i < _server_name.size(); i++)
+	{
+		std::cout << _server_name[i];
+		if (i != _server_name.size() - 1)
+			std::cout << ' ';
+		else
+			std::cout << '\n';
+	}
+}
+
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */
@@ -256,6 +270,11 @@ int	Webserver::getServerSocket()
 int	Webserver::getPort()
 {
 	return (_port);
+}
+
+std::vector<std::string>	Webserver::getServerName()
+{
+	return (_server_name);
 }
 
 struct sockaddr_in*	Webserver::getAddress()

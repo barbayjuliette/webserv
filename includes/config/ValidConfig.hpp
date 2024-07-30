@@ -81,13 +81,13 @@ class ValidConfig
 		void	setErrorPages(const t_strvec& tokens);
 
 		/* Utils */
-		int		strToInt(const std::string& str);
-		int		strToSizet(const std::string& str);
+		int			strToInt(const std::string& str);
+		int			strToSizet(const std::string& str);
 		std::string	intToStr(const int nb);
-		bool	isStatusCode(const std::string& str);
-		int		isDirectory(const std::string& str);
-		int		isRegularFile(const std::string& str);
-		bool	isValidMethod(const std::string& str);
+		bool		isStatusCode(const std::string& str);
+		int			isDirectory(const std::string& str);
+		int			isRegularFile(const std::string& str);
+		bool		isValidMethod(const std::string& str);
 
 		/* Accessors */
 		t_strmap&	getDirectives(void);

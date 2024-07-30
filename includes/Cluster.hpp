@@ -63,7 +63,8 @@ class Cluster
 
 		/* Server socket methods */
 		t_mmap::iterator	findHostPort(std::string& host, int port);
-		Webserver*			getServer(std::string& host, int port);
+		Webserver*			getServerByPort(std::string& name, std::string& host, int port);
+		Webserver*			getServerByName(std::vector<Webserver*>& servers, std::string& name);
 		void				initServerSocket(std::string& host, int port, struct addrinfo *addr);
 		void				addServerSocket(std::string& host, int port, int socket_fd);
 		void				addServer(std::string& host, int port, Webserver *new_server);
@@ -75,7 +76,9 @@ class Cluster
 		void			handle_client_events(int client_socket, uint32_t event_type);
 
 		/* Utils */
-		bool			is_server_socket(int fd);
+		bool			is_server_socket(const int fd);
+		bool			isIPAddress(const std::string& str);
+		std::string		getClientIPAddress(const int socket_fd);
 		void			check(int num);
 		static void		signal_handler(int signum);
 		int				countServers(std::string& host, int port);
