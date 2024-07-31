@@ -420,7 +420,7 @@ Request::Request(char *full_request, ServerConfig *config) :
 	_raw(full_request),
 	_header_length(-1),
 	_req_complete(false),
-	_body_max_length(300000),
+	_body_max_length(DEFAULT_BODY_MAX),
 	_content_length(-1),
 	_is_chunked(false),
 	_error(NO_ERR),

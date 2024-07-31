@@ -23,6 +23,8 @@
 # include "webserv.hpp"
 # include "ServerConfig.hpp"
 
+#define DEFAULT_BODY_MAX 300000
+
 enum connection_type {
 	KEEP_ALIVE,
 	CLOSE
