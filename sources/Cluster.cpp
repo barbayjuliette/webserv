@@ -237,6 +237,9 @@ void	Cluster::runServers(void)
 
 			if (event_type & EPOLLIN)
 				handle_read_connection(client_socket);
+			// TODO
+			// if (event_type & EPOLLOUT)
+			// 	handle_write_connection(client_socket);
 		}
 	}
 }
@@ -259,6 +262,15 @@ int	Cluster::accept_new_connections(int server_socket)
     return (client_socket);
 }
 
+void	Cluster::removeClient(int client_socket)
+{
+	close(client_socket);
+	Cluster::removeFromEpoll(client_socket);
+	delete _clients[client_socket];
+	_clients.erase(client_socket);
+}
+
+
 /* Preliminary request parsing: extract host and port to determine which server to route to */
 void	Cluster::handle_read_connection(int client_socket)
 {
@@ -272,32 +284,42 @@ void	Cluster::handle_read_connection(int client_socket)
 			std::cerr << strerror(errno) << std::endl;
 		else if (DEBUG)
 			std::cout << "Client closed the connection\n";
-		// removeClient(client_socket);
+		removeClient(client_socket);
 	}
 	else // valid bytes read
 	{
-		std::string	host, name;
-		int			port;
-
-		Request::parseHostPort(buffer, host, port);
-		name = host;
-		if (CTRACE)
-			std::cout << "host: " << host << "; port: " << port << '\n';
-		if (!isIPAddress(host))
+		// If not existing request -> create new request
+		if (!_clients[client_socket]->getRequest())
 		{
-			host = getClientIPAddress(client_socket);
-			if (CTRACE)
-				std::cout << "IP address: " << host << '\n';
+			Request*	new_request = new Request(buffer);
+			_clients[client_socket]->setRequest(new_request);
+			if (new_request->getReqComplete() == false)
+				return;
 		}
-
-		Webserver	*server = getServerByPort(name, host, port);
-		if (!server)
-			throw std::runtime_error("No server matched the request");
-		if (CTRACE)
+		/* If existing request -> check if header is complete
+			-> If incomplete, handle header
+				-> Check again if header complete */
+		Request*	request = _clients[client_socket]->getRequest();
+		if (request->getHeaderLength() == -1)
 		{
-			std::cout << GREEN << "found server match\n" << RESET;
-			server->printServerNames();
+			request->handle_incomplete_header(bytes_read, buffer);
+			if (request->getReqComplete() == false) // If request complete, create response
+				return;
 		}
+		else // if chunked -> process chunk -> create response
+			_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read);
+		// if (request->getHeaderLength() != -1 && request->getReqComplete() == true) 
+		// {
+		// 	Webserver	*server = getServerByPort(request);
+		// 	if (!server)
+		// 			throw std::runtime_error("No server matched the request");
+		// 	server->create_response(*new_request, client_socket);
+		// 	if (CTRACE)
+		// 	{
+		// 		std::cout << GREEN << "found server match\n" << RESET;
+		// 		server->printServerNames();
+		// 	}
+		// }
 	}
 }
 

@@ -74,6 +74,7 @@ class Cluster
 		int				accept_new_connections(int server_socket);
 		void			handle_read_connection(int client_socket);
 		void			handle_client_events(int client_socket, uint32_t event_type);
+		void			removeClient(int client_socket);
 
 		/* Utils */
 		bool			is_server_socket(const int fd);

@@ -83,7 +83,7 @@ class Request
 		void 		print_variables() const;
 
 	public:
-		Request(char *full_request, ServerConfig *config);
+		Request(char *full_request);
 		Request( Request const & src );
 		~Request();
 
