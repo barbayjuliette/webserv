@@ -23,7 +23,7 @@
 # include "webserv.hpp"
 # include "ServerConfig.hpp"
 
-# define VERBOSE 1
+#define DEFAULT_BODY_MAX 300000
 
 enum connection_type {
 	KEEP_ALIVE,
@@ -32,8 +32,17 @@ enum connection_type {
 
 enum error_type {
 	NO_ERR,
+	INVALID_METHOD,
 	INVALID, // 400
-	NOT_SUPPORTED // 405
+	NOT_SUPPORTED, // 405
+	CHUNK_AND_LENGTH,
+	REQ_TOO_LONG,
+	POST_MISSING_BODY,
+	INVALID_SIZE,
+	INVALID_EMPTY_REQ,
+	CURR_LENGTH_TOO_LONG,
+	NO_HOST,
+	INVALID_PORT,
 };
 
 class Request
@@ -48,13 +57,15 @@ class Request
 		std::string							_method;
 		std::string							_path;
 		std::string							_http_version;
-		std::string							_host;
+		std::string							_content_type;
+		std::string							_boundary;
 		int									_port;
 		ssize_t								_curr_length;
 		std::map<std::string, std::string>	_headers;
 		std::string							_body;
 		error_type							_error;
 		ServerConfig*						_config;
+		std::map<std::string, std::string>	_formData;
 
 		Request();
 
@@ -62,6 +73,7 @@ class Request
 		int 		parseRequest();
 		void 		parseHeader();
 		void 		parsePort();
+		void		parseContentType();
 		// void 		parseBody();
 
 		void 		checkMethod();
@@ -74,6 +86,7 @@ class Request
 		// Helper function
 		size_t		convert_sizet(std::string str);
 		bool 		is_header_complete();
+		void		boundary_found();
 
 		// Error handling
 		void 		printError(std::string error_msg);

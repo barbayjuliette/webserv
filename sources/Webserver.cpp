@@ -91,7 +91,6 @@ void		Webserver::handle_write_connection(int client_socket)
 	Client			*client = getClient(client_socket);
 	Response		*response = client->getResponse();
 	unsigned int	bytes_sent;
-
 	if (!response)
 		return ;
 

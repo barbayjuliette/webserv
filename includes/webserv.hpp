@@ -13,8 +13,12 @@
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
 
+#ifndef VERBOSE
+# define VERBOSE 1
+#endif
+
 #ifndef DEBUG
-# define DEBUG 1
+# define DEBUG 0
 #endif
 
 #ifndef TRACE
