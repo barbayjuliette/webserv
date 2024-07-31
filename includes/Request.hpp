@@ -59,6 +59,7 @@ class Request
 		std::string							_http_version;
 		std::string							_content_type;
 		std::string							_boundary;
+		std::string							_host;
 		int									_port;
 		ssize_t								_curr_length;
 		std::map<std::string, std::string>	_headers;
@@ -66,6 +67,8 @@ class Request
 		error_type							_error;
 		ServerConfig*						_config;
 		std::map<std::string, std::string>	_formData;
+		std::map<std::string, std::string> 	_bodyMap;
+		std::map<std::string, std::string>	_fileMap;
 
 		Request();
 
@@ -74,7 +77,7 @@ class Request
 		void 		parseHeader();
 		void 		parsePort();
 		void		parseContentType();
-		// void 		parseBody();
+		void 		handleFileUploads();
 
 		void 		checkMethod();
 		void 		checkPath();
@@ -89,8 +92,9 @@ class Request
 		void		boundary_found();
 
 		// Error handling
-		void 		printError(std::string error_msg);
-		void 		printHeaders(const std::map<std::string, std::string>& headers);
+		void 			printError(std::string error_msg);
+		void 			printHeaders(const std::map<std::string, std::string>& headers);
+		static void		printMap(std::map<std::string, std::string> map);
 
 		// Debug
 		void 		print_variables() const;
@@ -115,4 +119,5 @@ class Request
 		void		handle_incomplete_header(int bytes_read, char *buffer);
 		bool		handle_chunk(char *buffer, int bytes_read);
 		static void	parseHostPort(char *buffer, std::string& host, int& port);
+		void 		parseBody();
 };

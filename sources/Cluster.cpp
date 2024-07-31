@@ -308,8 +308,9 @@ void	Cluster::handle_read_connection(int client_socket)
 		}
 		else // if chunked -> process chunk -> create response
 			_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read);
-		// if (request->getHeaderLength() != -1 && request->getReqComplete() == true) 
-		// {
+		if (request->getHeaderLength() != -1 && request->getReqComplete() == true) 
+		{
+			request->parseBody();
 		// 	Webserver	*server = getServerByPort(request);
 		// 	if (!server)
 		// 			throw std::runtime_error("No server matched the request");
@@ -319,7 +320,7 @@ void	Cluster::handle_read_connection(int client_socket)
 		// 		std::cout << GREEN << "found server match\n" << RESET;
 		// 		server->printServerNames();
 		// 	}
-		// }
+		}
 	}
 }
 

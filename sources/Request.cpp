@@ -253,8 +253,10 @@ void	Request::boundary_found()
 	if (_body.find("--" + _boundary + "--") != std::string::npos)
     {
     	if (VERBOSE)
+    	{
     		std::cout << GREEN "set req complete 5" << RESET << std::endl;
-    	std::cout << "\n" << "\n" << _body << "\n\n";
+    		std::cout << "\n" << "\n" << _body << "\n\n";
+    	}
     	_req_complete = true;
     }
 }
@@ -389,13 +391,105 @@ void Request::initBody()
 	}
 }
 
-// void	Request::parseBody()
-// {
-// 	if (_method != "POST")
-// 		return ;
-// 	if (_path.includes("subscribe.html")) // If form, parse form
+void	Request::printMap(std::map<std::string, std::string> map)
+{
+	std::map<std::string, std::string>::iterator it;
 
-// }
+	for (it = map.begin(); it != map.end(); it++)
+    {
+        std::cout << "[" << it->first << "] = " << it->second << std::endl;
+    }		
+}
+
+void Request::handleFileUploads()
+{
+    // Directory to save files
+    std::string directory = "wwwroot/database";
+    
+    // Iterate over file map
+    for (std::map<std::string, std::string>::const_iterator it = _fileMap.begin(); it != _fileMap.end(); it++)
+    {
+        const std::string& filename = it->first;
+        const std::string& fileContent = it->second;
+        std::string filePath = directory + "/" + filename;
+
+        // Open file stream
+        std::ofstream file(filePath.c_str(), std::ios::binary);
+        if (!file)
+        {
+            std::cerr << "Failed to open file for writing: " << filePath << std::endl;
+            continue;
+        }
+
+        // Write content to file
+        file.write(fileContent.c_str(), fileContent.size());
+        // Handle write fails
+        if (!file)
+            std::cerr << "Failed to write content to file: " << filePath << std::endl;
+        file.close();
+    }
+}
+
+void Request::parseBody()
+{
+    if (_method == "POST" && _content_type == "multipart/form-data") 
+    {
+        if (_boundary.empty() || _body.empty())
+            return;
+
+        std::string boundary = "--" + _boundary;
+        size_t pos = 0;
+
+        // Look for each boundary
+        while ((pos = _body.find(boundary, pos)) != std::string::npos) 
+        {
+            size_t start = pos + boundary.length();
+            size_t end = _body.find(boundary, start);
+            if (end == std::string::npos) {
+                break;
+            }
+
+            // Extract parts between boundaries
+            std::string part = _body.substr(start, end - start);
+
+            // Check for Content-Disposition header
+            size_t dispositionStart = part.find("Content-Disposition:");
+            if (dispositionStart != std::string::npos) 
+            {
+                size_t nameStart = part.find("name=\"", dispositionStart) + 6;
+                size_t nameEnd = part.find("\"", nameStart);
+                std::string key = part.substr(nameStart, nameEnd - nameStart);
+
+                // If data is file
+                size_t filenameStart = part.find("filename=\"", dispositionStart);
+                if (filenameStart != std::string::npos) 
+                {
+                    filenameStart += 10; // Length of "filename=\""
+                    size_t filenameEnd = part.find("\"", filenameStart);
+                    std::string filename = part.substr(filenameStart, filenameEnd - filenameStart);
+
+                    // Store file information
+                    size_t fileStart = part.find("\r\n\r\n") + 4;
+                    size_t fileEnd = part.find("\r\n", fileStart);
+                    std::string fileContent = part.substr(fileStart, fileEnd - fileStart);
+
+                    _fileMap[filename] = fileContent;
+                }
+                else 
+                {
+                    // Handle other form data types
+                    size_t valueStart = part.find("\r\n\r\n") + 4;
+                    size_t valueEnd = part.find("\r\n", valueStart);
+                    std::string value = part.substr(valueStart, valueEnd - valueStart);
+
+                    _bodyMap[key] = value;
+                }
+            }
+            pos = end;
+        }
+    }
+    handleFileUploads();
+}
 
 /* Function to handle incomplete header
 	start copying to end of buf of previous read */
