@@ -23,7 +23,7 @@ Client::Client()
 
 Client::Client(int socket) : _socket(socket), _request(NULL), _response(NULL)
 {
-	if (DEBUG)
+	if (CTRACE)
 		std::cout << CYAN << "Client created: " << socket << std::endl << RESET;
 }
 
@@ -66,8 +66,8 @@ Client &				Client::operator=( Client const & rhs )
 */
 void	Client::reset(void)
 {
-	delete (_request);
-	_request = NULL;
+	// delete (_request);
+	// _request = NULL;
 	delete (_response);
 	_response = NULL;
 }
@@ -91,9 +91,9 @@ void	Client::setRequest(Request* request)
 	_request = request;
 }
 
-void	Client::setResponse(Response& response)
+void	Client::setResponse(Response* response)
 {
-	_response = &response;
+	_response = response;
 }
 
 int		Client::getSocket()

@@ -45,11 +45,11 @@ class ValidConfig
 
 		t_strvec	_server_name;
 		t_strvec	_index;
-		t_strvec	_allow_methods;
+		t_strvec	_allowed_methods;
 		t_strvec	_cgi_ext; //cgi file extensions
 		// t_strvec	_cgi_path;
 
-		std::map<int, std::string>	_error_page;
+		std::map<int, std::string>			_error_page;
 		std::map<std::string, t_directive>	_validKeys;
 
 	public:
@@ -67,7 +67,7 @@ class ValidConfig
 		virtual void	initValidKeys(void) = 0;
 
 		/* Validation functions */
-		void	validateKeys(void);
+		virtual void	validateKeys(void) = 0;
 		void	setListenPort(const t_strvec& tokens);
 		void	setBodyMaxLength(const t_strvec& tokens);
 		void	setAutoindex(const t_strvec& tokens);
@@ -81,13 +81,13 @@ class ValidConfig
 		void	setErrorPages(const t_strvec& tokens);
 
 		/* Utils */
-		int		strToInt(const std::string& str);
-		int		strToSizet(const std::string& str);
+		int			strToInt(const std::string& str);
+		int			strToSizet(const std::string& str);
 		std::string	intToStr(const int nb);
-		bool	isStatusCode(const std::string& str);
-		int		isDirectory(const std::string& str);
-		int		isRegularFile(const std::string& str);
-		bool	isValidMethod(const std::string& str);
+		bool		isStatusCode(const std::string& str);
+		int			isDirectory(const std::string& str);
+		int			isRegularFile(const std::string& str);
+		bool		isValidMethod(const std::string& str);
 
 		/* Accessors */
 		t_strmap&	getDirectives(void);

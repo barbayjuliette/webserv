@@ -20,16 +20,14 @@ Response::Response() {}
 
 Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 {
-	std::vector<LocationConfig*> location_vector = _config->getLocations();
-	LocationConfig*	location = location_vector[0];
-	// location->getAllowedMethods();
-	// TO DO change the PATH based on the location
 	_path = "./" + _config->getRoot() + request.getPath().substr(1, request.getPath().size() - 1);
-	
+	_location = _config->matchLocation(_path);
+	std::cout << "RESPONSE - PATH: " << _path << '\n';
+	// TO DO change the PATH based on the location
 	setContentType(_path);
 
-	if (!method_is_allowed(request.getMethod(), location->getAllowedMethods()))
-		this->respond_wrong_request(location->getAllowedMethods());
+	if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
+		this->respond_wrong_request(_location->getAllowedMethods());
 	else if (request.getMethod() == "GET")
 		this->respond_get_request(request.getPath());
 
@@ -39,7 +37,7 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 	else if (request.getMethod() == "DELETE")
 		this->respond_delete_request();
 	else
-		this->respond_wrong_request(location->getAllowedMethods());
+		this->respond_wrong_request(_location->getAllowedMethods());
 
 	_headers["Cache-Control"] = "no-cache, private";
 	this->_http_version = request.getHttpVersion();
@@ -129,10 +127,7 @@ void	Response::create_directory_listing(std::string path, std::string req_path)
 
 int		Response::is_directory(std::string req_path)
 {
-
-	std::vector<LocationConfig*> location_vector = _config->getLocations();
-	LocationConfig*				location = location_vector[0];
-	bool						autoIndex = location->getAutoindex();
+	bool						autoIndex = _location->getAutoindex();
 	std::string					dir_path = _path;
 
 	struct	stat				filename;

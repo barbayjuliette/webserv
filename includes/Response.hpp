@@ -41,7 +41,8 @@ class Response
 		std::string							_full_response;
 		std::string							_path;
 		std::map<std::string, std::string>	_headers;
-		ServerConfig						*_config;
+		ServerConfig*						_config;
+		LocationConfig*						_location;
 		Response();
 
 	public:

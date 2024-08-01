@@ -23,7 +23,7 @@
 # include "webserv.hpp"
 # include "ServerConfig.hpp"
 
-# define VERBOSE 1
+#define DEFAULT_BODY_MAX 300000
 
 enum connection_type {
 	KEEP_ALIVE,
@@ -32,8 +32,17 @@ enum connection_type {
 
 enum error_type {
 	NO_ERR,
+	INVALID_METHOD,
 	INVALID, // 400
-	NOT_SUPPORTED // 405
+	NOT_SUPPORTED, // 405
+	CHUNK_AND_LENGTH,
+	REQ_TOO_LONG,
+	POST_MISSING_BODY,
+	INVALID_SIZE,
+	INVALID_EMPTY_REQ,
+	CURR_LENGTH_TOO_LONG,
+	NO_HOST,
+	INVALID_PORT,
 };
 
 class Request
@@ -48,12 +57,18 @@ class Request
 		std::string							_method;
 		std::string							_path;
 		std::string							_http_version;
+		std::string							_content_type;
+		std::string							_boundary;
+		std::string							_host;
 		int									_port;
 		ssize_t								_curr_length;
 		std::map<std::string, std::string>	_headers;
 		std::string							_body;
 		error_type							_error;
 		ServerConfig*						_config;
+		std::map<std::string, std::string>	_formData;
+		std::map<std::string, std::string> 	_bodyMap;
+		std::map<std::string, std::string>	_fileMap;
 
 		Request();
 
@@ -61,7 +76,8 @@ class Request
 		int 		parseRequest();
 		void 		parseHeader();
 		void 		parsePort();
-		// void 		parseBody();
+		void		parseContentType();
+		void 		handleFileUploads();
 
 		void 		checkMethod();
 		void 		checkPath();
@@ -73,16 +89,18 @@ class Request
 		// Helper function
 		size_t		convert_sizet(std::string str);
 		bool 		is_header_complete();
+		void		boundary_found();
 
 		// Error handling
-		void 		printError(std::string error_msg);
-		void 		printHeaders(const std::map<std::string, std::string>& headers);
+		void 			printError(std::string error_msg);
+		void 			printHeaders(const std::map<std::string, std::string>& headers);
+		static void		printMap(std::map<std::string, std::string> map);
 
 		// Debug
 		void 		print_variables() const;
 
 	public:
-		Request(char *full_request, ServerConfig *config);
+		Request(char *full_request);
 		Request( Request const & src );
 		~Request();
 
@@ -92,10 +110,16 @@ class Request
 		std::string							getHttpVersion() const;
 		std::string							getMethod() const;
 		std::string							getBody() const;
+		std::string							getHost() const;
+		int									getPort() const;
 		std::map<std::string, std::string>	getHeaders() const;
 		ssize_t								getHeaderLength() const;
 		bool								getReqComplete() const;
 
+		void								setConfig(ServerConfig* config);
+
 		void		handle_incomplete_header(int bytes_read, char *buffer);
 		bool		handle_chunk(char *buffer, int bytes_read);
+		static void	parseHostPort(char *buffer, std::string& host, int& port);
+		void 		parseBody();
 };

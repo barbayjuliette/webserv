@@ -28,6 +28,7 @@ void Request::printHeaders(const std::map<std::string, std::string>& headers)
 		"method: " << _method << std::endl << 
 		"path:   " << _path << std::endl <<
 		"http:   " << _http_version << std::endl <<
+		"host:   " << _host << std::endl <<
 		"port:   " << _port << std::endl <<
 		GREEN << "END OF VARS" << RESET << std::endl;
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
@@ -41,17 +42,24 @@ void Request::printHeaders(const std::map<std::string, std::string>& headers)
 
 std::string Request::extractHeader()
 {
-    // Find the "Connection:" line in the raw request
-    size_t connectionStart = _raw.find("Connection: ");
-    if (connectionStart == std::string::npos)
-        return "";
     // Find the end of the header
-    size_t headersEnd = _raw.find("\r\n\r\n", connectionStart);
+    size_t headersEnd = _raw.find("\r\n\r\n");
     if (headersEnd == std::string::npos)
         return "";
-    // Extract from "Connection:" line to the end of headers (not including the body)
-    std::string result = _raw.substr(connectionStart, headersEnd - connectionStart);
+    // Extract from start of _raw line to the end of headers (not including the body)
+    std::string result = _raw.substr(0, headersEnd);
     return result;
+}
+
+void Request::parseContentType()
+{
+	if (_headers.find("content-type") != _headers.end() &&
+    	_headers["content-type"].find("multipart/form-data") != std::string::npos)
+    {
+    	_content_type = _headers["content-type"].substr(0, _headers["content-type"].find(";"));
+    	if (_headers["content-type"].find("boundary=") != std::string::npos)
+    		_boundary = _headers["content-type"].substr(_headers["content-type"].find("boundary=") + 9);
+    }
 }
 
 void Request::parseHeader()
@@ -83,6 +91,7 @@ void Request::parseHeader()
 	            this->_headers[name] = value;
 	        }
 		}
+		parseContentType();
 	}
 }
 
@@ -100,15 +109,52 @@ void Request::parsePort()
 			std::string host = _raw.substr(hostStart, hostEnd - hostStart);
 			size_t colon = host.find(":");
 			if (colon != std::string::npos)
+			{
+				this->_host = host.substr(0, colon);
+				if (this->_host == "localhost")
+					this->_host = "127.0.0.1";
 				this->_port = std::atoi(host.substr(colon + 1).c_str());
+			}
 			else
-				_error = INVALID;
+				_error = INVALID_PORT;
 		}
 		else
-			_error = INVALID;
+			_error = NO_HOST;
 	}
 	else
-		_error = INVALID;
+		_error = NO_HOST;
+}
+
+/* Static method to extract host/port before the Request instance is created
+- Used in Cluster to determine which server to send the request to */
+void	Request::parseHostPort(char *buffer, std::string& host, int& port)
+{
+	std::string	raw(buffer);
+	size_t hostStart = raw.find("Host: ");
+
+	if (hostStart != std::string::npos)
+	{
+		hostStart += 6;
+		size_t hostEnd = raw.find("\r\n", hostStart);
+		if (hostEnd != std::string::npos)
+		{
+			std::string str = raw.substr(hostStart, hostEnd - hostStart);
+			size_t colon = str.find(":");
+			if (colon != std::string::npos)
+			{
+				host = str.substr(0, colon);
+				if (host == "localhost")
+					host = "127.0.0.1";
+				port = std::atoi(str.substr(colon + 1).c_str());
+			}
+			else
+				throw std::runtime_error("Could not parse request host:port");
+		}
+		else
+			throw std::runtime_error("Could not parse request host:port");
+	}
+	else
+		throw std::runtime_error("Could not parse request host:port");
 }
 
 void Request::checkMethod()
@@ -122,7 +168,7 @@ void Request::checkMethod()
 	else if (validMethods.find(searchMethod) != std::string::npos)
 		this->_error = NOT_SUPPORTED;
 	else
-		this->_error = INVALID;
+		this->_error = INVALID_METHOD;
 }
 
 void Request::checkPath()
@@ -174,7 +220,7 @@ size_t Request::convert_sizet(std::string str)
 
 	if (ss.fail())
 	{
-		_error = INVALID;
+		_error = INVALID_SIZE;
 	}
 	return num;
 }
@@ -192,12 +238,29 @@ bool Request::is_header_complete()
 			// Arbitrary body max length -> to be set by config file
 		if (_curr_length > _body_max_length)
 		{
-			_error = INVALID;
+			_error = CURR_LENGTH_TOO_LONG;
 			return true;
 		}
 		return true;
 	}
 	return false;
+}
+
+void	Request::boundary_found()
+{
+	if (_content_type != "multipart/form-data")
+	{
+		return ;
+	}
+	if (_body.find("--" + _boundary + "--") != std::string::npos)
+    {
+    	if (VERBOSE)
+    	{
+    		std::cout << GREEN "set req complete 5" << RESET << std::endl;
+    		std::cout << "\n" << "\n" << _body << "\n\n";
+    	}
+    	_req_complete = true;
+    }
 }
 
 bool	Request::handle_chunk(char *buffer, int bytes_read)
@@ -209,38 +272,47 @@ bool	Request::handle_chunk(char *buffer, int bytes_read)
  	// Parse the new chunked data
  	_raw.append(buffer, bytes_read);
     int i = 0;
-    while (i < bytes_read) 
+    if (_content_type == "multipart/form-data") 
     {
-        // Find the chunk size in hexadecimal format
-        char *chunk_size_start = buffer + i;
-        char *chunk_size_end = std::strstr(chunk_size_start, "\r\n");
-        if (!chunk_size_end)
-            break;
-
-        // Convert chunk size from hexadecimal to integer
-        *chunk_size_end = '\0';
-        int chunk_size = std::strtol(chunk_size_start, NULL, 16);
-        if (chunk_size == 0) 
-        {
-            // Last chunk received
-            _req_complete = true;
-            return true;
-        }
-
-        // Move the pointer past the chunk size and \r\n
-        i += (chunk_size_end - chunk_size_start) + 2;
-
-        // Ensure there are enough bytes in the buffer for the chunk data and \r\n
-        if (i + chunk_size + 2 > bytes_read) 
-            break;
-
-        // Append the chunk data to the body
-        _body.append(buffer + i, chunk_size);
-
-        // Move the pointer past the chunk data and \r\n
-        i += chunk_size;
+    	_body.append(buffer);
+    	boundary_found();
     }
-    return _req_complete;
+    else
+    {
+	    while (i < bytes_read) 
+	    {
+	        // Find the chunk size in hexadecimal format
+	        char *chunk_size_start = buffer + i;
+	        char *chunk_size_end = std::strstr(chunk_size_start, "\r\n");
+	        if (!chunk_size_end)
+	            break;
+
+	        // Convert chunk size from hexadecimal to integer
+	        *chunk_size_end = '\0';
+	        int chunk_size = std::strtol(chunk_size_start, NULL, 16);
+	        if (chunk_size == 0) 
+	        {
+	            // Last chunk received
+	            std::cout << GREEN << "set req complete 4" << RESET << std::endl;
+	            _req_complete = true;
+	            return true;
+	        }
+
+	        // Move the pointer past the chunk size and \r\n
+	        i += (chunk_size_end - chunk_size_start) + 2;
+
+	        // Ensure there are enough bytes in the buffer for the chunk data and \r\n
+	        if (i + chunk_size + 2 > bytes_read) 
+	            break;
+
+	        // Append the chunk data to the body
+	        _body.append(buffer + i, chunk_size);
+
+	        // Move the pointer past the chunk data and \r\n
+	        i += chunk_size;
+	    }
+	}
+	return _req_complete;
 }
 
 void Request::initRequest()
@@ -248,6 +320,9 @@ void Request::initRequest()
 	// Check if header is complete
 	if (!is_header_complete())
 		return ;
+	this->parseRequest();
+	this->parsePort();
+	this->parseHeader();
 	// Check if encoding chunked
 	if (this->_headers.find("transfer-encoding") != this->_headers.end())
 	{
@@ -259,23 +334,35 @@ void Request::initRequest()
 	{
 		// If chunked -> invalid
 		if (_is_chunked == true)
-			_error = INVALID;
+			_error = CHUNK_AND_LENGTH;
 		else
 		{
 			_content_length = convert_sizet(_headers["content-length"]);
 			// If no error, check if content length met
-			if (_error != NO_ERR)
+			if (_error == NO_ERR)
 			{
-				if (_curr_length - _header_length <= _content_length)
+				if (_curr_length - _header_length <= _content_length && _content_type != "multipart/form-data")
+				{
+					if (VERBOSE)
+						std::cout << GREEN "set req complete 1" << RESET << std::endl;
 					_req_complete = true;
+				}
 				else if (_curr_length - _header_length > _content_length) // if body length longer than content length, ret invalid
-					_error = INVALID;
+					_error = REQ_TOO_LONG;
 			}
 		}
 	}
+    if (_content_type == "multipart/form-data") 
+    {
+        _is_chunked = true;
+    }
 	// If not chunked and no content length -> req complete
-	if ((_is_chunked == false && _content_length == -1) || _error == INVALID)
+	if (_is_chunked == false && _content_length == -1)
+	{
+		if (VERBOSE)
+			std::cout << GREEN "set req complete 3" << RESET << std::endl;
 		_req_complete = true;
+	}
 }
 
 void Request::initBody()
@@ -290,19 +377,120 @@ void Request::initBody()
         {
             body_start += 4;
             _body = _raw.substr(body_start);
+            boundary_found();
        	}
        	else if (!_is_chunked && body_start != std::string::npos)
         {
             body_start += 4;
             // Post method missing body error
             if (body_start == _raw.size() && _method == "POST")
-            	_error = INVALID;
+            	_error = POST_MISSING_BODY;
             else if (body_start + _content_length <= _raw.size()) // Check if there is enough length in _raw
                 _body = _raw.substr(body_start, _content_length);
             else
-                _error = INVALID; // Error: insufficient length in _raw
+                _error = REQ_TOO_LONG; // Error: insufficient length in _raw
         }
 	}
+}
+
+void	Request::printMap(std::map<std::string, std::string> map)
+{
+	std::map<std::string, std::string>::iterator it;
+
+	for (it = map.begin(); it != map.end(); it++)
+    {
+        std::cout << "[" << it->first << "] = " << it->second << std::endl;
+    }		
+}
+
+void Request::handleFileUploads()
+{
+    // Directory to save files
+    std::string directory = "wwwroot/database";
+    
+    // Iterate over file map
+    for (std::map<std::string, std::string>::const_iterator it = _fileMap.begin(); it != _fileMap.end(); it++)
+    {
+        const std::string& filename = it->first;
+        const std::string& fileContent = it->second;
+        std::string filePath = directory + "/" + filename;
+
+        // Open file stream
+        std::ofstream file(filePath.c_str(), std::ios::binary);
+        if (!file)
+        {
+            std::cerr << "Failed to open file for writing: " << filePath << std::endl;
+            continue;
+        }
+
+        // Write content to file
+        file.write(fileContent.c_str(), fileContent.size());
+        // Handle write fails
+        if (!file)
+            std::cerr << "Failed to write content to file: " << filePath << std::endl;
+        file.close();
+    }
+}
+
+void Request::parseBody()
+{
+    if (_method == "POST" && _content_type == "multipart/form-data") 
+    {
+        if (_boundary.empty() || _body.empty())
+            return;
+
+        std::string boundary = "--" + _boundary;
+        size_t pos = 0;
+
+        // Look for each boundary
+        while ((pos = _body.find(boundary, pos)) != std::string::npos) 
+        {
+            size_t start = pos + boundary.length();
+            size_t end = _body.find(boundary, start);
+            if (end == std::string::npos) {
+                break;
+            }
+
+            // Extract parts between boundaries
+            std::string part = _body.substr(start, end - start);
+
+            // Check for Content-Disposition header
+            size_t dispositionStart = part.find("Content-Disposition:");
+            if (dispositionStart != std::string::npos) 
+            {
+                size_t nameStart = part.find("name=\"", dispositionStart) + 6;
+                size_t nameEnd = part.find("\"", nameStart);
+                std::string key = part.substr(nameStart, nameEnd - nameStart);
+
+                // If data is file
+                size_t filenameStart = part.find("filename=\"", dispositionStart);
+                if (filenameStart != std::string::npos) 
+                {
+                    filenameStart += 10; // Length of "filename=\""
+                    size_t filenameEnd = part.find("\"", filenameStart);
+                    std::string filename = part.substr(filenameStart, filenameEnd - filenameStart);
+
+                    // Store file information
+                    size_t fileStart = part.find("\r\n\r\n") + 4;
+                    size_t fileEnd = part.find("\r\n", fileStart);
+                    std::string fileContent = part.substr(fileStart, fileEnd - fileStart);
+
+                    _fileMap[filename] = fileContent;
+                }
+                else 
+                {
+                    // Handle other form data types
+                    size_t valueStart = part.find("\r\n\r\n") + 4;
+                    size_t valueEnd = part.find("\r\n", valueStart);
+                    std::string value = part.substr(valueStart, valueEnd - valueStart);
+
+                    _bodyMap[key] = value;
+                }
+            }
+            pos = end;
+        }
+    }
+    handleFileUploads();
 }
 
 /* Function to handle incomplete header
@@ -316,9 +504,6 @@ void	Request::handle_incomplete_header(int bytes_read, char *buffer)
 	else
 	{
 		this->initRequest();
-		this->parseRequest();
-		this->parsePort();
-		this->parseHeader();
 		this->initBody();
 	}
 }
@@ -326,12 +511,13 @@ void	Request::handle_incomplete_header(int bytes_read, char *buffer)
 void Request::print_variables() const 
 {
   std::cout << "Request Variables:\n";
-    std::cout << "Raw: " << _raw << "\n";
+    std::cout << "Raw: " << _raw << "\n\n";
     // std::cout << "Buffer: ";  // Print first 100 characters of buffer for practicality
     // for (int i = 0; i < 100 && _buf[i] != '\0'; ++i) {
     //     std::cout << _buf[i];
     // }
     // std::cout << "\n";
+    std::cout << GREEN << "start printing variables after raw" << RESET << std::endl;
     std::cout << "Header Length: " << _header_length << "\n";
     std::cout << "Request Complete: " << (_req_complete ? "true" : "false") << "\n";
     std::cout << "Body Max Length: " << _body_max_length << "\n";
@@ -341,13 +527,16 @@ void Request::print_variables() const
     std::cout << "Path: " << _path << "\n";
     std::cout << "HTTP Version: " << _http_version << "\n";
     std::cout << "Port: " << _port << "\n";
+    std::cout << "Host: " << _host << "\n";
     std::cout << "Current Length: " << _curr_length << "\n";
+    std::cout << "Boundary: " << _boundary << "\n";
     std::cout << "Headers:\n";
     for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
         std::cout << "  " << it->first << ": " << it->second << "\n";
     }
+    std::cout << "Request complete: " << (_req_complete ? "true" : "false") << "\n";
+    std::cout << "Error: " << (_error) << "\n";
     std::cout << "Body: " << _body << "\n";
-    std::cout << "Error: " << (_error == NO_ERR ? "NO_ERR" : "ERR") << "\n";
 }
 
 /*
@@ -356,30 +545,26 @@ void Request::print_variables() const
 
 Request::Request() {}
 
-Request::Request(char *full_request, ServerConfig *config) : 
+Request::Request(char *full_request) : 
 	_raw(full_request),
 	_header_length(-1),
 	_req_complete(false),
-	_body_max_length(10000),
+	_body_max_length(DEFAULT_BODY_MAX),
 	_content_length(-1),
 	_is_chunked(false),
-	_error(NO_ERR),
-	_config(config)
+	_error(NO_ERR)
 {
-	(void)_config;
 	if (this->_raw.length() == 0)
-		_error = INVALID;
+		_error = INVALID_EMPTY_REQ;
 	this->initRequest();
 	if (_header_length != -1)
 	{
-		this->parseRequest();
-		this->parsePort();
-		this->parseHeader();
 		this->initBody();
 	}
 	if (VERBOSE)
 	{
-		printHeaders(_headers);
+		// std::cout << _raw << std::endl << RED << "end of req" << RESET << std::endl;
+		// printHeaders(_headers);
 		print_variables();
 	}
 }
@@ -430,6 +615,11 @@ Request &				Request::operator=( Request const & rhs )
 ** --------------------------------- ACCESSOR ---------------------------------
 */
 
+void			Request::setConfig(ServerConfig* config)
+{
+	this->_config = config;
+}
+
 std::string		Request::getRaw() const
 {
 	return (this->_raw);
@@ -458,6 +648,16 @@ std::map<std::string, std::string>		Request::getHeaders() const
 std::string		Request::getBody() const
 {
 	return (this->_body);
+}
+
+std::string		Request::getHost() const
+{
+	return (this->_host);
+}
+
+int		Request::getPort() const
+{
+	return (this->_port);
 }
 
 ssize_t		Request::getHeaderLength() const
