@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 15:00:25 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/31 21:06:30 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/01 16:40:05 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,11 +62,9 @@ void	CGIHandler::process_result_cgi(int pid, int pipe_fd[], int pipe_data[])
 		close(pipe_fd[1]);
 		close(pipe_data[0]);
 
-		write(pipe_data[1], "red=off&blue=on", 15);
+		write(pipe_data[1], "email=barbayjuliette@gmail.com&test=test", 41);
 		close(pipe_data[1]);
         waitpid(pid, NULL, 0);
-
-		// std::cout << "In Parent process\n";
 
 		char buffer[4096];
 		ssize_t bytesRead;
@@ -100,9 +98,10 @@ void	CGIHandler::execute_cgi(std::string path, int pipe_fd[], int pipe_data[])
 		NULL
 	};
 
-	std::string	content_length = "CONTENT_LENGTH=15";
+	std::string	content_length = "CONTENT_LENGTH=31";
 	std::string	request_method = "REQUEST_METHOD=POST";
 	std::string	content_type = "CONTENT_TYPE=application/x-www-form-urlencoded";
+	// TO DO Choose which headers to put based on tester
 	// std::string	gateway_interface = "GATEWAY_INTERFACE=CGI/1.1";
 	// std::string	path_info = "PATH_INFO=" + path;
 	// std::string	path_translated = "PATH_TRANSLATED";
@@ -147,41 +146,37 @@ std::string	CGIHandler::getContentType()
 	return (this->_content_type);
 }
 
-void		CGIHandler::setFirstLine()
+void		CGIHandler::setHeaders()
 {
 	std::size_t		pos = _result.find("\r\n\r\n", 0);
 
 	if (pos == std::string::npos)
-	{
-		// TO DO Error
-		std::cout << "No CGI first line found\n";
-		_first_line = "";
-		return ;
-	}
-	_first_line = _result.substr(0, pos);
-	// std::cout << "First line: " << _first_line << std::endl;
+		_headers = "";
+	else
+		_headers = _result.substr(0, pos);
+	// std::cout << "Headers: " << _headers << std::endl;
 }
 
 void	CGIHandler::setContentType()
 {
-	setFirstLine();
+	setHeaders();
 
-	std::string	low = _first_line;
-	for (size_t i = 0; i < _first_line.size() ; i++)
+	std::string	low = _headers;
+	for (size_t i = 0; i < _headers.size() ; i++)
 	{
-		low[i] = (char)tolower(_first_line[i]);
+		low[i] = (char)tolower(_headers[i]);
 	}
 
 	std::size_t		pos = low.find("content-type:", 0);
 	if (pos == std::string::npos)
 	{
 		// TO DO Error 
-		// this->_content_type = "text/plain";
+		this->_content_type = "text/plain";
 		std::cout << "No Content-type found in CGI\n";
 		return ;
 	}
 
-	this->_content_type = _first_line.substr(pos + 13, low.find("/n", pos + 13) - 1);
+	this->_content_type = _headers.substr(pos + 13, low.find("/n", pos + 13) - 1);
 	std::cout << "Content_type: " << _content_type << std::endl;
 }
 
@@ -191,39 +186,8 @@ void	CGIHandler::setHtml()
 	std::size_t		pos = _result.find(delim, 0);
 
 	if (pos == std::string::npos)
-	{
-		// TO DO Error 
-		// this->_content_type = "text/plain";
-		std::cout << "No html found in CGI\n";
-		return ;
-	}
-	_html = _result.substr(pos + delim.size() + 1, _result.size());
+		_html = _result;
+	else
+		_html = _result.substr(pos + delim.size() + 1, _result.size());
 	std::cout << "HTML: " << _html << std::endl;
 }
-// const char*		CGIHandler::set_environment_cgi(std::string path)
-// {
-// 	std::string request_method = "POST";
-//     std::string content_type = "application/x-www-form-urlencoded"; // or other MIME type
-//     std::string content_length = "15";
-//     std::string script_name = path;
-//     std::string server_name = "localhost";
-//     std::string server_port = "8080";
-//     std::string server_protocol = "HTTP/1.1";
-//     std::string remote_addr = "127.0.0.1";
-//     std::string remote_port = "12345";
-
-//     // Environment variables for the CGI script
-//     const char* env[] = {
-//         ("REQUEST_METHOD=" + request_method).c_str(),
-//         ("CONTENT_TYPE=" + content_type).c_str(),
-//         ("CONTENT_LENGTH=" + content_length).c_str(),
-//         ("SCRIPT_NAME=" + script_name).c_str(),
-//         ("SERVER_NAME=" + server_name).c_str(),
-//         ("SERVER_PORT=" + server_port).c_str(),
-//         ("SERVER_PROTOCOL=" + server_protocol).c_str(),
-//         ("REMOTE_ADDR=" + remote_addr).c_str(),
-//         ("REMOTE_PORT=" + remote_port).c_str(),
-//         NULL
-//     };
-// 	return (env);
-// }

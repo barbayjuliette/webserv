@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 14:56:13 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/31 20:35:03 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/01 15:52:27 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ class CGIHandler
 		std::string		_result;
 		std::string		_content_type;
 		std::string		_html;
-		std::string		_first_line;
+		std::string		_headers;
 
 	public:
 		CGIHandler();
@@ -44,7 +44,7 @@ class CGIHandler
 
 		void		execute_cgi(std::string path, int pipe_fd[], int pipe_data[]);
 		void		process_result_cgi(int pid, int pipe_fd[], int pipe_data[]);
-		const char**	set_environment_cgi(std::string path);
+		// const char**	set_environment_cgi(std::string path);
 
 
 		std::string	getResult();
@@ -53,7 +53,6 @@ class CGIHandler
 		std::string	getFirstLine();
 		void		setContentType();
 		void		setHtml();
-		void		setFirstLine();
-		// const char*	set_environment_cgi(std::string path);
+		void		setHeaders();
 
 };
