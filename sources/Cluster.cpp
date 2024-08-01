@@ -236,7 +236,16 @@ void	Cluster::runServers(void)
 				client_socket = event_fd;
 
 			if (event_type & EPOLLIN)
-				handle_read_connection(client_socket);
+			{
+				try
+				{
+					handle_read_connection(client_socket);
+				}
+				catch (std::exception& e)
+				{
+					std::cerr << RED << e.what() << ".\n" << RESET;
+				}
+			}
 			// TODO
 			if (event_type & EPOLLOUT)
 				handle_write_connection(client_socket);
@@ -349,7 +358,6 @@ void	Cluster::handle_read_connection(int client_socket)
 		{
 			std::string name = request->getHost();
 			std::string host = request->getHost();
-			std::cout << "NAME is " << name << std::endl;
 			if (!isIPAddress(host))
 			{
 				host = getClientIPAddress(client_socket);
@@ -358,14 +366,14 @@ void	Cluster::handle_read_connection(int client_socket)
 			Webserver	*server = getServerByPort(name, host, request->getPort());
 			if (!server)
 				throw std::runtime_error("No server matched the request");
+			if (CTRACE)
+			{
+				std::cout << GREEN << "found server match\n" << RESET;
+				server->printServerNames();
+			}
 			// Set config
 			request->setConfig(server->getConfig());
-			server->create_response(*request, client_socket);
-		// 	if (CTRACE)
-		// 	{
-		// 		std::cout << GREEN << "found server match\n" << RESET;
-		// 		server->printServerNames();
-		// 	}
+			server->create_response(request, _clients[client_socket]);
 		}
 	}
 }
@@ -394,8 +402,8 @@ Webserver*	Cluster::getServerByName(std::vector<Webserver*>& servers, const std:
 
 		for (size_t j = 0; j < server_names.size(); j++)
 		{
-			if (CTRACE)
-				std::cout << "now comparing " << server_names[j] << " with " << name << '\n';
+			// if (CTRACE)
+			// 	std::cout << "now comparing " << server_names[j] << " with " << name << '\n';
 			if (server_names[j] == name)
 				return (servers[i]);
 		}

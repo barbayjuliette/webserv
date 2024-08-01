@@ -19,6 +19,8 @@
 
 # define BUFFER_SIZE 50000
 
+class Client;
+
 class Webserver
 {
 	protected:
@@ -51,7 +53,7 @@ class Webserver
 		void			handle_connections(int client_socket, uint32_t event_type);
 		void			handle_read_connection(int client_socket);
 		void			handle_write_connection(int client_socket);
-		void			create_response(Request &request, int client_socket);
+		void			create_response(Request *request, Client *client);
 		void			removeClient(int client_socket);
 
 		/* Utils */

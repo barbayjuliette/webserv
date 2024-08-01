@@ -78,12 +78,12 @@ Webserver::~Webserver()
 ** --------------------------------- METHODS ----------------------------------
 */
 
-void	Webserver::create_response(Request &request, int client_socket)
+void	Webserver::create_response(Request *request, Client *client)
 {
 	Response	*_response = new Response(request, this->_config);
-	getClient(client_socket)->setResponse(*_response);
+	client->setResponse(_response);
 	// Delete request
-	getClient(client_socket)->setRequest(NULL);
+	client->setRequest(NULL);
 }
 
 void	Webserver::check(int num)

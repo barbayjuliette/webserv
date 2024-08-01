@@ -111,6 +111,8 @@ void Request::parsePort()
 			if (colon != std::string::npos)
 			{
 				this->_host = host.substr(0, colon);
+				if (this->_host == "localhost")
+					this->_host = "127.0.0.1";
 				this->_port = std::atoi(host.substr(colon + 1).c_str());
 			}
 			else

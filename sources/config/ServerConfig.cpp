@@ -32,10 +32,11 @@ ServerConfig::ServerConfig(const ServerConfig& other) : ValidConfig(other)
 
 ServerConfig::~ServerConfig()
 {
-	for (std::vector<LocationConfig*>::iterator it = this->_locations.begin();
-		it != this->_locations.end(); it++)
+	std::map<std::string, LocationConfig*>::iterator	it;
+	for (it = _locations.begin(); it != _locations.end(); it++)
 	{
-		delete *it;
+		if (it->second)
+			delete it->second;
 	}
 }
 
@@ -57,16 +58,63 @@ void	ServerConfig::initValidKeys(void)
 	this->_validKeys["allowed_methods"] = &ServerConfig::setAllowedMethods;
 }
 
-void	ServerConfig::setLocation(LocationConfig* location)
+/* Function for validating all directives in the map
+- Set root first if specified, to ensure that index files are rooted to the correct directory path */
+void	ServerConfig::validateKeys(void)
 {
-	this->_locations.push_back(location);
+	if (_directives.find("root") != _directives.end())
+		setRoot(_directives["root"]);
+
+	if (_directives.find("listen") != _directives.end())
+		setListenPort(_directives["listen"]);
+
+	for (t_strmap::iterator it = _directives.begin(); it != _directives.end(); it++)
+	{
+		if (TRACE)
+			std::cout << "current key: " << it->first << '\n';
+
+		t_dirmap::iterator found = this->_validKeys.find(it->first);
+		if (found == this->_validKeys.end())
+			throw InvalidConfigError("Invalid server directive");
+		t_directive	handlerFunction = found->second;
+		(this->*handlerFunction)(it->second);
+	}
+
+	if (_locations.empty())
+		_locations["/"] = new LocationConfig();
+}
+
+void	ServerConfig::setLocation(const std::string& path, LocationConfig* location)
+{
+	_locations[path] = location;
+}
+
+LocationConfig*	ServerConfig::matchLocation(const std::string& path)
+{
+	// std::cout << "inside matchLocation: path: " << path << '\n';
+	if (_locations.find(path) != _locations.end())
+	{
+		return (_locations[path]);
+	}
+	else
+	{
+		//path matching logic
+	}
+	return (_locations.begin()->second);
 }
 
 /*
 ** -------------------------------- ACCESSORS ---------------------------------
 */
 
-std::vector<LocationConfig*>	ServerConfig::getLocations(void)
+std::map<std::string, LocationConfig*>	ServerConfig::getLocations(void)
 {
-	return (this->_locations);
+	return (_locations);
+}
+
+LocationConfig*	ServerConfig::getLocation(const std::string& path)
+{
+	if (_locations.find(path) == _locations.end())
+		return (NULL);
+	return (_locations[path]);
 }

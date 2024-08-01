@@ -24,9 +24,9 @@ class LocationConfig;
 class ServerConfig : public ValidConfig
 {
 	private:
-		std::vector<LocationConfig*>		_locations;
-		// std::map<std::string, t_directives>	_validDirectives;
-	
+		std::map<std::string, LocationConfig*>	_locations;
+		// std::map<std::string, t_directive>		_validKeys;
+
 	public:
 		/* Constructors */
 		ServerConfig();
@@ -39,11 +39,14 @@ class ServerConfig : public ValidConfig
 		~ServerConfig();
 
 		/* Member functions */
-		void	initValidKeys(void); //overload
-		void	setLocation(LocationConfig* location);
+		void			initValidKeys(void); //overload
+		void			validateKeys(void); //overload
+		void			setLocation(const std::string& path, LocationConfig* location);
+		LocationConfig*	matchLocation(const std::string& path);
 
 		/* Accessors */
-		std::vector<LocationConfig*>	getLocations(void);
+		std::map<std::string, LocationConfig*>	getLocations(void);
+		LocationConfig*	getLocation(const std::string& path);
 };
 
 #endif

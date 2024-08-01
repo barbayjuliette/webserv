@@ -37,5 +37,5 @@ class Client
 		int				getSocket();
 		void			reset();
 		void			setRequest(Request* request);
-		void			setResponse(Response& response);
+		void			setResponse(Response* response);
 };

@@ -91,9 +91,9 @@ void	Client::setRequest(Request* request)
 	_request = request;
 }
 
-void	Client::setResponse(Response& response)
+void	Client::setResponse(Response* response)
 {
-	_response = &response;
+	_response = response;
 }
 
 int		Client::getSocket()

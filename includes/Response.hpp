@@ -38,11 +38,12 @@ class Response
 		std::string							_full_response;
 		std::string							_path;
 		std::map<std::string, std::string>	_headers;
-		ServerConfig						*_config;
+		ServerConfig*						_config;
+		LocationConfig*						_location;
 		Response();
 
 	public:
-		Response(Request &request, ServerConfig *conf);
+		Response(Request *request, ServerConfig *conf);
 		Response( Response const & src );
 		~Response();
 
@@ -50,7 +51,7 @@ class Response
 
 		std::string	get_error_page(int num);
 		void		respond_get_request(std::string req_path);
-		void		respond_post_request(const Request &request);
+		void		respond_post_request(const Request *request);
 		void		respond_delete_request(void);
 		void		respond_wrong_request(std::vector<std::string> allowed_methods);
 		std::string	intToString(int num);

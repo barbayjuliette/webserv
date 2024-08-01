@@ -23,6 +23,13 @@ ValidConfig::ValidConfig()
 	this->_body_max_length = 5000;
 	this->_autoindex = false;
 	this->_address_info = NULL;
+	this->_root = "./";
+	this->_allowed_methods.push_back("GET");
+	this->_allowed_methods.push_back("POST");
+
+	std::string	default_index = this->_root + "index.html";
+	if (isRegularFile(default_index) && !access(default_index.c_str(), R_OK))
+		this->_index.push_back(default_index);
 }
 
 ValidConfig::ValidConfig(const ValidConfig& other)
@@ -44,7 +51,7 @@ ValidConfig&	ValidConfig::operator=(const ValidConfig& other)
 		this->_redirect = other._redirect;
 		this->_server_name = other._server_name;
 		this->_index = other._index;
-		this->_allow_methods = other._allow_methods;
+		this->_allowed_methods = other._allowed_methods;
 	}
 	return (*this);
 }
@@ -62,29 +69,6 @@ ValidConfig::~ValidConfig()
 /*
 ** --------------------------------- METHODS ----------------------------------
 */
-
-/* Function for validating all directives in the map
-- Set root first if specified, to ensure that index files are rooted to the correct directory path */
-void	ValidConfig::validateKeys(void)
-{
-	if (this->_directives.find("root") != this->_directives.end())
-		setRoot(this->_directives["root"]);
-
-	if (this->_directives.find("listen") != this->_directives.end())
-		setListenPort(this->_directives["listen"]);
-
-	for (t_strmap::iterator it = this->_directives.begin(); it != this->_directives.end(); it++)
-	{
-		if (TRACE)
-			std::cout << "current key: " << it->first << '\n';
-
-		t_dirmap::iterator found = this->_validKeys.find(it->first);
-		if (found == this->_validKeys.end())
-			throw InvalidConfigError("Invalid directive");
-		t_directive	handlerFunction = found->second;
-		(this->*handlerFunction)(it->second);
-	}
-}
 
 /* Port number range: 0 to 65353 */
 void	ValidConfig::setListenPort(const t_strvec& tokens)
@@ -198,7 +182,7 @@ void	ValidConfig::setAllowedMethods(const t_strvec& tokens)
 		if (tokens[i] != "GET" && tokens[i] != "POST" && tokens[i] != "DELETE")
 			throw InvalidConfigError("Invalid method");
 	}
-	this->_allow_methods = tokens;
+	this->_allowed_methods = tokens;
 }
 
 void	ValidConfig::setErrorPages(const t_strvec& tokens)
@@ -338,7 +322,7 @@ t_strvec	ValidConfig::getIndex(void)
 
 t_strvec	ValidConfig::getAllowedMethods(void)
 {
-	return (this->_allow_methods);
+	return (this->_allowed_methods);
 }
 
 std::string	ValidConfig::getErrorPage(int status_code)

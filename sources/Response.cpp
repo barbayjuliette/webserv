@@ -18,33 +18,31 @@
 
 Response::Response() {}
 
-Response::Response(Request &request, ServerConfig *conf) : _config(conf)
+Response::Response(Request *request, ServerConfig *conf) : _config(conf)
 {
-	std::vector<LocationConfig*> location_vector = _config->getLocations();
-	LocationConfig*	location = location_vector[0];
-	// location->getAllowedMethods();
+	_path = "./" + _config->getRoot() + request->getPath().substr(1, request->getPath().size() - 1);
+	_location = _config->matchLocation(_path);
+	std::cout << "RESPONSE - PATH: " << _path << '\n';
 	// TO DO change the PATH based on the location
-	_path = "./" + _config->getRoot() + request.getPath().substr(1, request.getPath().size() - 1);
-	
 	setContentType(_path);
 
-	if (!method_is_allowed(request.getMethod(), location->getAllowedMethods()))
-		this->respond_wrong_request(location->getAllowedMethods());
-	else if (request.getMethod() == "GET")
-		this->respond_get_request(request.getPath());
+	if (!method_is_allowed(request->getMethod(), _location->getAllowedMethods()))
+		this->respond_wrong_request(_location->getAllowedMethods());
+	else if (request->getMethod() == "GET")
+		this->respond_get_request(request->getPath());
 
-	else if (request.getMethod() == "POST")
+	else if (request->getMethod() == "POST")
 		this->respond_post_request(request);
 
-	else if (request.getMethod() == "DELETE")
+	else if (request->getMethod() == "DELETE")
 		this->respond_delete_request();
 	else
-		this->respond_wrong_request(location->getAllowedMethods());
+		this->respond_wrong_request(_location->getAllowedMethods());
 
 	_headers["Cache-Control"] = "no-cache, private";
-	this->_http_version = request.getHttpVersion();
+	this->_http_version = request->getHttpVersion();
 
-	if (this->_http_version == "HTTP/1.1" && request.getHeaders()["connection"] != "close")
+	if (this->_http_version == "HTTP/1.1" && request->getHeaders()["connection"] != "close")
 		_headers["Connection"] = "keep-alive";
 	else
 		_headers["Connection"] = "close";
@@ -129,10 +127,7 @@ void	Response::create_directory_listing(std::string path, std::string req_path)
 
 int		Response::is_directory(std::string req_path)
 {
-
-	std::vector<LocationConfig*> location_vector = _config->getLocations();
-	LocationConfig*				location = location_vector[0];
-	bool						autoIndex = location->getAutoindex();
+	bool						autoIndex = _location->getAutoindex();
 	std::string					dir_path = _path;
 
 	struct	stat				filename;
@@ -188,18 +183,18 @@ void	Response::respond_get_request(std::string req_path)
 	page.close();
 }
 
-void	Response::respond_post_request(const Request &request)
+void	Response::respond_post_request(const Request *request)
 {
 	std::string					name = "Juliette";
 	std::string					email = "hello@gmail.com";
 	std::ifstream				page(this->_path.c_str());
 
-	if (request.getHeaders()["content-type"] == "application/x-www-form-urlencoded")
+	if (request->getHeaders()["content-type"] == "application/x-www-form-urlencoded")
 	{
 		std::cout << RED << "Wrong type\n" << RESET; // TO DO something else here, error page??
 		set_error(404, "Not Found"); // change to another error
 	}
-	else if ((request.getHeaders()["content-type"]).substr(0, 19) == "multipart/form-data")
+	else if ((request->getHeaders()["content-type"]).substr(0, 19) == "multipart/form-data")
 	{
 		if (this->_path == "./" + _config->getRoot() + "simple-form.html")
 		{
