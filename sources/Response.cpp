@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/29 14:23:46 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/31 18:07:15 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,31 +18,31 @@
 
 Response::Response() {}
 
-Response::Response(Request *request, ServerConfig *conf) : _config(conf)
+Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 {
-	_path = "./" + _config->getRoot() + request->getPath().substr(1, request->getPath().size() - 1);
+	_path = "./" + _config->getRoot() + request.getPath().substr(1, request.getPath().size() - 1);
 	_location = _config->matchLocation(_path);
 	std::cout << "RESPONSE - PATH: " << _path << '\n';
 	// TO DO change the PATH based on the location
 	setContentType(_path);
 
-	if (!method_is_allowed(request->getMethod(), _location->getAllowedMethods()))
+	if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
 		this->respond_wrong_request(_location->getAllowedMethods());
-	else if (request->getMethod() == "GET")
-		this->respond_get_request(request->getPath());
+	else if (request.getMethod() == "GET")
+		this->respond_get_request(request.getPath());
 
-	else if (request->getMethod() == "POST")
+	else if (request.getMethod() == "POST")
 		this->respond_post_request(request);
 
-	else if (request->getMethod() == "DELETE")
+	else if (request.getMethod() == "DELETE")
 		this->respond_delete_request();
 	else
 		this->respond_wrong_request(_location->getAllowedMethods());
 
 	_headers["Cache-Control"] = "no-cache, private";
-	this->_http_version = request->getHttpVersion();
+	this->_http_version = request.getHttpVersion();
 
-	if (this->_http_version == "HTTP/1.1" && request->getHeaders()["connection"] != "close")
+	if (this->_http_version == "HTTP/1.1" && request.getHeaders()["connection"] != "close")
 		_headers["Connection"] = "keep-alive";
 	else
 		_headers["Connection"] = "close";
@@ -84,7 +84,7 @@ int		Response::method_is_allowed(std::string method, std::vector<std::string> al
 	return (0);
 }
 
-std::string	Response::create_item(std::string source, std::string req_path)
+std::string	Response::create_html(std::string source, std::string req_path)
 {
 	if (req_path[req_path.size() - 1] != '/')
 		req_path += '/';
@@ -114,7 +114,7 @@ void	Response::create_directory_listing(std::string path, std::string req_path)
 		std::string	name = dr->d_name;
 		if (name == "." || name == "..")
 			continue;
-		index << create_item(dr->d_name, req_path);
+		index << create_html(dr->d_name, req_path);
 	}
 	index << "</ul>";
 	closedir(dir);
@@ -183,18 +183,34 @@ void	Response::respond_get_request(std::string req_path)
 	page.close();
 }
 
-void	Response::respond_post_request(const Request *request)
+void	Response::cgi_post_form(const Request &request)
+{
+	std::cout << RED << "This is CGI\n" << RESET;
+	CGIHandler*	cgi = new CGIHandler(request);
+	_body = cgi->getHtml();
+	_headers["Content-Length"] = intToString(this->_body.size());
+	_headers["Content-Type"] = cgi->getContentType();
+	// _headers["Location"] = path;
+	std::cout << RED << "CGI DONE\n" << RESET;
+	delete (cgi);
+}
+
+void	Response::respond_post_request(const Request &request)
 {
 	std::string					name = "Juliette";
 	std::string					email = "hello@gmail.com";
 	std::ifstream				page(this->_path.c_str());
 
-	if (request->getHeaders()["content-type"] == "application/x-www-form-urlencoded")
+	if (request.getPath().substr(0, 8) == "/cgi-bin")
+	{
+		cgi_post_form(request);
+	}
+	else if (request.getHeaders()["content-type"] == "application/x-www-form-urlencoded")
 	{
 		std::cout << RED << "Wrong type\n" << RESET; // TO DO something else here, error page??
 		set_error(404, "Not Found"); // change to another error
 	}
-	else if ((request->getHeaders()["content-type"]).substr(0, 19) == "multipart/form-data")
+	else if ((request.getHeaders()["content-type"]).substr(0, 19) == "multipart/form-data")
 	{
 		if (this->_path == "./" + _config->getRoot() + "simple-form.html")
 		{
@@ -228,7 +244,7 @@ void	Response::set_allow_headers(void)
 	set_error(405, "Method Not Allowed");
 	_headers["Allow"] = "GET";
 
-	std::string		database = _config->getRoot() + "database";
+	std::string		database = "./" + _config->getRoot() + "database";
 	int				length = database.size();
 
 	// TO DO: Change headers Allow
@@ -241,12 +257,13 @@ void	Response::set_allow_headers(void)
 
 int	Response::check_permission(void)
 {
-	std::string		database = _config->getRoot() + "database";
+	std::string		database = "./" + _config->getRoot() + "database";
 	int				length = database.size();
 
 	if (this->_path.substr(0, length) != database)
 	{
 		set_error(403, "Forbidden");
+		std::cout << "in check_permission\n";
 		_headers["Content-Length"] = intToString(this->_body.size());
 		return (0);
 	}
@@ -277,7 +294,10 @@ void	Response::respond_delete_request()
 	else
 	{
 		if (errno == EACCES || errno == EPERM)
+		{
 			set_error(403, "Forbidden");
+			std::cout << "checking error number\n";
+		}
 		else
 			set_error(500, "Internal Server Error");
 		std::cout << "Error deleting resource\n";
@@ -289,6 +309,7 @@ void	Response::respond_wrong_request(std::vector<std::string> allowed_methods)
 {	
 	set_error(405, "Method Not Allowed");
 	set_allow_methods(allowed_methods);
+	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
 void	Response::set_allow_methods(std::vector<std::string> allowed_methods)
@@ -323,7 +344,7 @@ void	Response::addToNewsletter(std::string data)
 {
 	(void)data;
 	std::ofstream 	file;
-	std::string		filename = _config->getRoot() + "database/newsletter.txt";
+	std::string		filename = "./" + _config->getRoot() + "database/newsletter.txt";
 
 	file.open(filename.c_str(), std::ios::app);
 	if (!file.is_open())
@@ -335,7 +356,9 @@ void	Response::addToNewsletter(std::string data)
 void	Response::addToPeople(std::map<std::string, std::string> body)
 {
 	std::ofstream file;
-	file.open("./database/people.txt", std::ios::app);
+	std::string		filename = "./" + _config->getRoot() + "database/people.txt";
+	
+	file.open(filename.c_str(), std::ios::app);
 	if (!file.is_open())
 		std::cout << strerror(errno);
 	file << "First name: " << body["name"] << ", Last name: " << body["last-name"] << "\n";

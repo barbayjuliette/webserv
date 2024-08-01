@@ -80,7 +80,7 @@ Webserver::~Webserver()
 
 void	Webserver::create_response(Request *request, Client *client)
 {
-	Response	*_response = new Response(request, this->_config);
+	Response	*_response = new Response(*request, this->_config);
 	client->setResponse(_response);
 	// Delete request
 	client->setRequest(NULL);

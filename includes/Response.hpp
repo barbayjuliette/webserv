@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/29 13:55:39 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/31 18:06:59 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,9 @@
 # include <iostream>
 # include <dirent.h>
 # include "ConfigFile.hpp"
+# include "CGIHandler.hpp"
+
+class CGIHandler;
 
 class Response
 {
@@ -43,7 +46,7 @@ class Response
 		Response();
 
 	public:
-		Response(Request *request, ServerConfig *conf);
+		Response(Request &request, ServerConfig *conf);
 		Response( Response const & src );
 		~Response();
 
@@ -51,7 +54,7 @@ class Response
 
 		std::string	get_error_page(int num);
 		void		respond_get_request(std::string req_path);
-		void		respond_post_request(const Request *request);
+		void		respond_post_request(const Request &request);
 		void		respond_delete_request(void);
 		void		respond_wrong_request(std::vector<std::string> allowed_methods);
 		std::string	intToString(int num);
@@ -64,7 +67,9 @@ class Response
 		void		set_allow_methods(std::vector<std::string> allowed_methods);
 		int			is_directory(std::string req_path);
 		void		create_directory_listing(std::string path, std::string req_path);
-		std::string	create_item(std::string source, std::string path);
+		std::string	create_html(std::string source, std::string path);
+		void		cgi_post_form(const Request &request);
+
 
 		int									getStatusCode() const;
 		std::string							getStatusText() const;
