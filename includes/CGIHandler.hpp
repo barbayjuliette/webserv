@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 14:56:13 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/01 15:52:27 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/01 17:57:26 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,9 +42,10 @@ class CGIHandler
 		~CGIHandler();
 		CGIHandler &		operator=( CGIHandler const & rhs );
 
-		void		execute_cgi(std::string path, int pipe_fd[], int pipe_data[]);
-		void		process_result_cgi(int pid, int pipe_fd[], int pipe_data[]);
+		void		execute_cgi(std::string path, int pipe_fd[], int pipe_data[], Request const & request);
+		void		process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Request const & request);
 		// const char**	set_environment_cgi(std::string path);
+		std::string		intToString(int num);
 
 
 		std::string	getResult();

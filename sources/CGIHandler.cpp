@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 15:00:25 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/01 16:40:05 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/01 17:57:42 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,18 +51,18 @@ CGIHandler::CGIHandler(Request const & request)
 		return ;
 	}
 	if (pid == 0)
-		execute_cgi(request.getPath(), pipe_fd, pipe_data);
+		execute_cgi(request.getPath(), pipe_fd, pipe_data, request);
 	else
-		process_result_cgi(pid, pipe_fd, pipe_data);
+		process_result_cgi(pid, pipe_fd, pipe_data, request);
 }
 
 // PARENT: Writes the form data to the pipe, then waits for the child to send the result from cgi.
-void	CGIHandler::process_result_cgi(int pid, int pipe_fd[], int pipe_data[])
+void	CGIHandler::process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Request const & request)
 {
 		close(pipe_fd[1]);
 		close(pipe_data[0]);
 
-		write(pipe_data[1], "email=barbayjuliette@gmail.com&test=test", 41);
+		write(pipe_data[1], request.getBody().c_str(), request.getBody().size());
 		close(pipe_data[1]);
         waitpid(pid, NULL, 0);
 
@@ -75,15 +75,21 @@ void	CGIHandler::process_result_cgi(int pid, int pipe_fd[], int pipe_data[])
 			_result += buffer;
 		}
 		close(pipe_fd[0]);
-		std::cout << RED << "Result CGI: " << _result << RESET << std::endl;
+		// std::cout << RED << "Result CGI: " << _result << RESET << std::endl;
 		setContentType();
 		setHtml();
 }
 
-// CHILD: Read form data from pipe then send result from cgi via pipe.
-void	CGIHandler::execute_cgi(std::string path, int pipe_fd[], int pipe_data[])
+std::string	CGIHandler::intToString(int num)
 {
-	std::cout << "In Child process\n";
+	std::stringstream	stream;
+	stream << num;
+	return (stream.str());
+}
+
+// CHILD: Read form data from pipe then send result from cgi via pipe.
+void	CGIHandler::execute_cgi(std::string path, int pipe_fd[], int pipe_data[], Request const & request)
+{
 	close(pipe_fd[0]);
 	close(pipe_data[1]);
 
@@ -98,9 +104,9 @@ void	CGIHandler::execute_cgi(std::string path, int pipe_fd[], int pipe_data[])
 		NULL
 	};
 
-	std::string	content_length = "CONTENT_LENGTH=31";
+	std::string	content_length = "CONTENT_LENGTH=" + intToString(request.getBody().size());
 	std::string	request_method = "REQUEST_METHOD=POST";
-	std::string	content_type = "CONTENT_TYPE=application/x-www-form-urlencoded";
+	std::string	content_type = "CONTENT_TYPE=" + request.getHeaders()["content-type"];
 	// TO DO Choose which headers to put based on tester
 	// std::string	gateway_interface = "GATEWAY_INTERFACE=CGI/1.1";
 	// std::string	path_info = "PATH_INFO=" + path;

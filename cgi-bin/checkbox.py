@@ -10,6 +10,13 @@ form = cgi.FieldStorage()
 
 blue = form.getvalue('blue')
 red = form.getvalue('red')
+
+if blue is None:
+	blue = 'off'
+
+if red is None:
+	red = 'off'
+
 now = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
 print ("Content-type:text/html\r\n\r\n")

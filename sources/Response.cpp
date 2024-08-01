@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/31 18:07:15 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/01 17:25:35 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -190,13 +190,13 @@ void	Response::respond_get_request(std::string req_path)
 
 void	Response::cgi_post_form(const Request &request)
 {
-	std::cout << RED << "This is CGI\n" << RESET;
+	// std::cout << RED << "This is CGI\n" << RESET;
 	CGIHandler*	cgi = new CGIHandler(request);
 	_body = cgi->getHtml();
 	_headers["Content-Length"] = intToString(this->_body.size());
 	_headers["Content-Type"] = cgi->getContentType();
-	// _headers["Location"] = path;
-	std::cout << RED << "CGI DONE\n" << RESET;
+	// _headers["Location"] = "./subscribe.html";
+	// std::cout << RED << "CGI DONE\n" << RESET;
 	delete (cgi);
 }
 
