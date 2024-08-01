@@ -86,36 +86,6 @@ void	Webserver::create_response(Request &request, int client_socket)
 	getClient(client_socket)->setRequest(NULL);
 }
 
-void		Webserver::handle_write_connection(int client_socket)
-{
-	Client			*client = getClient(client_socket);
-	Response		*response = client->getResponse();
-	unsigned int	bytes_sent;
-	if (!response)
-		return ;
-
-	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
-	if (bytes_sent == response->getFullResponse().size())
-	{
-		if (DEBUG)
-		{
-			std::cout << GREEN << "---- Response sent to client ----\n" << RESET;
-			std::cout << response->getFullResponse() << std::endl;
-			std::cout << GREEN << "End of response\n" << RESET;
-		}
-		if ((response->getHeaders())["Connection"] == "keep-alive")
-		{
-			client->reset();
-		}
-		// else
-		// {
-		// 	removeClient(client_socket);
-		// }
-	}
-	else
-		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
-}
-
 void	Webserver::check(int num)
 {
 	if (num < 0)

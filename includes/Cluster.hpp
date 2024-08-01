@@ -62,9 +62,9 @@ class Cluster
 		static void		removeFromEpoll(int socket_fd);
 
 		/* Server socket methods */
-		t_mmap::iterator	findHostPort(std::string& host, int port);
-		Webserver*			getServerByPort(std::string& name, std::string& host, int port);
-		Webserver*			getServerByName(std::vector<Webserver*>& servers, std::string& name);
+		t_mmap::iterator	findHostPort(const std::string& host, int port);
+		Webserver*			getServerByPort(const std::string& name, const std::string& host, int port);
+		Webserver*			getServerByName(std::vector<Webserver*>& servers, const std::string& name);
 		void				initServerSocket(std::string& host, int port, struct addrinfo *addr);
 		void				addServerSocket(std::string& host, int port, int socket_fd);
 		void				addServer(std::string& host, int port, Webserver *new_server);
@@ -73,6 +73,7 @@ class Cluster
 		void			runServers(void);
 		int				accept_new_connections(int server_socket);
 		void			handle_read_connection(int client_socket);
+		void			handle_write_connection(int client_socket);
 		void			handle_client_events(int client_socket, uint32_t event_type);
 		void			removeClient(int client_socket);
 
@@ -85,6 +86,9 @@ class Cluster
 		int				countServers(std::string& host, int port);
 		int				countServers(t_mmap::iterator res);
 		void			printServerSockets(void);
+
+		// getter
+		Client*			getClient(int socket);
 };
 
 #endif

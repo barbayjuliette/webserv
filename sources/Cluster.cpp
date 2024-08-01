@@ -95,7 +95,7 @@ Cluster::~Cluster()
 
 /* Check if a socket has been created for a specific host:port combination
 - Return iterator to the _server_sockets element if it exists */
-t_mmap::iterator	Cluster::findHostPort(std::string& host, int port)
+t_mmap::iterator	Cluster::findHostPort(const std::string& host, int port)
 {
 	t_mmap::iterator	it;
 
@@ -238,8 +238,8 @@ void	Cluster::runServers(void)
 			if (event_type & EPOLLIN)
 				handle_read_connection(client_socket);
 			// TODO
-			// if (event_type & EPOLLOUT)
-			// 	handle_write_connection(client_socket);
+			if (event_type & EPOLLOUT)
+				handle_write_connection(client_socket);
 		}
 	}
 }
@@ -268,6 +268,43 @@ void	Cluster::removeClient(int client_socket)
 	Cluster::removeFromEpoll(client_socket);
 	delete _clients[client_socket];
 	_clients.erase(client_socket);
+}
+
+Client*		Cluster::getClient(int socket)
+{
+	if (_clients.find(socket) == _clients.end())
+		return (NULL);
+	return (_clients[socket]);
+}
+
+void		Cluster::handle_write_connection(int client_socket)
+{
+	Client			*client = getClient(client_socket);
+	Response		*response = client->getResponse();
+	unsigned int	bytes_sent;
+	if (!response)
+		return ;
+
+	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
+	if (bytes_sent == response->getFullResponse().size())
+	{
+		if (DEBUG)
+		{
+			std::cout << GREEN << "---- Response sent to client ----\n" << RESET;
+			std::cout << response->getFullResponse() << std::endl;
+			std::cout << GREEN << "End of response\n" << RESET;
+		}
+		if ((response->getHeaders())["Connection"] == "keep-alive")
+		{
+			client->reset();
+		}
+		// else
+		// {
+		// 	removeClient(client_socket);
+		// }
+	}
+	else
+		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
 }
 
 
@@ -310,11 +347,20 @@ void	Cluster::handle_read_connection(int client_socket)
 			_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read);
 		if (request->getHeaderLength() != -1 && request->getReqComplete() == true) 
 		{
+			std::string name = request->getHost();
+			std::string host = request->getHost();
+			std::cout << "NAME is " << name << std::endl;
+			if (!isIPAddress(host))
+			{
+				host = getClientIPAddress(client_socket);
+			}
 			request->parseBody();
-		// 	Webserver	*server = getServerByPort(request);
-		// 	if (!server)
-		// 			throw std::runtime_error("No server matched the request");
-		// 	server->create_response(*new_request, client_socket);
+			Webserver	*server = getServerByPort(name, host, request->getPort());
+			if (!server)
+				throw std::runtime_error("No server matched the request");
+			// Set config
+			request->setConfig(server->getConfig());
+			server->create_response(*request, client_socket);
 		// 	if (CTRACE)
 		// 	{
 		// 		std::cout << GREEN << "found server match\n" << RESET;
@@ -324,12 +370,11 @@ void	Cluster::handle_read_connection(int client_socket)
 	}
 }
 
-Webserver*	Cluster::getServerByPort(std::string& name, std::string& host, int port)
+Webserver*	Cluster::getServerByPort(const std::string& name, const std::string& host, int port)
 {
 	t_mmap::iterator	it = findHostPort(host, port);
 	if (it == _server_sockets.end())
 		return (NULL);
-
 	int	count = countServers(it);
 	if (count <= 0)
 		return (NULL);
@@ -338,7 +383,7 @@ Webserver*	Cluster::getServerByPort(std::string& name, std::string& host, int po
 	return (getServerByName(it->second.servers, name));
 }
 
-Webserver*	Cluster::getServerByName(std::vector<Webserver*>& servers, std::string& name)
+Webserver*	Cluster::getServerByName(std::vector<Webserver*>& servers, const std::string& name)
 {
 	if (servers.empty())
 		return (NULL);

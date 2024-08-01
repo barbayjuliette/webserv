@@ -525,6 +525,7 @@ void Request::print_variables() const
     std::cout << "Path: " << _path << "\n";
     std::cout << "HTTP Version: " << _http_version << "\n";
     std::cout << "Port: " << _port << "\n";
+    std::cout << "Host: " << _host << "\n";
     std::cout << "Current Length: " << _curr_length << "\n";
     std::cout << "Boundary: " << _boundary << "\n";
     std::cout << "Headers:\n";
@@ -551,7 +552,6 @@ Request::Request(char *full_request) :
 	_is_chunked(false),
 	_error(NO_ERR)
 {
-	(void)_config;
 	if (this->_raw.length() == 0)
 		_error = INVALID_EMPTY_REQ;
 	this->initRequest();
@@ -612,6 +612,11 @@ Request &				Request::operator=( Request const & rhs )
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */
+
+void			Request::setConfig(ServerConfig* config)
+{
+	this->_config = config;
+}
 
 std::string		Request::getRaw() const
 {

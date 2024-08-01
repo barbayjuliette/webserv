@@ -116,6 +116,8 @@ class Request
 		ssize_t								getHeaderLength() const;
 		bool								getReqComplete() const;
 
+		void								setConfig(ServerConfig* config);
+
 		void		handle_incomplete_header(int bytes_read, char *buffer);
 		bool		handle_chunk(char *buffer, int bytes_read);
 		static void	parseHostPort(char *buffer, std::string& host, int& port);
