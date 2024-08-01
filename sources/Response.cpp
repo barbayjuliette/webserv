@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/29 15:57:35 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/07/31 18:07:15 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,7 +86,7 @@ int		Response::method_is_allowed(std::string method, std::vector<std::string> al
 	return (0);
 }
 
-std::string	Response::create_item(std::string source, std::string req_path)
+std::string	Response::create_html(std::string source, std::string req_path)
 {
 	if (req_path[req_path.size() - 1] != '/')
 		req_path += '/';
@@ -116,7 +116,7 @@ void	Response::create_directory_listing(std::string path, std::string req_path)
 		std::string	name = dr->d_name;
 		if (name == "." || name == "..")
 			continue;
-		index << create_item(dr->d_name, req_path);
+		index << create_html(dr->d_name, req_path);
 	}
 	index << "</ul>";
 	closedir(dir);
@@ -188,13 +188,29 @@ void	Response::respond_get_request(std::string req_path)
 	page.close();
 }
 
+void	Response::cgi_post_form(const Request &request)
+{
+	std::cout << RED << "This is CGI\n" << RESET;
+	CGIHandler*	cgi = new CGIHandler(request);
+	_body = cgi->getHtml();
+	_headers["Content-Length"] = intToString(this->_body.size());
+	_headers["Content-Type"] = cgi->getContentType();
+	// _headers["Location"] = path;
+	std::cout << RED << "CGI DONE\n" << RESET;
+	delete (cgi);
+}
+
 void	Response::respond_post_request(const Request &request)
 {
 	std::string					name = "Juliette";
 	std::string					email = "hello@gmail.com";
 	std::ifstream				page(this->_path.c_str());
 
-	if (request.getHeaders()["content-type"] == "application/x-www-form-urlencoded")
+	if (request.getPath().substr(0, 8) == "/cgi-bin")
+	{
+		cgi_post_form(request);
+	}
+	else if (request.getHeaders()["content-type"] == "application/x-www-form-urlencoded")
 	{
 		std::cout << RED << "Wrong type\n" << RESET; // TO DO something else here, error page??
 		set_error(404, "Not Found"); // change to another error
