@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/02 17:57:48 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/02 19:32:59 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,28 +23,20 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 	_location = _config->matchLocation(request.getPath());
 	_path = _location->getRoot() + request.getPath().substr(1, std::string::npos);
 	std::cout << "RESPONSE - PATH: " << _path << '\n';
-	// TO DO change the PATH based on the location
+
 	setContentType(_path);
 
-	// std::cout << "ALLOWED METHODS:\n";
-	// std::vector<std::string>	allowed = _location->getAllowedMethods();
-	// for (size_t i = 0; i < allowed.size(); i++)
-	// {
-	// 	std::cout << allowed[i] << '\n';
-	// }
-
 	if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
-		this->respond_wrong_request(_location->getAllowedMethods());
+		this->set_allow_methods(false);
 	else if (request.getMethod() == "GET")
 		this->respond_get_request(request.getPath());
-
 	else if (request.getMethod() == "POST")
 		this->respond_post_request(request);
 
 	else if (request.getMethod() == "DELETE")
 		this->respond_delete_request();
 	else
-		this->respond_wrong_request(_location->getAllowedMethods());
+		this->set_allow_methods(false);
 
 	_headers["Cache-Control"] = "no-cache, private";
 	this->_http_version = request.getHttpVersion();
@@ -163,13 +155,10 @@ int		Response::is_directory(std::string req_path)
 		return (1); // Continue the respond_get_request
 	}
 	else if (autoIndex == true)
-	{
 		create_directory_listing(dir_path, req_path);
-	}
 	else
-	{
 		set_error(404, "Not Found");
-	}
+
 	_headers["Content-Length"] = intToString(this->_body.size());
 	setContentType(_path);
 	return (0);
@@ -209,62 +198,16 @@ void	Response::cgi_post_form(const Request &request)
 
 void	Response::respond_post_request(const Request &request)
 {
-	std::string					name = "Juliette";
-	std::string					email = "hello@gmail.com";
 	std::ifstream				page(this->_path.c_str());
 
+	// TO DO Check only if finishes with extension.
 	if (request.getPath().substr(0, 8) == "/cgi-bin")
-	{
 		cgi_post_form(request);
-	}
-	else if (request.getHeaders()["content-type"] == "application/x-www-form-urlencoded")
-	{
-		std::cout << RED << "Wrong type\n" << RESET; // TO DO something else here, error page??
-		set_error(404, "Not Found"); // change to another error
-	}
-	else if ((request.getHeaders()["content-type"]).substr(0, 19) == "multipart/form-data")
-	{
-		if (this->_path == _location->getRoot() + "simple-form.html")
-		{
-			std::map<std::string, std::string> map;
-			map["name"] = "Juliette";
-			map["last-name"] = "Barbay";
-			addToPeople(map);
-			_body = "<p>Saved " + name + "</p>";
-			_headers["Content-Length"] = intToString(this->_body.size());
-		}
-		else if (this->_path == _location->getRoot() + "subscribe.html")
-		{
-			addToNewsletter(email);
-			_body = "<p>Thanks for subscribing to our newsletter!</p>";
-			_headers["Content-Length"] = intToString(this->_body.size());
-		}
-		else if (!page.good())// Path does not exist : 404
-		{
-			set_error(404, "Not Found");
-		}
-		else // Page exists but not allowed to do POST
-		{
-			set_allow_headers();
-		}
-	}
+	else if (!page.good())// Path does not exist : 404
+		set_error(404, "Not Found");
+	else // Page exists but not allowed to do POST
+		set_allow_methods(true);
 	_headers["Content-Length"] = intToString(this->_body.size());
-}
-
-void	Response::set_allow_headers(void)
-{
-	set_error(405, "Method Not Allowed");
-	_headers["Allow"] = "GET";
-
-	std::string		database = "./" + _config->getRoot() + "database";
-	int				length = database.size();
-
-	// TO DO: Change headers Allow
-	if (this->_path.substr(0, length) != database)
-		_headers["Allow"] = "GET";
-	else
-		_headers["Allow"] = "GET, DELETE";
-
 }
 
 int	Response::check_permission(void)
@@ -317,26 +260,27 @@ void	Response::respond_delete_request()
 	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
-void	Response::respond_wrong_request(std::vector<std::string> allowed_methods)
-{	
-	set_error(405, "Method Not Allowed");
-	set_allow_methods(allowed_methods);
-	_headers["Content-Length"] = intToString(this->_body.size());
-}
-
-void	Response::set_allow_methods(std::vector<std::string> allowed_methods)
+void	Response::set_allow_methods(bool post)
 {
 	std::vector<std::string>::iterator it;
 	std::string							methods;
+	std::vector<std::string> 			allowed_methods = _location->getAllowedMethods();
 
 	for (it = allowed_methods.begin(); it != allowed_methods.end(); it++)
 	{
+		if (post && *it == "POST")
+			continue ;
 		methods += *it;
 		if (it + 1 != allowed_methods.end())
-			methods += ", ";
+		{
+			if(!(*(it + 1) == "POST" && post))
+				methods += ", ";
+		}
 	}
 	_headers["Allow"] = methods;
-	// std::cout << "ALLOWED METHODS: " << methods << std::endl;
+	set_error(405, "Method Not Allowed");
+	_headers["Content-Length"] = intToString(this->_body.size());
+	std::cout << "ALLOWED METHODS: " << methods << std::endl;
 }
 
 void		Response::getDate()
@@ -351,32 +295,6 @@ void		Response::getDate()
     // std::cout << std::string(formatted_date) << std::endl;
 	_headers["Date"] = formatted_date;
 }
-
-void	Response::addToNewsletter(std::string data)
-{
-	(void)data;
-	std::ofstream 	file;
-	std::string		filename = "./" + _config->getRoot() + "database/newsletter.txt";
-
-	file.open(filename.c_str(), std::ios::app);
-	if (!file.is_open())
-		std::cout << strerror(errno);
-	file << data << "\n";
-	file.close();
-}
-
-void	Response::addToPeople(std::map<std::string, std::string> body)
-{
-	std::ofstream file;
-	std::string		filename = "./" + _config->getRoot() + "database/people.txt";
-	
-	file.open(filename.c_str(), std::ios::app);
-	if (!file.is_open())
-		std::cout << strerror(errno);
-	file << "First name: " << body["name"] << ", Last name: " << body["last-name"] << "\n";
-	file.close();
-}
-
 
 /*
 ** --------------------------------- OVERLOAD ---------------------------------

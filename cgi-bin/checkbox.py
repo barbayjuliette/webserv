@@ -7,7 +7,6 @@ form = cgi.FieldStorage()
 # if "blue" not in form:
 # 	print("<h1>Error</h1>")
 
-
 blue = form.getvalue('blue')
 red = form.getvalue('red')
 

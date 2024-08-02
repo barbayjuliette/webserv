@@ -16,7 +16,7 @@ http
 		{
 			root wwwroot/; #root folder of location
 			autoindex on; #turn on directory listing
-			allowed_methods GET POST; #accepted methods for the route
+			allowed_methods POST GET; #accepted methods for the route
 			index index.html; #default file when request is a directory
 		}
 
@@ -53,7 +53,6 @@ http
 		server_name another.eg www.another.eg;
 
 		root wwwroot/database/;
-		index newsletter.txt;
 	}
 
 	server
