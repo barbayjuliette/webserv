@@ -16,25 +16,29 @@
 # include "Response.hpp"
 # include "Request.hpp"
 
-
 class Client
 {
 	private:
-		int			_socket;
-		Request		*_request;
-		Response	*_response;
+		int					_socket;
+		struct sockaddr_in	_addr;
+		Request				*_request;
+		Response			*_response;
 		// bool		keepAlive;
 		Client();
 
 	public:
-		Client(int socket);
+		Client(int socket, struct sockaddr_in addr);
 		Client( Client const & src );
 		~Client();
 
 		Client &		operator=( Client const & rhs );
+
 		Request*		getRequest();
 		Response*		getResponse();
 		int				getSocket();
+		unsigned short	getPort();
+		unsigned long	getIPAddress();
+
 		void			reset();
 		void			setRequest(Request* request);
 		void			setResponse(Response* response);
