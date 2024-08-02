@@ -274,7 +274,7 @@ int	Cluster::accept_new_connections(int server_socket)
 void	Cluster::removeClient(int client_socket)
 {
 	close(client_socket);
-	Cluster::removeFromEpoll(client_socket);
+	// Cluster::removeFromEpoll(client_socket);
 	delete _clients[client_socket];
 	_clients.erase(client_socket);
 }
@@ -297,7 +297,7 @@ void		Cluster::handle_write_connection(int client_socket)
 	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
 	if (bytes_sent == response->getFullResponse().size())
 	{
-		if (DEBUG)
+		if (CTRACE)
 		{
 			std::cout << GREEN << "---- Response sent to client ----\n" << RESET;
 			std::cout << response->getFullResponse() << std::endl;
