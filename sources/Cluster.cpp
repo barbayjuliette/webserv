@@ -233,22 +233,23 @@ void	Cluster::runServers(void)
 			if (is_server_socket(event_fd) && (event_type & EPOLLIN))
 				client_socket = accept_new_connections(event_fd);
 			else
-				client_socket = event_fd;
-
-			if (event_type & EPOLLIN)
 			{
-				try
+				client_socket = event_fd;
+				if (event_type & EPOLLIN)
 				{
-					handle_read_connection(client_socket);
+					try
+					{
+						handle_read_connection(client_socket);
+					}
+					catch (std::exception& e)
+					{
+						std::cerr << RED << e.what() << ".\n" << RESET;
+					}
 				}
-				catch (std::exception& e)
-				{
-					std::cerr << RED << e.what() << ".\n" << RESET;
-				}
+				// TODO
+				if (event_type & EPOLLOUT)
+					handle_write_connection(client_socket);
 			}
-			// TODO
-			if (event_type & EPOLLOUT)
-				handle_write_connection(client_socket);
 		}
 	}
 }
@@ -257,9 +258,20 @@ void	Cluster::runServers(void)
 - Create epoll_event struct for the new client socket and register it to be monitored */
 int	Cluster::accept_new_connections(int server_socket)
 {
-	int	client_socket = accept(server_socket, NULL, NULL);
+	struct sockaddr_in	client_addr;
+	socklen_t			client_len = sizeof(client_addr);
+
+	int	client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_len);
 	check(client_socket);
 	check(fcntl(server_socket, F_SETFL, O_NONBLOCK));
+
+	int	existing_client = getExistingClient(&client_addr);
+	if (existing_client != -1)
+	{
+		std::cout << RED << "\nIs existing client. Closing duplicate socket.\n\n" << RESET;
+		close(client_socket);
+		return (existing_client);
+	}
 
 	struct epoll_event	ep_event;
 
@@ -267,8 +279,24 @@ int	Cluster::accept_new_connections(int server_socket)
 	ep_event.events = EPOLLIN | EPOLLOUT;
 	addToEpoll(client_socket, &ep_event);
 
-    _clients[client_socket] = new Client(client_socket);
+    _clients[client_socket] = new Client(client_socket, client_addr);
+    if (CTRACE)
+		std::cout << GREEN << "\nNew client created: " << client_socket << "\n\n" << RESET;
+
     return (client_socket);
+}
+
+int	Cluster::getExistingClient(struct sockaddr_in *addr)
+{
+	std::map<int, Client*>::iterator	it;
+
+	for (it = _clients.begin(); it != _clients.end(); it++)
+	{
+		if (it->second->getPort() == addr->sin_port
+			&& it->second->getIPAddress() == addr->sin_addr.s_addr)
+			return (it->first);
+	}
+	return (-1);
 }
 
 void	Cluster::removeClient(int client_socket)
@@ -289,6 +317,8 @@ Client*		Cluster::getClient(int socket)
 void		Cluster::handle_write_connection(int client_socket)
 {
 	Client			*client = getClient(client_socket);
+	if (!client)
+		return ;
 	Response		*response = client->getResponse();
 	unsigned int	bytes_sent;
 	if (!response)
@@ -299,6 +329,7 @@ void		Cluster::handle_write_connection(int client_socket)
 	{
 		if (CTRACE)
 		{
+			std::cout << CYAN << "inside handle_write_connection: " << client_socket << '\n' << RESET;
 			std::cout << GREEN << "---- Response sent to client ----\n" << RESET;
 			std::cout << response->getFullResponse() << std::endl;
 			std::cout << GREEN << "End of response\n" << RESET;

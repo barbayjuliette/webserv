@@ -81,6 +81,7 @@ class Cluster
 		bool			is_server_socket(const int fd);
 		bool			isIPAddress(const std::string& str);
 		std::string		getClientIPAddress(const int socket_fd);
+		int				getExistingClient(struct sockaddr_in *addr);
 		void			check(int num);
 		static void		signal_handler(int signum);
 		int				countServers(std::string& host, int port);

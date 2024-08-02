@@ -20,11 +20,18 @@ Response::Response() {}
 
 Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 {
-	_path = "./" + _config->getRoot() + request.getPath().substr(1, request.getPath().size() - 1);
-	_location = _config->matchLocation(_path);
+	_location = _config->matchLocation(request.getPath());
+	_path = _location->getRoot() + request.getPath().substr(1, std::string::npos);
 	std::cout << "RESPONSE - PATH: " << _path << '\n';
 	// TO DO change the PATH based on the location
 	setContentType(_path);
+
+	std::cout << "ALLOWED METHODS:\n";
+	std::vector<std::string>	allowed = _location->getAllowedMethods();
+	for (size_t i = 0; i < allowed.size(); i++)
+	{
+		std::cout << allowed[i] << '\n';
+	}
 
 	if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
 		this->respond_wrong_request(_location->getAllowedMethods());
@@ -80,7 +87,9 @@ int		Response::method_is_allowed(std::string method, std::vector<std::string> al
 {
 	std::vector<std::string>::iterator it = std::find(allowed.begin(), allowed.end(), method);
 	if (it != allowed.end())
+	{
 		return (1);
+	}
 	return (0);
 }
 
@@ -190,7 +199,7 @@ void	Response::cgi_post_form(const Request &request)
 	_body = cgi->getHtml();
 	_headers["Content-Length"] = intToString(this->_body.size());
 	_headers["Content-Type"] = cgi->getContentType();
-	// _headers["Location"] = path;
+	_headers["Location"] = _path;
 	std::cout << RED << "CGI DONE\n" << RESET;
 	delete (cgi);
 }

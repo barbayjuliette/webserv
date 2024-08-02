@@ -21,10 +21,9 @@ Client::Client()
 {
 }
 
-Client::Client(int socket) : _socket(socket), _request(NULL), _response(NULL)
+Client::Client(int socket, struct sockaddr_in addr) :
+_socket(socket), _addr(addr), _request(NULL), _response(NULL)
 {
-	if (CTRACE)
-		std::cout << CYAN << "Client created: " << socket << std::endl << RESET;
 }
 
 Client::Client( const Client & src ) :
@@ -72,6 +71,16 @@ void	Client::reset(void)
 	_response = NULL;
 }
 
+void	Client::setRequest(Request* request)
+{
+	_request = request;
+}
+
+void	Client::setResponse(Response* response)
+{
+	_response = response;
+}
+
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */
@@ -86,19 +95,28 @@ Response*	Client::getResponse()
 	return (this->_response);
 }
 
-void	Client::setRequest(Request* request)
-{
-	_request = request;
-}
-
-void	Client::setResponse(Response* response)
-{
-	_response = response;
-}
-
 int		Client::getSocket()
 {
-	return (_socket);
+	return (this->_socket);
+}
+
+/*struct sockaddr_in {
+    short            sin_family;
+    unsigned short   sin_port;
+    struct in_addr   sin_addr;
+    char             sin_zero[8];
+};
+struct in_addr {
+    unsigned long s_addr;
+};*/
+unsigned short	Client::getPort()
+{
+	return (this->_addr.sin_port);
+}
+
+unsigned long	Client::getIPAddress()
+{
+	return (this->_addr.sin_addr.s_addr);
 }
 
 /* ************************************************************************** */
