@@ -8,7 +8,7 @@ http
 		body_max_length 1024; #limit size of client request body
 
 		root wwwroot/; #maps all requests to this directory if location block does not include its own root directive
-		index index.html;
+		# index index.html;
 
 		error_page 400=errors/400.html 404=errors/404.html; #default error page
 
@@ -17,7 +17,7 @@ http
 			root wwwroot/; #root folder of location
 			autoindex on; #turn on directory listing
 			allowed_methods POST GET; #accepted methods for the route
-			index index.html; #default file when request is a directory
+			# index index.html; #default file when request is a directory
 		}
 
 		location = /test { #test skipping inline open brace

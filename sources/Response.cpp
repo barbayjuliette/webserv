@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/02 19:32:59 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/02 19:47:43 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,12 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 
 	setContentType(_path);
 
-	if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
+	if (request.getError() != NO_ERR &&  request.getError() != NOT_SUPPORTED)
+	{
+		set_error(400, "Bad Request");
+		std::cout << "Error: " << request.getError() << std::endl;
+	}
+	else if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
 		this->set_allow_methods(false);
 	else if (request.getMethod() == "GET")
 		this->respond_get_request(request.getPath());
@@ -77,14 +82,11 @@ Response::~Response() {}
 
 int		Response::method_is_allowed(std::string method, std::vector<std::string> allowed)
 {
-	std::cout << "method: " << method << '\n';
 	std::vector<std::string>::iterator it = std::find(allowed.begin(), allowed.end(), method);
 	if (it != allowed.end())
 	{
-		std::cout << "returned 1\n";
 		return (1);
 	}
-	std::cout << "returned 0\n";
 	return (0);
 }
 
