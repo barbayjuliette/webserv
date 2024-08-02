@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/02 19:33:22 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/02 20:38:34 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@
 # include <dirent.h>
 # include "ConfigFile.hpp"
 # include "CGIHandler.hpp"
+# include "CGIGet.hpp"
 
 class CGIHandler;
 
@@ -52,7 +53,7 @@ class Response
 		Response &		operator=( Response const & rhs );
 
 		std::string	get_error_page(int num);
-		void		respond_get_request(std::string req_path);
+		void		respond_get_request(const Request &request);
 		void		respond_post_request(const Request &request);
 		void		respond_delete_request(void);
 		std::string	intToString(int num);

@@ -6,7 +6,7 @@
 #    By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/07/09 14:32:15 by agan              #+#    #+#              #
-#    Updated: 2024/08/01 17:20:38 by jbarbay          ###   ########.fr        #
+#    Updated: 2024/08/02 20:40:28 by jbarbay          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -45,7 +45,8 @@ SRCS	= $(addprefix $(SRC_DIR)/, \
 		Client.cpp \
 		Request.cpp \
 		Response.cpp \
-		CGIHandler.cpp) $(CONFIG_SRCS)
+		CGIHandler.cpp \
+		CGIGet.cpp ) $(CONFIG_SRCS)
 OBJS    = $(addprefix $(BUILD_DIR)/, $(notdir $(SRCS:.cpp=.o)))
 DEPS    = $(OBJS:.o=.d)
 

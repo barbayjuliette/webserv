@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/02 19:47:43 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/02 20:38:04 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 	else if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
 		this->set_allow_methods(false);
 	else if (request.getMethod() == "GET")
-		this->respond_get_request(request.getPath());
+		this->respond_get_request(request);
 	else if (request.getMethod() == "POST")
 		this->respond_post_request(request);
 
@@ -166,11 +166,25 @@ int		Response::is_directory(std::string req_path)
 	return (0);
 }
 
-void	Response::respond_get_request(std::string req_path)
+void	Response::respond_get_request(const Request &request)
 {
-	if (is_directory(req_path) == 0)
+	if (is_directory(request.getPath()) == 0)
 		return ;
-		
+	
+	std::string		ext = ".py";
+	int				length = request.getPath().size();
+
+	if (request.getPath().substr(length - ext.size(), length) == ext)
+	{
+		std::cout << RED << "CGI GET \n" << RESET;
+		CGIGet*	cgi = new CGIGet(request);
+		_body = cgi->getHtml();
+		_headers["Content-Length"] = intToString(this->_body.size());
+		_headers["Content-Type"] = cgi->getContentType();
+		delete (cgi);
+		return ;
+	}
+
 	char						c;
 	std::ifstream				page(this->_path.c_str());
 	if (page.good())
