@@ -19,6 +19,7 @@
 LocationConfig::LocationConfig() : ValidConfig(), _match_exact(false), _case_sensitive(false)
 {
 	initValidKeys();
+	this->_path = "/";
 }
 
 LocationConfig::LocationConfig(const LocationConfig& other) : ValidConfig(other)
@@ -44,6 +45,26 @@ void	LocationConfig::initValidKeys(void)
 	this->_validKeys["index"] = &LocationConfig::setIndex;
 	this->_validKeys["redirect"] = &LocationConfig::setRedirect;
 	this->_validKeys["allowed_methods"] = &LocationConfig::setAllowedMethods;
+}
+
+/* Function for validating all directives in the map
+- Set root first if specified, to ensure that index files are rooted to the correct directory path */
+void	LocationConfig::validateKeys(void)
+{
+	if (_directives.find("root") != _directives.end())
+		setRoot(_directives["root"]);
+
+	for (t_strmap::iterator it = _directives.begin(); it != _directives.end(); it++)
+	{
+		if (TRACE)
+			std::cout << "current key: " << it->first << '\n';
+
+		t_dirmap::iterator found = this->_validKeys.find(it->first);
+		if (found == this->_validKeys.end())
+			throw InvalidConfigError("Invalid location directive");
+		t_directive	handlerFunction = found->second;
+		(this->*handlerFunction)(it->second);
+	}
 }
 
 /* Syntax: location [modifier] [URI] (+ inline open brace '{' if applicable) */

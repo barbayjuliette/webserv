@@ -19,14 +19,18 @@
 
 # define BUFFER_SIZE 50000
 
+class Client;
+
 class Webserver
 {
 	protected:
-		int						_server_socket;
-		int						_port;
-		struct sockaddr_in*		_address;
-		ServerConfig*			_config;
-		std::map<int, Client*>	_clients;
+		int							_server_socket;
+		std::string					_host;
+		int							_port;
+		std::vector<std::string>	_server_name;
+		struct sockaddr_in*			_address;
+		ServerConfig*				_config;
+		std::map<int, Client*>		_clients;
 
 	public:
 		/* Constructors */
@@ -49,16 +53,20 @@ class Webserver
 		void			handle_connections(int client_socket, uint32_t event_type);
 		void			handle_read_connection(int client_socket);
 		void			handle_write_connection(int client_socket);
-		void			create_response(Request &request, int client_socket);
+		void			create_response(Request *request, Client *client);
 		void			removeClient(int client_socket);
 
-		/* Error checking */
+		/* Utils */
 		void			check(int num);
+		void			printServerNames(void);
 
 		// Accessors
 		int							getServerSocket();
+		int							getPort();
+		std::vector<std::string>	getServerName();
 		struct sockaddr_in*			getAddress();
 		std::map<int, Client*>		getClients();
 		Client*						getClient(int socket);
+		ServerConfig*				getConfig();
 };
 

@@ -30,7 +30,7 @@ class LocationConfig : public ValidConfig
 		std::string	_path; //location-specific directive
 		bool		_match_exact;
 		bool		_case_sensitive;
-		// std::map<std::string, t_directives>	_validDirectives;
+		// std::map<std::string, t_directive>	_validKeys;
 
 	public:
 		enum e_modifier
@@ -52,6 +52,7 @@ class LocationConfig : public ValidConfig
 
 		/* Validation functions */
 		void	initValidKeys(void); //overload
+		void	validateKeys(void); //overload
 		void	setPath(t_strvec& tokens);
 		int		checkPathModifier(std::string& path);
 		int		setPathModifier(std::string& token);

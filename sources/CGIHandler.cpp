@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 15:00:25 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/01 17:57:42 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/02 17:59:12 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ void	CGIHandler::process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Req
 		close(pipe_fd[1]);
 		close(pipe_data[0]);
 
-		write(pipe_data[1], request.getBody().c_str(), request.getBody().size());
+		write(pipe_data[1], request.getBody(), request.getBody().size());
 		close(pipe_data[1]);
         waitpid(pid, NULL, 0);
 

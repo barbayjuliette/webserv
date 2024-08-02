@@ -110,8 +110,8 @@ void	ConfigFile::readServerContext(ServerConfig* server)
 		{
 			LocationConfig	*location = new LocationConfig();
 
-			server->setLocation(location);
 			location->setPath(tokens);
+			server->setLocation(location->getPath(), location);
 			readLocationContext(location);
 		}
 		else
@@ -158,13 +158,14 @@ void	ConfigFile::validateConfig(void)
 			std::cout << CYAN << "\nCHECKING SERVER DIRECTIVES:\n" << RESET;
 		(*it)->validateKeys();
 
-		std::vector<LocationConfig*>	locations = (*it)->getLocations();
+		std::map<std::string, LocationConfig*>	locations = (*it)->getLocations();
+		std::map<std::string, LocationConfig*>::iterator	loc;
 
-		for (size_t i = 0; i < locations.size(); i++)
+		for (loc = locations.begin(); loc != locations.end(); loc++)
 		{
 			if (TRACE)
-				std::cout << CYAN << "\nCHECKING LOCATION DIRECTIVES: " << locations[i]->getPath() << '\n' << RESET;
-			locations[i]->validateKeys();
+				std::cout << CYAN << "\nCHECKING LOCATION DIRECTIVES: " << loc->second->getPath() << '\n' << RESET;
+			loc->second->validateKeys();
 		}
 	}
 }
@@ -261,15 +262,17 @@ void	ConfigFile::printContexts(std::vector<ServerConfig*>& vec)
 
 		ServerConfig	*server = *it;
 		printMap(server->getDirectives());
-		std::vector<LocationConfig*>	locations = server->getLocations();
 
-		for (size_t i = 0; i < locations.size(); i++)
+		std::map<std::string, LocationConfig*>	locations = server->getLocations();
+		std::map<std::string, LocationConfig*>::iterator	loc;
+
+		for (loc = locations.begin(); loc != locations.end(); loc++)
 		{
-			std::cout << CYAN << "--> LOCATION: " << locations[i]->getPath();
-			std::cout << "\n--> match exact: " << locations[i]->getMatchExact();
-			std::cout << "; case sensitive: " << locations[i]->getCaseSensitive();
+			std::cout << CYAN << "--> LOCATION: " << loc->second->getPath();
+			std::cout << "\n--> match exact: " << loc->second->getMatchExact();
+			std::cout << "; case sensitive: " << loc->second->getCaseSensitive();
 			std::cout << '\n' << RESET;
-			printMap(locations[i]->getDirectives());
+			printMap(loc->second->getDirectives());
 		}
 	}
 
