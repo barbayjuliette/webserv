@@ -26,12 +26,12 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 	// TO DO change the PATH based on the location
 	setContentType(_path);
 
-	std::cout << "ALLOWED METHODS:\n";
-	std::vector<std::string>	allowed = _location->getAllowedMethods();
-	for (size_t i = 0; i < allowed.size(); i++)
-	{
-		std::cout << allowed[i] << '\n';
-	}
+	// std::cout << "ALLOWED METHODS:\n";
+	// std::vector<std::string>	allowed = _location->getAllowedMethods();
+	// for (size_t i = 0; i < allowed.size(); i++)
+	// {
+	// 	std::cout << allowed[i] << '\n';
+	// }
 
 	if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
 		this->respond_wrong_request(_location->getAllowedMethods());
@@ -85,11 +85,14 @@ Response::~Response() {}
 
 int		Response::method_is_allowed(std::string method, std::vector<std::string> allowed)
 {
+	std::cout << "method: " << method << '\n';
 	std::vector<std::string>::iterator it = std::find(allowed.begin(), allowed.end(), method);
 	if (it != allowed.end())
 	{
+		std::cout << "returned 1\n";
 		return (1);
 	}
+	std::cout << "returned 0\n";
 	return (0);
 }
 
@@ -221,7 +224,7 @@ void	Response::respond_post_request(const Request &request)
 	}
 	else if ((request.getHeaders()["content-type"]).substr(0, 19) == "multipart/form-data")
 	{
-		if (this->_path == "./" + _config->getRoot() + "simple-form.html")
+		if (this->_path == _location->getRoot() + "simple-form.html")
 		{
 			std::map<std::string, std::string> map;
 			map["name"] = "Juliette";
@@ -230,7 +233,7 @@ void	Response::respond_post_request(const Request &request)
 			_body = "<p>Saved " + name + "</p>";
 			_headers["Content-Length"] = intToString(this->_body.size());
 		}
-		else if (this->_path == "./" + _config->getRoot() + "subscribe.html")
+		else if (this->_path == _location->getRoot() + "subscribe.html")
 		{
 			addToNewsletter(email);
 			_body = "<p>Thanks for subscribing to our newsletter!</p>";
