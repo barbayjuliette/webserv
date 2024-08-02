@@ -271,12 +271,14 @@ int	Cluster::accept_new_connections(int server_socket)
     return (client_socket);
 }
 
+// Removed seg fault
 void	Cluster::removeClient(int client_socket)
 {
 	close(client_socket);
 	Cluster::removeFromEpoll(client_socket);
-	delete _clients[client_socket];
+	Client *to_delete = _clients[client_socket];
 	_clients.erase(client_socket);
+	delete to_delete;
 }
 
 Client*		Cluster::getClient(int socket)
@@ -337,7 +339,7 @@ void	Cluster::handle_read_connection(int client_socket)
 		// If not existing request -> create new request
 		if (!_clients[client_socket]->getRequest())
 		{
-			Request*	new_request = new Request(buffer);
+			Request*	new_request = new Request(buffer, bytes_read);
 			_clients[client_socket]->setRequest(new_request);
 			if (new_request->getReqComplete() == false)
 				return;
@@ -362,7 +364,7 @@ void	Cluster::handle_read_connection(int client_socket)
 			{
 				host = getClientIPAddress(client_socket);
 			}
-			request->parseBody();
+			// request->parseBody();
 			Webserver	*server = getServerByPort(name, host, request->getPort());
 			if (!server)
 				throw std::runtime_error("No server matched the request");

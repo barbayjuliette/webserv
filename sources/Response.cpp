@@ -22,7 +22,9 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 {
 	_path = "./" + _config->getRoot() + request.getPath().substr(1, request.getPath().size() - 1);
 	_location = _config->matchLocation(_path);
-	std::cout << "RESPONSE - PATH: " << _path << '\n';
+
+	if (CTRACE)
+		std::cout << GREEN << "Creating response" << RESET << std::endl << "RESPONSE - PATH: " << _path << '\n';
 	// TO DO change the PATH based on the location
 	setContentType(_path);
 
