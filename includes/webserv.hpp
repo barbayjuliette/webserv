@@ -26,7 +26,7 @@
 #endif
 
 #ifndef CTRACE
-# define CTRACE 1
+# define CTRACE 0
 #endif
 
 /* C++ headers */

@@ -48,7 +48,7 @@ enum error_type {
 class Request
 {
 	private:
-		std::string							_raw;
+		std::vector<unsigned char>			_raw;
 		ssize_t								_header_length;
 		bool								_req_complete;
 		ssize_t								_body_max_length;
@@ -63,7 +63,7 @@ class Request
 		int									_port;
 		ssize_t								_curr_length;
 		std::map<std::string, std::string>	_headers;
-		std::string							_body;
+		std::vector<unsigned char>			_body;
 		error_type							_error;
 		ServerConfig*						_config;
 		std::map<std::string, std::string>	_formData;
@@ -73,11 +73,11 @@ class Request
 		Request();
 
 		// Member functions
-		int 		parseRequest();
-		void 		parseHeader();
-		void 		parsePort();
+		int 		parseRequest(std::string header);
+		void 		parseHeader(std::string header);
+		void 		parsePort(std::string header);
 		void		parseContentType();
-		void 		handleFileUploads();
+		// void 		handleFileUploads();
 
 		void 		checkMethod();
 		void 		checkPath();
@@ -90,26 +90,30 @@ class Request
 		size_t		convert_sizet(std::string str);
 		bool 		is_header_complete();
 		void		boundary_found();
+		void		copyRawRequest(char *buf, int bytes_read);
+		bool 		findSequence(const std::vector <unsigned char> &vec, \
+			const std::vector<unsigned char>& seq);
 
 		// Error handling
 		void 			printError(std::string error_msg);
 		void 			printHeaders(const std::map<std::string, std::string>& headers);
 		static void		printMap(std::map<std::string, std::string> map);
+		void 			print_vector(std::vector<unsigned char> vec);
 
 		// Debug
-		void 		print_variables() const;
+		void 			print_variables() const;
 
 	public:
-		Request(char *full_request);
+		Request(char *full_request, int bytes_read);
 		Request( Request const & src );
 		~Request();
 
 		Request &							operator=( Request const & rhs );
-		std::string							getRaw() const;
+		std::vector<unsigned char>			getRaw() const;
 		std::string							getPath() const;
 		std::string							getHttpVersion() const;
 		std::string							getMethod() const;
-		std::string							getBody() const;
+		std::vector<unsigned char>							getBody() const;
 		std::string							getHost() const;
 		int									getPort() const;
 		std::map<std::string, std::string>	getHeaders() const;
