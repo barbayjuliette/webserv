@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:06:01 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/16 16:35:33 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/02 19:44:27 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,7 +119,8 @@ class Request
 		std::map<std::string, std::string>	getHeaders() const;
 		ssize_t								getHeaderLength() const;
 		bool								getReqComplete() const;
-
+		error_type							getError() const;
+		
 		void								setConfig(ServerConfig* config);
 
 		void		handle_incomplete_header(int bytes_read, char *buffer);

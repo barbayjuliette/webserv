@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/31 18:06:59 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/02 20:38:34 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@
 # include <dirent.h>
 # include "ConfigFile.hpp"
 # include "CGIHandler.hpp"
+# include "CGIGet.hpp"
 
 class CGIHandler;
 
@@ -49,22 +50,17 @@ class Response
 		Response(Request &request, ServerConfig *conf);
 		Response( Response const & src );
 		~Response();
-
 		Response &		operator=( Response const & rhs );
 
 		std::string	get_error_page(int num);
-		void		respond_get_request(std::string req_path);
+		void		respond_get_request(const Request &request);
 		void		respond_post_request(const Request &request);
 		void		respond_delete_request(void);
-		void		respond_wrong_request(std::vector<std::string> allowed_methods);
 		std::string	intToString(int num);
 		void		getDate();
-		void		addToNewsletter(std::string data);
-		void		addToPeople(std::map<std::string, std::string> body);
 		int			check_permission(void);
 		void		set_error(int code, std::string text);
-		void		set_allow_headers(void);
-		void		set_allow_methods(std::vector<std::string> allowed_methods);
+		void		set_allow_methods(bool flag);
 		int			is_directory(std::string req_path);
 		void		create_directory_listing(std::string path, std::string req_path);
 		std::string	create_html(std::string source, std::string path);

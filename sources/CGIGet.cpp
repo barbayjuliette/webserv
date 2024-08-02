@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   CGIHandler.cpp                                     :+:      :+:    :+:   */
+/*   CGIGet.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -10,35 +10,34 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "CGIHandler.hpp"
+#include "CGIGet.hpp"
 
-CGIHandler::CGIHandler( CGIHandler const & src )
+CGIGet::CGIGet( CGIGet const & src )
 {
 	(void)src;
 }
 
-CGIHandler::~CGIHandler()
+CGIGet::~CGIGet()
 {
 
 }
 
-CGIHandler::CGIHandler()
+CGIGet::CGIGet()
 {
 
 }
 
-CGIHandler &		CGIHandler::operator=( CGIHandler const & rhs )
+CGIGet &		CGIGet::operator=( CGIGet const & rhs )
 {
 	(void)rhs;
 	return(*this);
 }
 
-CGIHandler::CGIHandler(Request const & request)
+CGIGet::CGIGet(Request const & request)
 {
 	int	pipe_fd[2];
-	int	pipe_data[2];
 
-	if (pipe(pipe_fd) == -1 || pipe(pipe_data) == -1)
+	if (pipe(pipe_fd) == -1)
 	{
 		std::cout << "Error: " << strerror(errno) << std::endl;
 		return ;
@@ -51,21 +50,15 @@ CGIHandler::CGIHandler(Request const & request)
 		return ;
 	}
 	if (pid == 0)
-		execute_cgi(request.getPath(), pipe_fd, pipe_data, request);
+		execute_cgi("/cgi-bin" + request.getPath(), pipe_fd, request);
 	else
-		process_result_cgi(pid, pipe_fd, pipe_data, request);
+		process_result_cgi(pid, pipe_fd);
 }
 
 // PARENT: Writes the form data to the pipe, then waits for the child to send the result from cgi.
-void	CGIHandler::process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Request const & request)
+void	CGIGet::process_result_cgi(int pid, int pipe_fd[])
 {
 		close(pipe_fd[1]);
-		close(pipe_data[0]);
-
-		std::string str_body(request.getBody().begin(), request.getBody().end());
-
-		write(pipe_data[1], str_body.c_str(), str_body.size());
-		close(pipe_data[1]);
         waitpid(pid, NULL, 0);
 
 		char buffer[4096];
@@ -82,7 +75,7 @@ void	CGIHandler::process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Req
 		setHtml();
 }
 
-std::string	CGIHandler::intToString(int num)
+std::string	CGIGet::intToString(int num)
 {
 	std::stringstream	stream;
 	stream << num;
@@ -90,12 +83,10 @@ std::string	CGIHandler::intToString(int num)
 }
 
 // CHILD: Read form data from pipe then send result from cgi via pipe.
-void	CGIHandler::execute_cgi(std::string path, int pipe_fd[], int pipe_data[], Request const & request)
+void	CGIGet::execute_cgi(std::string path, int pipe_fd[], Request const & request)
 {
 	close(pipe_fd[0]);
-	close(pipe_data[1]);
 
-	dup2(pipe_data[0], STDIN_FILENO); // Read form data from the pipe
 	dup2(pipe_fd[1], STDOUT_FILENO); // Write result of script to pipe
 	path = "." + path;
 
@@ -107,7 +98,7 @@ void	CGIHandler::execute_cgi(std::string path, int pipe_fd[], int pipe_data[], R
 	};
 
 	std::string	content_length = "CONTENT_LENGTH=" + intToString(request.getBody().size());
-	std::string	request_method = "REQUEST_METHOD=" + request.getMethod();
+	std::string	request_method = "REQUEST_METHOD=GET";
 	std::string	content_type = "CONTENT_TYPE=" + request.getHeaders()["content-type"];
 	// TO DO Choose which headers to put based on tester
 	// std::string	gateway_interface = "GATEWAY_INTERFACE=CGI/1.1";
@@ -132,29 +123,28 @@ void	CGIHandler::execute_cgi(std::string path, int pipe_fd[], int pipe_data[], R
 		NULL
 	};
 	close(pipe_fd[1]);
-	close(pipe_data[0]);
 	execve("/usr/bin/python3", argv, const_cast<char* const*>(env));
 	std::cout << "Execve failed\n";
 }
 
 // ---------------------------------------- ACCESSORS ----------------------------------------
 
-std::string	CGIHandler::getResult()
+std::string	CGIGet::getResult()
 {
 	return (this->_result);
 }
 
-std::string	CGIHandler::getHtml()
+std::string	CGIGet::getHtml()
 {
 	return (this->_html);
 }
 
-std::string	CGIHandler::getContentType()
+std::string	CGIGet::getContentType()
 {
 	return (this->_content_type);
 }
 
-void		CGIHandler::setHeaders()
+void		CGIGet::setHeaders()
 {
 	std::size_t		pos = _result.find("\r\n\r\n", 0);
 
@@ -165,7 +155,7 @@ void		CGIHandler::setHeaders()
 	// std::cout << "Headers: " << _headers << std::endl;
 }
 
-void	CGIHandler::setContentType()
+void	CGIGet::setContentType()
 {
 	setHeaders();
 
@@ -188,7 +178,7 @@ void	CGIHandler::setContentType()
 	std::cout << "Content_type: " << _content_type << std::endl;
 }
 
-void	CGIHandler::setHtml()
+void	CGIGet::setHtml()
 {
 	std::string		delim = "\r\n\r\n";
 	std::size_t		pos = _result.find(delim, 0);

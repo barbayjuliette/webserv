@@ -1,14 +1,15 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   CGIHandler.hpp                                     :+:      :+:    :+:   */
+/*   CGIGet.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/07/31 14:56:13 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/01 17:57:26 by jbarbay          ###   ########.fr       */
+/*   Created: 2024/08/02 20:33:16 by jbarbay           #+#    #+#             */
+/*   Updated: 2024/08/02 20:39:50 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #pragma once
 
@@ -27,7 +28,7 @@
 
 class Response;
 
-class CGIHandler
+class CGIGet
 {
 	private:
 		std::string		_result;
@@ -36,22 +37,20 @@ class CGIHandler
 		std::string		_headers;
 
 	public:
-		CGIHandler();
-		CGIHandler(Request const & request);
-		CGIHandler( CGIHandler const & src );
-		~CGIHandler();
-		CGIHandler &		operator=( CGIHandler const & rhs );
+		CGIGet();
+		CGIGet(Request const & request);
+		CGIGet( CGIGet const & src );
+		~CGIGet();
+		CGIGet &		operator=( CGIGet const & rhs );
 
-		void		execute_cgi(std::string path, int pipe_fd[], int pipe_data[], Request const & request);
-		void		process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Request const & request);
-		// const char**	set_environment_cgi(std::string path);
+		void			execute_cgi(std::string path, int pipe_fd[], Request const & request);
+		void			process_result_cgi(int pid, int pipe_fd[]);
 		std::string		intToString(int num);
 
 
 		std::string	getResult();
 		std::string	getHtml();
 		std::string	getContentType();
-		std::string	getFirstLine();
 		void		setContentType();
 		void		setHtml();
 		void		setHeaders();

@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:33 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/29 14:27:01 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/02 19:44:23 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -732,6 +732,11 @@ ssize_t		Request::getHeaderLength() const
 bool	Request::getReqComplete() const
 {
 	return (this->_req_complete);
+}
+
+error_type	Request::getError() const
+{
+	return (this->_error);
 }
 
 /* ************************************************************************** */
