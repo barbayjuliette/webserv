@@ -64,14 +64,14 @@ Webserver&	Webserver::operator=( Webserver const & rhs )
 
 Webserver::~Webserver()
 {
-	close(_server_socket);
+	// close(_server_socket);
 
-	std::map<int, Client*>::iterator	it;
-	for (it = _clients.begin() ; it != _clients.end(); it++)
-	{
-		delete (it->second);
-	}
-	_clients.clear();
+	// std::map<int, Client*>::iterator	it;
+	// for (it = _clients.begin() ; it != _clients.end(); it++)
+	// {
+	// 	delete (it->second);
+	// }
+	// _clients.clear();
 }
 
 /*
@@ -82,8 +82,7 @@ void	Webserver::create_response(Request *request, Client *client)
 {
 	Response	*_response = new Response(*request, this->_config);
 	client->setResponse(_response);
-	// Delete request
-	client->setRequest(NULL);
+	client->deleteRequest();
 }
 
 void	Webserver::check(int num)

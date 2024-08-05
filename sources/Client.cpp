@@ -67,7 +67,8 @@ void	Client::reset(void)
 {
 	// delete (_request);
 	// _request = NULL;
-	delete (_response);
+	if (_response)
+		delete (_response);
 	_response = NULL;
 }
 
@@ -79,6 +80,13 @@ void	Client::setRequest(Request* request)
 void	Client::setResponse(Response* response)
 {
 	_response = response;
+}
+
+void	Client::deleteRequest(void)
+{
+	if (_request)
+		delete _request;
+	_request = NULL;
 }
 
 /*

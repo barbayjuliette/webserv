@@ -42,4 +42,5 @@ class Client
 		void			reset();
 		void			setRequest(Request* request);
 		void			setResponse(Response* response);
+		void			deleteRequest(void);
 };

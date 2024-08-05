@@ -77,12 +77,17 @@ Cluster&	Cluster::operator=(const Cluster& src)
 Cluster::~Cluster()
 {
 	t_mmap::iterator	it;
-
 	for (it = _server_sockets.begin(); it != _server_sockets.end(); it++)
 	{
 		std::vector<Webserver*>	servers = it->second.servers;
 		for (size_t i = 0; i < servers.size(); i++)
 			delete servers[i];
+	}
+
+	std::map<int, Client*>::iterator	it_client;
+	for (it_client = _clients.begin() ; it_client != _clients.end(); it_client++)
+	{
+		delete (it_client->second);
 	}
 
 	if (_config_file)
@@ -213,7 +218,6 @@ void	Cluster::runServers(void)
 {
 	initEpoll();
 	struct epoll_event	ep_events[MAX_EVENTS];
-	std::vector<ServerConfig*>	configs = _config_file->getServers();
 
 	while (true)
 	{
