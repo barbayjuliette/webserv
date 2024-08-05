@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/05 21:00:27 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/05 22:06:57 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 
 	setContentType(_path);
 
-	if (request.getError() != NO_ERR &&  request.getError() != NOT_SUPPORTED)
+	if (request.getError() != NO_ERR && request.getError() != NOT_SUPPORTED)
 	{
 		set_error(400, "Bad Request");
 		_headers["Content-Length"] = intToString(this->_body.size());
@@ -211,7 +211,7 @@ void	Response::respond_get_request(const Request &request)
 void	Response::cgi_post_form(const Request &request)
 {
 	// std::cout << RED << "This is CGI\n" << RESET;
-	CGIHandler*	cgi = new CGIHandler(request);
+	CGIPost*	cgi = new CGIPost(request);
 	_body = cgi->getHtml();
 	_headers["Content-Length"] = intToString(this->_body.size());
 	_headers["Content-Type"] = cgi->getContentType();
