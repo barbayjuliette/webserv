@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/05 19:47:43 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/05 20:47:37 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,8 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 
 	getDate();
 	setFullResponse();
+	// std::cout << RED << "Code: " << this->_status_code << std::endl;
+	// std::cout << "Text: " << this->_status_text << std::endl << RESET;
 	// std::cout << this->_path << std::endl;
 	//  Content-Length if there is a body
 	// /!\ Body can be empty string, would be valid request
@@ -139,6 +141,8 @@ int		Response::is_directory(std::string req_path)
 
 	struct	stat				filename;
 	stat(_path.c_str(), &filename);
+	// std::cout << RED << "Path: " << _path;
+	// std::cout << RED << "filename: " << filename.st_mode << RESET << std::endl;
 
 	if (this->_path[this->_path.size() - 1] == '/')
 	{
@@ -169,22 +173,30 @@ int		Response::is_directory(std::string req_path)
 
 void	Response::respond_get_request(const Request &request)
 {
-	if (is_directory(request.getPath()) == 0)
-		return ;
 	
 	std::string		ext = ".py";
 	int				length = request.getPath().size();
 
-	if (request.getPath().substr(length - ext.size(), length) == ext)
+	std::cout << RED << "HERE\n";
+	std::cout << "Length: " << length << std::endl;
+	std::cout << "ext.size(): " << (int)ext.size() << std::endl;
+	std::cout << "Length - ext.size(): " << length - ext.size() << std::endl << RESET;
+	
+	if (length >= (int)ext.size() && request.getPath().substr(length - ext.size(), length) == ext)
 	{
 		std::cout << RED << "CGI GET \n" << RESET;
 		CGIGet*	cgi = new CGIGet(request);
 		_body = cgi->getHtml();
 		_headers["Content-Length"] = intToString(this->_body.size());
 		_headers["Content-Type"] = cgi->getContentType();
+		this->_status_code = 200;
+		this->_status_text = "OK";
 		delete (cgi);
 		return ;
 	}
+	std::cout << RED << "AGAIN\n" << RESET;
+	if (is_directory(request.getPath()) == 0)
+		return ;
 
 	char						c;
 	std::ifstream				page(this->_path.c_str());
@@ -208,6 +220,8 @@ void	Response::cgi_post_form(const Request &request)
 	_body = cgi->getHtml();
 	_headers["Content-Length"] = intToString(this->_body.size());
 	_headers["Content-Type"] = cgi->getContentType();
+	this->_status_code = 200;
+	this->_status_text = "OK";
 	// _headers["Location"] = "./subscribe.html";
 	// std::cout << RED << "CGI DONE\n" << RESET;
 	delete (cgi);
