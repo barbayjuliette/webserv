@@ -118,7 +118,7 @@ void	Response::create_directory_listing(std::string path, std::string req_path)
 	while ((dr = readdir(dir)))
 	{
 		std::string	name = dr->d_name;
-		if (name == "." || name == "..")
+		if (name == "." || name == ".." || name[0] == '.')
 			continue;
 		index << create_html(dr->d_name, req_path);
 	}
@@ -159,6 +159,7 @@ int		Response::is_directory(std::string req_path)
 	else if (autoIndex == true)
 		create_directory_listing(dir_path, req_path);
 	else
+		// set_error(403, "Forbidden");
 		set_error(404, "Not Found");
 
 	_headers["Content-Length"] = intToString(this->_body.size());

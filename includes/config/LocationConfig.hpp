@@ -14,9 +14,11 @@
 # define LOCATION_CONFIG_HPP
 
 # include "ValidConfig.hpp"
+# include "ServerConfig.hpp"
 
 class ConfigFile;
 class ValidConfig;
+class ServerConfig;
 
 /* Each location block is nested inside a server block
 - path: the location identifier to compare with a requested url
@@ -27,10 +29,13 @@ class ValidConfig;
 class LocationConfig : public ValidConfig
 {
 	private:
-		std::string	_path; //location-specific directive
-		bool		_match_exact;
-		bool		_case_sensitive;
+		ServerConfig*	_server;
+		std::string		_path; //location-specific directive
+		bool			_match_exact;
+		bool			_case_sensitive;
 		// std::map<std::string, t_directive>	_validKeys;
+
+		LocationConfig(); //should not be constructed without server
 
 	public:
 		enum e_modifier
@@ -41,7 +46,7 @@ class LocationConfig : public ValidConfig
 		};
 
 		/* Constructors */
-		LocationConfig();
+		LocationConfig(ServerConfig* server);
 		LocationConfig(const LocationConfig& src);
 
 		/* Operator overload */

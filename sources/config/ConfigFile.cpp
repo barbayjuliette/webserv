@@ -27,6 +27,21 @@ ConfigFile::ConfigFile(const char *file)
 	validateConfig();
 }
 
+ConfigFile::ConfigFile(const ConfigFile& src)
+{
+	*this = src;
+}
+
+ConfigFile&	ConfigFile::operator=(const ConfigFile& other)
+{
+	if (this != &other)
+	{
+		this->_servers = other._servers;
+		this->_open_braces = other._open_braces;
+	}
+	return (*this);
+}
+
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
@@ -108,7 +123,7 @@ void	ConfigFile::readServerContext(ServerConfig* server)
 
 		if (checkContext(tokens[0]) == LOCATION)
 		{
-			LocationConfig	*location = new LocationConfig();
+			LocationConfig	*location = new LocationConfig(server);
 
 			location->setPath(tokens);
 			server->setLocation(location->getPath(), location);

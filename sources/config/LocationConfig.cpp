@@ -16,7 +16,10 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-LocationConfig::LocationConfig() : ValidConfig(), _match_exact(false), _case_sensitive(false)
+LocationConfig::LocationConfig() : ValidConfig() {}
+
+LocationConfig::LocationConfig(ServerConfig* server) :
+	ValidConfig(), _server(server), _match_exact(false), _case_sensitive(false)
 {
 	initValidKeys();
 	this->_path = "/";
@@ -53,6 +56,8 @@ void	LocationConfig::validateKeys(void)
 {
 	if (_directives.find("root") != _directives.end())
 		setRoot(_directives["root"]);
+	else
+		this->_root = this->_server->getRoot();
 
 	for (t_strmap::iterator it = _directives.begin(); it != _directives.end(); it++)
 	{

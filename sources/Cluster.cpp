@@ -206,10 +206,6 @@ void	Cluster::removeFromEpoll(int socket_fd)
 	}
 }
 
-/*
-** --------------------------------- METHODS ----------------------------------
-*/
-
 /* Monitor all sockets for the specified events
 - If EPOLLIN flag is set for the server socket: there is a new client connection incoming
 - Call the corresponding Webserver instance to handle the events */
@@ -253,6 +249,10 @@ void	Cluster::runServers(void)
 		}
 	}
 }
+
+/*
+** ----------------------------- HANDLE CONNECTIONS ----------------------------
+*/
 
 /* Add new client to the clients map
 - Create epoll_event struct for the new client socket and register it to be monitored */
@@ -315,39 +315,6 @@ Client*		Cluster::getClient(int socket)
 	return (_clients[socket]);
 }
 
-void		Cluster::handle_write_connection(int client_socket)
-{
-	Client			*client = getClient(client_socket);
-	if (!client)
-		return ;
-	Response		*response = client->getResponse();
-	unsigned int	bytes_sent;
-	if (!response)
-		return ;
-
-	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
-	if (bytes_sent == response->getFullResponse().size())
-	{
-		if (CTRACE)
-		{
-			std::cout << CYAN << "inside handle_write_connection: " << client_socket << '\n' << RESET;
-			std::cout << GREEN << "---- Response sent to client ----\n" << RESET;
-			std::cout << response->getFullResponse() << std::endl;
-			std::cout << GREEN << "End of response\n" << RESET;
-		}
-		if ((response->getHeaders())["Connection"] == "keep-alive")
-		{
-			client->reset();
-		}
-		// else
-		// {
-		// 	removeClient(client_socket);
-		// }
-	}
-	else
-		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
-}
-
 
 /* Preliminary request parsing: extract host and port to determine which server to route to */
 void	Cluster::handle_read_connection(int client_socket)
@@ -400,7 +367,7 @@ void	Cluster::handle_read_connection(int client_socket)
 				throw std::runtime_error("No server matched the request");
 			if (CTRACE)
 			{
-				std::cout << GREEN << "found server match\n" << RESET;
+				std::cout << GREEN << "\nfound server match\n" << RESET;
 				server->printServerNames();
 			}
 			// Set config
@@ -409,6 +376,43 @@ void	Cluster::handle_read_connection(int client_socket)
 		}
 	}
 }
+
+void		Cluster::handle_write_connection(int client_socket)
+{
+	Client			*client = getClient(client_socket);
+	if (!client)
+		return ;
+	Response		*response = client->getResponse();
+	unsigned int	bytes_sent;
+	if (!response)
+		return ;
+
+	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
+	if (bytes_sent == response->getFullResponse().size())
+	{
+		if (CTRACE)
+		{
+			std::cout << CYAN << "\ninside handle_write_connection: " << client_socket << '\n' << RESET;
+			std::cout << GREEN << "---- Response sent to client ----\n" << RESET;
+			std::cout << response->getFullResponse() << std::endl;
+			std::cout << GREEN << "End of response\n" << RESET;
+		}
+		if ((response->getHeaders())["Connection"] == "keep-alive")
+		{
+			client->reset();
+		}
+		// else
+		// {
+		// 	removeClient(client_socket);
+		// }
+	}
+	else
+		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
+}
+
+/*
+** -------------------------------- SERVER UTILS --------------------------------
+*/
 
 Webserver*	Cluster::getServerByPort(const std::string& name, const std::string& host, int port)
 {
@@ -442,10 +446,6 @@ Webserver*	Cluster::getServerByName(std::vector<Webserver*>& servers, const std:
 	}
 	return (servers[0]);
 }
-
-/*
-** ---------------------------------- UTILS -----------------------------------
-*/
 
 bool	Cluster::is_server_socket(const int fd)
 {
@@ -505,25 +505,6 @@ std::string	Cluster::getClientIPAddress(const int client_socket)
 	return (stream.str());
 }
 
-void	Cluster::check(int num)
-{
-	if (num < 0)
-	{
-		std::cerr << strerror(errno) << std::endl;
-		exit(1);
-	}
-}
-
-void	Cluster::signal_handler(int signum)
-{
-	if (_instance)
-	{
-		delete (_instance);
-	}
-	std::cout << "\nSignal received, webserver closed. Bye bye!" << std::endl;
-	exit(signum);
-}
-
 int	Cluster::countServers(std::string& host, int port)
 {
 	int	count = 0;
@@ -560,4 +541,27 @@ void	Cluster::printServerSockets(void)
 		std::cout << "- Socket fd: " << it->second.fd << '\n';
 		std::cout << "- No. of servers listening: " << countServers(it) << "\n\n";
 	}
+}
+
+/*
+** ---------------------------------- UTILS -----------------------------------
+*/
+
+void	Cluster::check(int num)
+{
+	if (num < 0)
+	{
+		std::cerr << strerror(errno) << std::endl;
+		exit(1);
+	}
+}
+
+void	Cluster::signal_handler(int signum)
+{
+	if (_instance)
+	{
+		delete (_instance);
+	}
+	std::cout << "\nSignal received, webserver closed. Bye bye!" << std::endl;
+	exit(signum);
 }

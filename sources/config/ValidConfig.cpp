@@ -26,10 +26,7 @@ ValidConfig::ValidConfig()
 	this->_root = "./";
 	this->_allowed_methods.push_back("GET");
 	this->_allowed_methods.push_back("POST");
-
-	std::string	default_index = this->_root + "index.html";
-	if (isRegularFile(default_index) && !access(default_index.c_str(), R_OK))
-		this->_index.push_back(default_index);
+	this->_index.push_back(this->_root + "index.html");
 }
 
 ValidConfig::ValidConfig(const ValidConfig& other)
@@ -161,14 +158,14 @@ void	ValidConfig::setIndex(const t_strvec& tokens)
 	if (tokens.empty())
 		return ;
 
-	for (size_t i = 0; i < tokens.size(); i++)
-	{
-		std::string	index_file = this->_root + tokens[i];
-		if (!isRegularFile(index_file))
-			throw InvalidConfigError("Invalid index file");
-		if (access(index_file.c_str(), R_OK))
-			throw InvalidConfigError("No permission to read index file");
-	}
+	// for (size_t i = 0; i < tokens.size(); i++)
+	// {
+	// 	std::string	index_file = this->_root + tokens[i];
+	// 	// if (!isRegularFile(index_file))
+	// 	// 	throw InvalidConfigError("Invalid index file");
+	// 	// if (access(index_file.c_str(), R_OK))
+	// 	// 	throw InvalidConfigError("No permission to read index file");
+	// }
 	this->_index = tokens;
 }
 

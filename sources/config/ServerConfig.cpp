@@ -81,7 +81,7 @@ void	ServerConfig::validateKeys(void)
 	}
 
 	if (_locations.empty())
-		_locations["/"] = new LocationConfig();
+		_locations["/"] = new LocationConfig(this);
 }
 
 void	ServerConfig::setLocation(const std::string& path, LocationConfig* location)
