@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/05 20:48:55 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/05 21:00:27 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -189,6 +189,7 @@ void	Response::respond_get_request(const Request &request)
 		delete (cgi);
 		return ;
 	}
+	
 	if (is_directory(request.getPath()) == 0)
 		return ;
 
@@ -235,21 +236,6 @@ void	Response::respond_post_request(const Request &request)
 	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
-int	Response::check_permission(void)
-{
-	std::string		database = "./" + _config->getRoot() + "database";
-	int				length = database.size();
-
-	if (this->_path.substr(0, length) != database)
-	{
-		set_error(403, "Forbidden");
-		std::cout << "in check_permission\n";
-		_headers["Content-Length"] = intToString(this->_body.size());
-		return (0);
-	}
-	return (1);
-}
-
 void	Response::set_error(int code, std::string text)
 {
 	this->_status_code = code;
@@ -259,10 +245,6 @@ void	Response::set_error(int code, std::string text)
 
 void	Response::respond_delete_request()
 {
-	// We can delete anything from root/database/
-	if (!check_permission())
-		return ;
-
 	if (access(this->_path.c_str(), F_OK) == -1)
 		set_error(404, "Not found");
 	else if (remove(this->_path.c_str()) == 0)
