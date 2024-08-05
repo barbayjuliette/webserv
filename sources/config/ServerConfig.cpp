@@ -75,7 +75,7 @@ void	ServerConfig::validateKeys(void)
 
 		t_dirmap::iterator found = this->_validKeys.find(it->first);
 		if (found == this->_validKeys.end())
-			throw InvalidConfigError("Invalid server directive");
+			throw InvalidConfigError("Unsupported server directive => " + it->first);
 		t_directive	handlerFunction = found->second;
 		(this->*handlerFunction)(it->second);
 	}

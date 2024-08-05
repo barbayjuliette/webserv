@@ -66,7 +66,7 @@ void	LocationConfig::validateKeys(void)
 
 		t_dirmap::iterator found = this->_validKeys.find(it->first);
 		if (found == this->_validKeys.end())
-			throw InvalidConfigError("Invalid location directive");
+			throw InvalidConfigError("Unsupported location directive => " + it->first);
 		t_directive	handlerFunction = found->second;
 		(this->*handlerFunction)(it->second);
 	}
