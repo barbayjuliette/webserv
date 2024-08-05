@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/05 20:47:37 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/05 20:48:55 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,11 +177,6 @@ void	Response::respond_get_request(const Request &request)
 	std::string		ext = ".py";
 	int				length = request.getPath().size();
 
-	std::cout << RED << "HERE\n";
-	std::cout << "Length: " << length << std::endl;
-	std::cout << "ext.size(): " << (int)ext.size() << std::endl;
-	std::cout << "Length - ext.size(): " << length - ext.size() << std::endl << RESET;
-	
 	if (length >= (int)ext.size() && request.getPath().substr(length - ext.size(), length) == ext)
 	{
 		std::cout << RED << "CGI GET \n" << RESET;
@@ -194,7 +189,6 @@ void	Response::respond_get_request(const Request &request)
 		delete (cgi);
 		return ;
 	}
-	std::cout << RED << "AGAIN\n" << RESET;
 	if (is_directory(request.getPath()) == 0)
 		return ;
 
