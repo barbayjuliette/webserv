@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/02 20:38:04 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/05 19:47:43 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 	if (request.getError() != NO_ERR &&  request.getError() != NOT_SUPPORTED)
 	{
 		set_error(400, "Bad Request");
+		_headers["Content-Length"] = intToString(this->_body.size());
 		std::cout << "Error: " << request.getError() << std::endl;
 	}
 	else if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
