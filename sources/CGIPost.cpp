@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/05 21:18:39 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 18:10:40 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 18:24:10 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,7 @@ CGIPost::CGIPost(Request const & request) : CGIHandler()
 	if (pipe(pipe_fd) == -1 || pipe(pipe_data) == -1)
 	{
 		std::cout << "Error: " << strerror(errno) << std::endl;
+		setError(500);
 		return ;
 	}
 
@@ -55,6 +56,7 @@ CGIPost::CGIPost(Request const & request) : CGIHandler()
 	if (pid == -1)
 	{
 		std::cout << "Error: " << strerror(errno) << std::endl;
+		setError(500);
 		return ;
 	}
 	if (pid == 0)
@@ -81,11 +83,9 @@ void	CGIPost::process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Reques
 		while ((bytesRead = read(pipe_fd[0], buffer, sizeof(buffer) - 1)) > 0) 
 		{
 			buffer[bytesRead] = '\0';
-			// _result += buffer;
 			setResult(getResult() += buffer);
 		}
 		close(pipe_fd[0]);
-		// std::cout << RED << "Result CGI: " << _result << RESET << std::endl;
 		setContentType();
 		setHtml();
 }
@@ -137,5 +137,6 @@ void	CGIPost::execute_cgi(int pipe_fd[], int pipe_data[], Request const & reques
 	close(pipe_data[0]);
 	execve("/usr/bin/python3", argv, const_cast<char* const*>(env));
 	std::cout << "Execve failed\n";
+	setError(500);
 }
 

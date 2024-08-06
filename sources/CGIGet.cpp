@@ -48,6 +48,7 @@ CGIGet::CGIGet(Request const & request) : CGIHandler()
 	if (pipe(pipe_fd) == -1)
 	{
 		std::cout << "Error: " << strerror(errno) << std::endl;
+		setError(500);
 		return ;
 	}
 
@@ -55,6 +56,7 @@ CGIGet::CGIGet(Request const & request) : CGIHandler()
 	if (pid == -1)
 	{
 		std::cout << "Error: " << strerror(errno) << std::endl;
+		setError(500);
 		return ;
 	}
 	if (pid == 0)
@@ -127,4 +129,5 @@ void	CGIGet::execute_cgi(int pipe_fd[], Request const & request)
 	close(pipe_fd[1]);
 	execve("/usr/bin/python3", argv, const_cast<char* const*>(env));
 	std::cerr << "Execve failed\n";
+	setError(500);
 }

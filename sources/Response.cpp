@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 16:58:20 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 18:25:59 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -219,6 +219,8 @@ void	Response::cgi_post_form(const Request &request)
 	CGIPost*	cgi = new CGIPost(request);
 	if (cgi->getError() == 404)
 		set_error(404, "Not Found");
+	else if (cgi->getError() == 500)
+		set_error(500, "Internal Server Error");
 	else
 	{
 		_body = cgi->getHtml();
