@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 15:00:25 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/05 21:55:43 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 18:00:26 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ CGIHandler::~CGIHandler()
 
 }
 
-CGIHandler::CGIHandler()
+CGIHandler::CGIHandler() : _error(0)
 {
 
 }
@@ -107,4 +107,24 @@ void	CGIHandler::setHtml()
 void	CGIHandler::setResult(std::string result)
 {
 	this->_result = result;
+}
+
+std::string	CGIHandler::getFullPath()
+{
+	return (this->_full_path);
+}
+
+void	CGIHandler::setFullPath(std::string path)
+{
+	this->_full_path = path;
+}
+
+int			CGIHandler::getError()
+{
+	return (this->_error);
+}
+
+void		CGIHandler::setError(int error)
+{
+	this->_error = error;
 }

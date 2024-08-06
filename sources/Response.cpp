@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/05 22:06:57 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 16:58:20 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -181,11 +181,16 @@ void	Response::respond_get_request(const Request &request)
 	{
 		std::cout << RED << "CGI GET \n" << RESET;
 		CGIGet*	cgi = new CGIGet(request);
-		_body = cgi->getHtml();
+		if (cgi->getError() == 404)
+			set_error(404, "Not Found");
+		else
+		{
+			_body = cgi->getHtml();
+			this->_status_code = 200;
+			this->_status_text = "OK";
+			_headers["Content-Type"] = cgi->getContentType();
+		}
 		_headers["Content-Length"] = intToString(this->_body.size());
-		_headers["Content-Type"] = cgi->getContentType();
-		this->_status_code = 200;
-		this->_status_text = "OK";
 		delete (cgi);
 		return ;
 	}
@@ -212,13 +217,16 @@ void	Response::cgi_post_form(const Request &request)
 {
 	// std::cout << RED << "This is CGI\n" << RESET;
 	CGIPost*	cgi = new CGIPost(request);
-	_body = cgi->getHtml();
+	if (cgi->getError() == 404)
+		set_error(404, "Not Found");
+	else
+	{
+		_body = cgi->getHtml();
+		_headers["Content-Type"] = cgi->getContentType();
+		this->_status_code = 200;
+		this->_status_text = "OK";
+	}
 	_headers["Content-Length"] = intToString(this->_body.size());
-	_headers["Content-Type"] = cgi->getContentType();
-	this->_status_code = 200;
-	this->_status_text = "OK";
-	// _headers["Location"] = "./subscribe.html";
-	// std::cout << RED << "CGI DONE\n" << RESET;
 	delete (cgi);
 }
 

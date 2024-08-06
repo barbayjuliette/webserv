@@ -37,6 +37,14 @@ CGIGet::CGIGet(Request const & request) : CGIHandler()
 {
 	int	pipe_fd[2];
 
+	setFullPath("./cgi-bin" + request.getPath());
+	
+	if (access(getFullPath().c_str(), F_OK) != 0)
+	{
+		setError(404);
+		return ;
+	}
+
 	if (pipe(pipe_fd) == -1)
 	{
 		std::cout << "Error: " << strerror(errno) << std::endl;
@@ -50,7 +58,7 @@ CGIGet::CGIGet(Request const & request) : CGIHandler()
 		return ;
 	}
 	if (pid == 0)
-		execute_cgi("/cgi-bin" + request.getPath(), pipe_fd, request);
+		execute_cgi(pipe_fd, request);
 	else
 		process_result_cgi(pid, pipe_fd);
 }
@@ -77,12 +85,12 @@ void	CGIGet::process_result_cgi(int pid, int pipe_fd[])
 }
 
 // CHILD: Read form data from pipe then send result from cgi via pipe.
-void	CGIGet::execute_cgi(std::string path, int pipe_fd[], Request const & request)
+void	CGIGet::execute_cgi(int pipe_fd[], Request const & request)
 {
 	close(pipe_fd[0]);
 
 	dup2(pipe_fd[1], STDOUT_FILENO); // Write result of script to pipe
-	path = "." + path;
+	std::string	path = getFullPath();
 
 	char* const argv[] = 
 	{
@@ -118,5 +126,5 @@ void	CGIGet::execute_cgi(std::string path, int pipe_fd[], Request const & reques
 	};
 	close(pipe_fd[1]);
 	execve("/usr/bin/python3", argv, const_cast<char* const*>(env));
-	std::cout << "Execve failed\n";
+	std::cerr << "Execve failed\n";
 }

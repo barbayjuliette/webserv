@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/02 20:33:16 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/05 22:00:34 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 18:14:05 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 #pragma once
 
 # include "CGIHandler.hpp"
-# include "Request.hpp"
 
 class CGIGet : public CGIHandler
 {
@@ -25,6 +24,6 @@ class CGIGet : public CGIHandler
 		~CGIGet();
 		CGIGet &		operator=( CGIGet const & rhs );
 
-		void			execute_cgi(std::string path, int pipe_fd[], Request const & request);
+		void			execute_cgi(int pipe_fd[], Request const & request);
 		void			process_result_cgi(int pid, int pipe_fd[]);
 };

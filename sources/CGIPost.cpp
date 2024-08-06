@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/05 21:18:39 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/05 21:57:06 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 18:10:40 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,13 @@ CGIPost::CGIPost(Request const & request) : CGIHandler()
 	int	pipe_fd[2];
 	int	pipe_data[2];
 
+	this->setFullPath("." + request.getPath());
+	if (access(getFullPath().c_str(), F_OK) != 0)
+	{
+		setError(404);
+		return ;
+	}
+
 	if (pipe(pipe_fd) == -1 || pipe(pipe_data) == -1)
 	{
 		std::cout << "Error: " << strerror(errno) << std::endl;
@@ -51,7 +58,7 @@ CGIPost::CGIPost(Request const & request) : CGIHandler()
 		return ;
 	}
 	if (pid == 0)
-		execute_cgi(request.getPath(), pipe_fd, pipe_data, request);
+		execute_cgi(pipe_fd, pipe_data, request);
 	else
 		process_result_cgi(pid, pipe_fd, pipe_data, request);
 }
@@ -85,14 +92,14 @@ void	CGIPost::process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Reques
 
 
 // CHILD: Read form data from pipe then send result from cgi via pipe.
-void	CGIPost::execute_cgi(std::string path, int pipe_fd[], int pipe_data[], Request const & request)
+void	CGIPost::execute_cgi(int pipe_fd[], int pipe_data[], Request const & request)
 {
 	close(pipe_fd[0]);
 	close(pipe_data[1]);
 
 	dup2(pipe_data[0], STDIN_FILENO); // Read form data from the pipe
 	dup2(pipe_fd[1], STDOUT_FILENO); // Write result of script to pipe
-	path = "." + path;
+	std::string	path = getFullPath();
 
 	char* const argv[] = 
 	{
