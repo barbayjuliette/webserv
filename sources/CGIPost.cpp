@@ -1,43 +1,44 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   CGIGet.cpp                                     :+:      :+:    :+:   */
+/*   CGIPost.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/07/31 15:00:25 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/02 20:26:17 by jbarbay          ###   ########.fr       */
+/*   Created: 2024/08/05 21:18:39 by jbarbay           #+#    #+#             */
+/*   Updated: 2024/08/05 21:57:06 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "CGIGet.hpp"
+#include "CGIPost.hpp"
 
-CGIGet::CGIGet( CGIGet const & src )
+CGIPost::CGIPost( CGIPost const & src )
 {
 	(void)src;
 }
 
-CGIGet::~CGIGet()
+CGIPost::~CGIPost()
 {
 
 }
 
-CGIGet::CGIGet() : CGIHandler()
+CGIPost::CGIPost() : CGIHandler()
 {
 
 }
 
-CGIGet &		CGIGet::operator=( CGIGet const & rhs )
+CGIPost &		CGIPost::operator=( CGIPost const & rhs )
 {
 	(void)rhs;
 	return(*this);
 }
 
-CGIGet::CGIGet(Request const & request) : CGIHandler()
+CGIPost::CGIPost(Request const & request) : CGIHandler()
 {
 	int	pipe_fd[2];
+	int	pipe_data[2];
 
-	if (pipe(pipe_fd) == -1)
+	if (pipe(pipe_fd) == -1 || pipe(pipe_data) == -1)
 	{
 		std::cout << "Error: " << strerror(errno) << std::endl;
 		return ;
@@ -50,15 +51,21 @@ CGIGet::CGIGet(Request const & request) : CGIHandler()
 		return ;
 	}
 	if (pid == 0)
-		execute_cgi("/cgi-bin" + request.getPath(), pipe_fd, request);
+		execute_cgi(request.getPath(), pipe_fd, pipe_data, request);
 	else
-		process_result_cgi(pid, pipe_fd);
+		process_result_cgi(pid, pipe_fd, pipe_data, request);
 }
 
 // PARENT: Writes the form data to the pipe, then waits for the child to send the result from cgi.
-void	CGIGet::process_result_cgi(int pid, int pipe_fd[])
+void	CGIPost::process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Request const & request)
 {
 		close(pipe_fd[1]);
+		close(pipe_data[0]);
+
+		std::string str_body(request.getBody().begin(), request.getBody().end());
+
+		write(pipe_data[1], str_body.c_str(), str_body.size());
+		close(pipe_data[1]);
         waitpid(pid, NULL, 0);
 
 		char buffer[4096];
@@ -76,11 +83,14 @@ void	CGIGet::process_result_cgi(int pid, int pipe_fd[])
 		setHtml();
 }
 
+
 // CHILD: Read form data from pipe then send result from cgi via pipe.
-void	CGIGet::execute_cgi(std::string path, int pipe_fd[], Request const & request)
+void	CGIPost::execute_cgi(std::string path, int pipe_fd[], int pipe_data[], Request const & request)
 {
 	close(pipe_fd[0]);
+	close(pipe_data[1]);
 
+	dup2(pipe_data[0], STDIN_FILENO); // Read form data from the pipe
 	dup2(pipe_fd[1], STDOUT_FILENO); // Write result of script to pipe
 	path = "." + path;
 
@@ -92,7 +102,7 @@ void	CGIGet::execute_cgi(std::string path, int pipe_fd[], Request const & reques
 	};
 
 	std::string	content_length = "CONTENT_LENGTH=" + intToString(request.getBody().size());
-	std::string	request_method = "REQUEST_METHOD=GET";
+	std::string	request_method = "REQUEST_METHOD=" + request.getMethod();
 	std::string	content_type = "CONTENT_TYPE=" + request.getHeaders()["content-type"];
 	// TO DO Choose which headers to put based on tester
 	// std::string	gateway_interface = "GATEWAY_INTERFACE=CGI/1.1";
@@ -117,6 +127,8 @@ void	CGIGet::execute_cgi(std::string path, int pipe_fd[], Request const & reques
 		NULL
 	};
 	close(pipe_fd[1]);
+	close(pipe_data[0]);
 	execve("/usr/bin/python3", argv, const_cast<char* const*>(env));
 	std::cout << "Execve failed\n";
 }
+

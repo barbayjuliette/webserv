@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/02 20:38:04 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/05 22:06:57 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,9 +26,10 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 
 	setContentType(_path);
 
-	if (request.getError() != NO_ERR &&  request.getError() != NOT_SUPPORTED)
+	if (request.getError() != NO_ERR && request.getError() != NOT_SUPPORTED)
 	{
 		set_error(400, "Bad Request");
+		_headers["Content-Length"] = intToString(this->_body.size());
 		std::cout << "Error: " << request.getError() << std::endl;
 	}
 	else if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
@@ -53,6 +54,8 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 
 	getDate();
 	setFullResponse();
+	// std::cout << RED << "Code: " << this->_status_code << std::endl;
+	// std::cout << "Text: " << this->_status_text << std::endl << RESET;
 	// std::cout << this->_path << std::endl;
 	//  Content-Length if there is a body
 	// /!\ Body can be empty string, would be valid request
@@ -138,6 +141,8 @@ int		Response::is_directory(std::string req_path)
 
 	struct	stat				filename;
 	stat(_path.c_str(), &filename);
+	// std::cout << RED << "Path: " << _path;
+	// std::cout << RED << "filename: " << filename.st_mode << RESET << std::endl;
 
 	if (this->_path[this->_path.size() - 1] == '/')
 	{
@@ -169,22 +174,25 @@ int		Response::is_directory(std::string req_path)
 
 void	Response::respond_get_request(const Request &request)
 {
-	if (is_directory(request.getPath()) == 0)
-		return ;
 	
 	std::string		ext = ".py";
 	int				length = request.getPath().size();
 
-	if (request.getPath().substr(length - ext.size(), length) == ext)
+	if (length >= (int)ext.size() && request.getPath().substr(length - ext.size(), length) == ext)
 	{
 		std::cout << RED << "CGI GET \n" << RESET;
 		CGIGet*	cgi = new CGIGet(request);
 		_body = cgi->getHtml();
 		_headers["Content-Length"] = intToString(this->_body.size());
 		_headers["Content-Type"] = cgi->getContentType();
+		this->_status_code = 200;
+		this->_status_text = "OK";
 		delete (cgi);
 		return ;
 	}
+	
+	if (is_directory(request.getPath()) == 0)
+		return ;
 
 	char						c;
 	std::ifstream				page(this->_path.c_str());
@@ -204,10 +212,12 @@ void	Response::respond_get_request(const Request &request)
 void	Response::cgi_post_form(const Request &request)
 {
 	// std::cout << RED << "This is CGI\n" << RESET;
-	CGIHandler*	cgi = new CGIHandler(request);
+	CGIPost*	cgi = new CGIPost(request);
 	_body = cgi->getHtml();
 	_headers["Content-Length"] = intToString(this->_body.size());
 	_headers["Content-Type"] = cgi->getContentType();
+	this->_status_code = 200;
+	this->_status_text = "OK";
 	// _headers["Location"] = "./subscribe.html";
 	// std::cout << RED << "CGI DONE\n" << RESET;
 	delete (cgi);
@@ -227,21 +237,6 @@ void	Response::respond_post_request(const Request &request)
 	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
-int	Response::check_permission(void)
-{
-	std::string		database = "./" + _config->getRoot() + "database";
-	int				length = database.size();
-
-	if (this->_path.substr(0, length) != database)
-	{
-		set_error(403, "Forbidden");
-		std::cout << "in check_permission\n";
-		_headers["Content-Length"] = intToString(this->_body.size());
-		return (0);
-	}
-	return (1);
-}
-
 void	Response::set_error(int code, std::string text)
 {
 	this->_status_code = code;
@@ -251,10 +246,6 @@ void	Response::set_error(int code, std::string text)
 
 void	Response::respond_delete_request()
 {
-	// We can delete anything from root/database/
-	if (!check_permission())
-		return ;
-
 	if (access(this->_path.c_str(), F_OK) == -1)
 		set_error(404, "Not found");
 	else if (remove(this->_path.c_str()) == 0)

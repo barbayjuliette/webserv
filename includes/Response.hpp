@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/02 20:38:34 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/05 22:17:52 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,8 +27,8 @@
 # include <iostream>
 # include <dirent.h>
 # include "ConfigFile.hpp"
-# include "CGIHandler.hpp"
 # include "CGIGet.hpp"
+# include "CGIPost.hpp"
 
 class CGIHandler;
 
@@ -58,7 +58,6 @@ class Response
 		void		respond_delete_request(void);
 		std::string	intToString(int num);
 		void		getDate();
-		int			check_permission(void);
 		void		set_error(int code, std::string text);
 		void		set_allow_methods(bool flag);
 		int			is_directory(std::string req_path);
