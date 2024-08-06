@@ -169,9 +169,15 @@ void Request::checkMethod()
 	 	|| this->_method == "DELETE")
 	 	return ;
 	else if (validMethods.find(searchMethod) != std::string::npos)
+	{
+		_req_complete = true;
 		this->_error = NOT_SUPPORTED;
+	}
 	else
+	{
+		_req_complete = true;
 		this->_error = INVALID_METHOD;
+	}
 }
 
 void Request::checkPath()
