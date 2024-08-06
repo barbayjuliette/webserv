@@ -68,7 +68,7 @@ ValidConfig::~ValidConfig()
 */
 
 /* Port number range: 0 to 65353 */
-void	ValidConfig::setListenPort(const t_strvec& tokens)
+void	ValidConfig::parseListenPort(const t_strvec& tokens)
 {
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
@@ -79,7 +79,7 @@ void	ValidConfig::setListenPort(const t_strvec& tokens)
 		throw InvalidConfigError("Listening port must be a number from 0 to 65353");
 }
 
-void	ValidConfig::setBodyMaxLength(const t_strvec& tokens)
+void	ValidConfig::parseBodyMaxLength(const t_strvec& tokens)
 {
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
@@ -87,7 +87,7 @@ void	ValidConfig::setBodyMaxLength(const t_strvec& tokens)
 	this->_body_max_length = strToSizet(tokens[0]);
 }
 
-void	ValidConfig::setAutoindex(const t_strvec& tokens)
+void	ValidConfig::parseAutoindex(const t_strvec& tokens)
 {
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
@@ -99,7 +99,7 @@ void	ValidConfig::setAutoindex(const t_strvec& tokens)
 		throw InvalidConfigError("Invalid param for autoindex");
 }
 
-void	ValidConfig::setHost(const t_strvec& tokens)
+void	ValidConfig::parseHost(const t_strvec& tokens)
 {
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
@@ -109,10 +109,10 @@ void	ValidConfig::setHost(const t_strvec& tokens)
 	else
 		this->_host = tokens[0];
 
-	setAddressInfo(this->_host, intToStr(this->_port));
+	parseAddressInfo(this->_host, intToStr(this->_port));
 }
 
-void	ValidConfig::setAddressInfo(std::string& host, std::string port)
+void	ValidConfig::parseAddressInfo(std::string& host, std::string port)
 {
 	struct addrinfo hints;
 	struct addrinfo	*result;
@@ -128,7 +128,7 @@ void	ValidConfig::setAddressInfo(std::string& host, std::string port)
 	this->_address_info = result;
 }
 
-void	ValidConfig::setRoot(const t_strvec& tokens)
+void	ValidConfig::parseRoot(const t_strvec& tokens)
 {
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
@@ -138,22 +138,20 @@ void	ValidConfig::setRoot(const t_strvec& tokens)
 	this->_root = tokens[0];
 }
 
-void	ValidConfig::setRedirect(const t_strvec& tokens)
+void	ValidConfig::parseRedirect(const t_strvec& tokens)
 {
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
 
-	if (!isRegularFile(tokens[0]))
-		throw InvalidConfigError("Invalid redirect");
 	this->_redirect = tokens[0];
 }
 
-void	ValidConfig::setServerName(const t_strvec& tokens)
+void	ValidConfig::parseServerName(const t_strvec& tokens)
 {
 	this->_server_name = tokens;
 }
 
-void	ValidConfig::setIndex(const t_strvec& tokens)
+void	ValidConfig::parseIndex(const t_strvec& tokens)
 {
 	if (tokens.empty())
 		return ;
@@ -169,7 +167,7 @@ void	ValidConfig::setIndex(const t_strvec& tokens)
 	this->_index = tokens;
 }
 
-void	ValidConfig::setAllowedMethods(const t_strvec& tokens)
+void	ValidConfig::parseAllowedMethods(const t_strvec& tokens)
 {
 	if (tokens.empty())
 		return ;
@@ -182,7 +180,7 @@ void	ValidConfig::setAllowedMethods(const t_strvec& tokens)
 	this->_allowed_methods = tokens;
 }
 
-void	ValidConfig::setErrorPages(const t_strvec& tokens)
+void	ValidConfig::parseErrorPages(const t_strvec& tokens)
 {
 	for (size_t i = 0; i < tokens.size(); i++)
 	{

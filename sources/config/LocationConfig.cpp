@@ -42,12 +42,12 @@ LocationConfig::~LocationConfig() {}
 
 void	LocationConfig::initValidKeys(void)
 {
-	this->_validKeys["autoindex"] = &LocationConfig::setAutoindex;
-	this->_validKeys["error_page"] = &LocationConfig::setErrorPages;
-	this->_validKeys["root"] = &LocationConfig::setRoot;
-	this->_validKeys["index"] = &LocationConfig::setIndex;
-	this->_validKeys["redirect"] = &LocationConfig::setRedirect;
-	this->_validKeys["allowed_methods"] = &LocationConfig::setAllowedMethods;
+	this->_validKeys["autoindex"] = &LocationConfig::parseAutoindex;
+	this->_validKeys["error_page"] = &LocationConfig::parseErrorPages;
+	this->_validKeys["root"] = &LocationConfig::parseRoot;
+	this->_validKeys["index"] = &LocationConfig::parseIndex;
+	this->_validKeys["redirect"] = &LocationConfig::parseRedirect;
+	this->_validKeys["allowed_methods"] = &LocationConfig::parseAllowedMethods;
 }
 
 /* Function for validating all directives in the map
@@ -55,14 +55,17 @@ void	LocationConfig::initValidKeys(void)
 void	LocationConfig::validateKeys(void)
 {
 	if (_directives.find("root") != _directives.end())
-		setRoot(_directives["root"]);
+		parseRoot(_directives["root"]);
 	else
 		this->_root = this->_server->getRoot();
 
+	if (_directives.find("cgi_ext") != _directives.end() && _directives.find("cgi_path") != _directives.end())
+		parseCGIPath(_directives["cgi_ext"], _directives["cgi_path"]);
+
 	for (t_strmap::iterator it = _directives.begin(); it != _directives.end(); it++)
 	{
-		if (TRACE)
-			std::cout << "current key: " << it->first << '\n';
+		if (it->first == "cgi_ext" || it->first == "cgi_path" || it->first == "root")
+			continue;
 
 		t_dirmap::iterator found = this->_validKeys.find(it->first);
 		if (found == this->_validKeys.end())
@@ -72,8 +75,24 @@ void	LocationConfig::validateKeys(void)
 	}
 }
 
+void	LocationConfig::parseCGIPath(t_strvec& exts, t_strvec& paths)
+{
+	if (exts.size() != paths.size())
+		throw InvalidConfigError("CGI extensions and paths do not match");
+
+	for (size_t i = 0; i < exts.size(); i++)
+	{
+		_cgi_path[exts[i]] = paths[i];
+	}
+	// std::cout << "printing cgi map:\n";
+	// for (std::map<std::string, std::string>::iterator it = _cgi_path.begin(); it != _cgi_path.end(); it++)
+	// {
+	// 	std::cout << it->first << ": " << it->second << '\n';
+	// }
+}
+
 /* Syntax: location [modifier] [URI] (+ inline open brace '{' if applicable) */
-void	LocationConfig::setPath(t_strvec& tokens)
+void	LocationConfig::parsePath(t_strvec& tokens)
 {
 	t_strvec::iterator	last = tokens.end();
 	last--;
@@ -85,7 +104,7 @@ void	LocationConfig::setPath(t_strvec& tokens)
 
 	t_strvec::iterator	current = tokens.begin();
 	current++;
-	if (setPathModifier(*current) == -1)
+	if (parsePathModifier(*current) == -1)
 	{
 		if (tokens.size() >= 3)
 			throw InvalidConfigError("Invalid parameters for location block");
@@ -108,7 +127,7 @@ int	LocationConfig::checkPathModifier(std::string& token)
 	return (-1);
 }
 
-int	LocationConfig::setPathModifier(std::string& token)
+int	LocationConfig::parsePathModifier(std::string& token)
 {
 	int modifier = checkPathModifier(token);
 
@@ -127,6 +146,34 @@ int	LocationConfig::setPathModifier(std::string& token)
 			break ;
 	}
 	return (modifier);
+}
+
+int	LocationConfig::comparePath(const std::string& str)
+{
+	size_t	count = 0;
+	size_t	i = 1;
+
+	while (i < _path.size() && i < str.size())
+	{
+		if (_path[i] == '/' && str[i] == '/')
+			count++;
+		if (_path[i] != str[i])
+			break ;
+		i++;
+	}
+	return (count);
+	// size_t	start1 = _path.find('/', pos);
+	// size_t	start2 = path.find('/', pos);
+	// size_t	end1 = _path.find('/', pos + 1);
+	// size_t	end2 = path.find('/', pos + 1);
+
+	// for (size_t i = start1; i < end1 && i < end2; i++)
+	// {
+	// 	if (_path[i] != path[i])
+	// 		return (count);
+	// }
+	// count++;
+	// return (comparePath(path, end1, count));
 }
 
 /*

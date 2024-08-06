@@ -63,8 +63,11 @@ void	ConfigFile::openFile(const char *file)
 	this->_config.open(file, std::ios::in);
 	if (!this->_config)
 	{
-		std::cout << file << std::endl;
-		throw ConfigReadError("Failed to open configuration file");
+		throw ConfigReadError("Failed to open " + std::string(file));
+	}
+	if (!ValidConfig::isRegularFile(file))
+	{
+		throw ConfigReadError(std::string(file) + " is not a regular file");
 	}
 }
 
@@ -125,7 +128,7 @@ void	ConfigFile::readServerContext(ServerConfig* server)
 		{
 			LocationConfig	*location = new LocationConfig(server);
 
-			location->setPath(tokens);
+			location->parsePath(tokens);
 			server->setLocation(location->getPath(), location);
 			readLocationContext(location);
 		}
@@ -317,7 +320,7 @@ std::vector<ServerConfig*>	ConfigFile::getServers(void)
 */
 
 ConfigFile::ConfigReadError::ConfigReadError(const std::string& message) \
-	: _message("Configuration file: " + message) {};
+	: _message("Config error: " + message) {};
 
 ConfigFile::ConfigReadError::~ConfigReadError() throw() {}
 

@@ -30,10 +30,10 @@ class LocationConfig : public ValidConfig
 {
 	private:
 		ServerConfig*	_server;
-		std::string		_path; //location-specific directive
+		std::string		_path;
+		std::map<std::string, std::string>	_cgi_path; //[ext] = path
 		bool			_match_exact;
 		bool			_case_sensitive;
-		// std::map<std::string, t_directive>	_validKeys;
 
 		LocationConfig(); //should not be constructed without server
 
@@ -58,9 +58,11 @@ class LocationConfig : public ValidConfig
 		/* Validation functions */
 		void	initValidKeys(void); //overload
 		void	validateKeys(void); //overload
-		void	setPath(t_strvec& tokens);
+		void	parseCGIPath(t_strvec& exts, t_strvec& paths);
+		void	parsePath(t_strvec& tokens);
 		int		checkPathModifier(std::string& path);
-		int		setPathModifier(std::string& token);
+		int		parsePathModifier(std::string& token);
+		int		comparePath(const std::string& path);
 
 		/* Accessors */
 		std::string	getPath(void);

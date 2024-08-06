@@ -46,16 +46,16 @@ ServerConfig::~ServerConfig()
 
 void	ServerConfig::initValidKeys(void)
 {
-	this->_validKeys["listen"] = &ServerConfig::setListenPort;
-	this->_validKeys["body_max_length"] = &ServerConfig::setBodyMaxLength;
-	this->_validKeys["autoindex"] = &ServerConfig::setAutoindex;
-	this->_validKeys["error_page"] = &ServerConfig::setErrorPages;
-	this->_validKeys["host"] = &ServerConfig::setHost;
-	this->_validKeys["root"] = &ServerConfig::setRoot;
-	this->_validKeys["server_name"] = &ServerConfig::setServerName;
-	this->_validKeys["index"] = &ServerConfig::setIndex;
-	this->_validKeys["redirect"] = &ServerConfig::setRedirect;
-	this->_validKeys["allowed_methods"] = &ServerConfig::setAllowedMethods;
+	this->_validKeys["listen"] = &ServerConfig::parseListenPort;
+	this->_validKeys["body_max_length"] = &ServerConfig::parseBodyMaxLength;
+	this->_validKeys["autoindex"] = &ServerConfig::parseAutoindex;
+	this->_validKeys["error_page"] = &ServerConfig::parseErrorPages;
+	this->_validKeys["host"] = &ServerConfig::parseHost;
+	this->_validKeys["root"] = &ServerConfig::parseRoot;
+	this->_validKeys["server_name"] = &ServerConfig::parseServerName;
+	this->_validKeys["index"] = &ServerConfig::parseIndex;
+	this->_validKeys["redirect"] = &ServerConfig::parseRedirect;
+	this->_validKeys["allowed_methods"] = &ServerConfig::parseAllowedMethods;
 }
 
 /* Function for validating all directives in the map
@@ -63,10 +63,10 @@ void	ServerConfig::initValidKeys(void)
 void	ServerConfig::validateKeys(void)
 {
 	if (_directives.find("root") != _directives.end())
-		setRoot(_directives["root"]);
+		parseRoot(_directives["root"]);
 
 	if (_directives.find("listen") != _directives.end())
-		setListenPort(_directives["listen"]);
+		parseListenPort(_directives["listen"]);
 
 	for (t_strmap::iterator it = _directives.begin(); it != _directives.end(); it++)
 	{
@@ -91,14 +91,33 @@ void	ServerConfig::setLocation(const std::string& path, LocationConfig* location
 
 LocationConfig*	ServerConfig::matchLocation(const std::string& path)
 {
-	// std::cout << "inside matchLocation: path: " << path << '\n';
-	if (_locations.find(path) != _locations.end())
+	std::cout << "inside matchLocation: path: " << path << '\n';
+
+	std::map<size_t, LocationConfig*>	match_result;
+
+	std::map<std::string, LocationConfig*>::iterator	it;
+	for (it = _locations.begin(); it != _locations.end(); it++)
 	{
-		return (_locations[path]);
+		size_t	cmp = it->second->comparePath(path);
+		std::cout << "comparing " << path << " : " << CYAN << it->first << RESET
+				<< " => " << cmp << '\n';
+		if (cmp > 0)
+		{
+			match_result[cmp] = it->second;
+			std::cout << "\t--> added to match_result\n";
+		}
 	}
-	else
+	std::cout << "no. of match_result: " << match_result.size() << '\n';
+
+	if (match_result.size() == 1)
+		return (match_result.begin()->second);
+
+	if (match_result.size() > 0)
 	{
-		//path matching logic
+		std::map<size_t, LocationConfig*>::iterator	match = match_result.end();
+		match--;
+		std::cout << "count: " << match->first << '\n';
+		return (match->second);
 	}
 	return (_locations.begin()->second);
 }

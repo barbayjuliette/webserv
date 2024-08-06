@@ -25,7 +25,6 @@ class ServerConfig : public ValidConfig
 {
 	private:
 		std::map<std::string, LocationConfig*>	_locations;
-		// std::map<std::string, t_directive>		_validKeys;
 
 	public:
 		/* Constructors */
