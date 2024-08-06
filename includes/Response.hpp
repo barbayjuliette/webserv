@@ -61,6 +61,7 @@ class Response
 		void		set_error(int code, std::string text);
 		void		set_allow_methods(bool flag);
 		int			is_directory(std::string req_path);
+		std::string	get_index_page(void);
 		void		create_directory_listing(std::string path, std::string req_path);
 		std::string	create_html(std::string source, std::string path);
 		void		cgi_post_form(const Request &request);

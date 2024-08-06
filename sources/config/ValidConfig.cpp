@@ -26,7 +26,7 @@ ValidConfig::ValidConfig()
 	this->_root = "./";
 	this->_allowed_methods.push_back("GET");
 	this->_allowed_methods.push_back("POST");
-	this->_index.push_back(this->_root + "index.html");
+	this->_index = "index.html";
 }
 
 ValidConfig::ValidConfig(const ValidConfig& other)
@@ -153,18 +153,10 @@ void	ValidConfig::parseServerName(const t_strvec& tokens)
 
 void	ValidConfig::parseIndex(const t_strvec& tokens)
 {
-	if (tokens.empty())
-		return ;
+	if (tokens.size() != 1)
+		throw InvalidConfigError(PARAM_COUNT_ERR);
 
-	// for (size_t i = 0; i < tokens.size(); i++)
-	// {
-	// 	std::string	index_file = this->_root + tokens[i];
-	// 	// if (!isRegularFile(index_file))
-	// 	// 	throw InvalidConfigError("Invalid index file");
-	// 	// if (access(index_file.c_str(), R_OK))
-	// 	// 	throw InvalidConfigError("No permission to read index file");
-	// }
-	this->_index = tokens;
+	this->_index = tokens[0];
 }
 
 void	ValidConfig::parseAllowedMethods(const t_strvec& tokens)
@@ -305,14 +297,14 @@ std::string	ValidConfig::getRedirect(void)
 	return (this->_redirect);
 }
 
+std::string	ValidConfig::getIndex(void)
+{
+	return (this->_index);
+}
+
 t_strvec	ValidConfig::getServerName(void)
 {
 	return (this->_server_name);
-}
-
-t_strvec	ValidConfig::getIndex(void)
-{
-	return (this->_index);
 }
 
 t_strvec	ValidConfig::getAllowedMethods(void)

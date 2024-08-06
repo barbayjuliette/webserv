@@ -148,32 +148,22 @@ int	LocationConfig::parsePathModifier(std::string& token)
 	return (modifier);
 }
 
-int	LocationConfig::comparePath(const std::string& str)
+size_t	LocationConfig::comparePath(const std::string& str)
 {
 	size_t	count = 0;
 	size_t	i = 1;
 
-	while (i < _path.size() && i < str.size())
+	while (i < this->_path.size() && i < str.size())
 	{
-		if (_path[i] == '/' && str[i] == '/')
+		if (this->_path[i] == '/' && str[i] == '/')
 			count++;
-		if (_path[i] != str[i])
+		if (this->_path[i] != str[i])
 			break ;
 		i++;
 	}
+	if ((long)(count + 1) != std::count(this->_path.begin(), this->_path.end(), '/'))
+		return (0);
 	return (count);
-	// size_t	start1 = _path.find('/', pos);
-	// size_t	start2 = path.find('/', pos);
-	// size_t	end1 = _path.find('/', pos + 1);
-	// size_t	end2 = path.find('/', pos + 1);
-
-	// for (size_t i = start1; i < end1 && i < end2; i++)
-	// {
-	// 	if (_path[i] != path[i])
-	// 		return (count);
-	// }
-	// count++;
-	// return (comparePath(path, end1, count));
 }
 
 /*

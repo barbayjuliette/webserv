@@ -151,11 +151,11 @@ int		Response::is_directory(std::string req_path)
 
 	if (this->_path[this->_path.size() - 1] == '/')
 	{
-		setPath(this->_path + "index.html");
+		setPath(this->_path + _location->getIndex());
 	}
 	else if (S_ISDIR(filename.st_mode))
 	{
-		setPath(this->_path + "/index.html");
+		setPath(this->_path + "/" + _location->getIndex());
 		dir_path += "/";
 	}
 	else

@@ -42,9 +42,9 @@ class ValidConfig
 		std::string		_host;
 		std::string		_root;
 		std::string		_redirect;
+		std::string		_index;
 
 		t_strvec		_server_name;
-		t_strvec		_index;
 		t_strvec		_allowed_methods;
 		t_strvec		_cgi_ext; //cgi file extensions
 		t_strvec		_cgi_path;
@@ -98,8 +98,8 @@ class ValidConfig
 		std::string		getHost(void);
 		std::string		getRoot(void);
 		std::string		getRedirect(void);
+		std::string		getIndex(void);
 		t_strvec		getServerName(void);
-		t_strvec		getIndex(void);
 		t_strvec		getAllowedMethods(void);
 		std::string		getErrorPage(int status_code);
 

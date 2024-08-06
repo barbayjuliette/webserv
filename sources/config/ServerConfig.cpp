@@ -104,7 +104,7 @@ LocationConfig*	ServerConfig::matchLocation(const std::string& path)
 		if (cmp > 0)
 		{
 			match_result[cmp] = it->second;
-			std::cout << "\t--> added to match_result\n";
+			std::cout << "\t--> added to match_result\n\n";
 		}
 	}
 	std::cout << "no. of match_result: " << match_result.size() << '\n';

@@ -62,7 +62,7 @@ class LocationConfig : public ValidConfig
 		void	parsePath(t_strvec& tokens);
 		int		checkPathModifier(std::string& path);
 		int		parsePathModifier(std::string& token);
-		int		comparePath(const std::string& path);
+		size_t	comparePath(const std::string& path);
 
 		/* Accessors */
 		std::string	getPath(void);
