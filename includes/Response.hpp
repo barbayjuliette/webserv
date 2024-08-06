@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/05 22:17:52 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 19:43:35 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,6 @@ class Response
 		void		create_directory_listing(std::string path, std::string req_path);
 		std::string	create_html(std::string source, std::string path);
 		void		cgi_post_form(const Request &request);
-
 
 		int									getStatusCode() const;
 		std::string							getStatusText() const;
