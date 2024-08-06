@@ -21,28 +21,6 @@ void Request::printError(std::string error_msg)
 	std::cout << RED << error_msg << RESET << std::endl;
 }
 
-// Testing function
-void Request::printHeaders(const std::map<std::string, std::string>& headers)
-{
-	std::cout << std::endl << std::endl << 
-		"method: " << _method << std::endl << 
-		"path:   " << _path << std::endl <<
-		"http:   " << _http_version << std::endl <<
-		"host:   " << _host << std::endl <<
-		"port:   " << _port << std::endl <<
-		GREEN << "END OF VARS" << RESET << std::endl;
-    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
-    {
-        std::cout << "[" << it->first << "] = " << it->second << std::endl;
-    }
-    std::cout << GREEN << "END OF HEADERS" << RESET << std::endl;
-    std::cout << GREEN << "START OF BODY" << std::endl;
-    for (std::vector<unsigned char>::const_iterator it = _body.begin(); it != _body.end(); it++)
-    	std::cout << *it << std::endl;
-    std::cout << RESET << std::endl;
-    std::cout << GREEN << "END OF BODY" << RESET << std::endl;
-}
-
 std::string Request::extractHeader()
 {
 	std::string raw_str(_raw.begin(), _raw.end());
@@ -273,9 +251,7 @@ bool 	Request::findSequence(const std::vector <unsigned char> &vec, \
 void	Request::boundary_found()
 {
 	if (_content_type != "multipart/form-data")
-	{
 		return ;
-	}
 
 	std::vector<unsigned char> boundary_vec;
 	// Get "--" + boundary + "--"
@@ -288,9 +264,7 @@ void	Request::boundary_found()
 	if (findSequence(_body, boundary_vec))
     {
     	if (VERBOSE)
-    	{
     		std::cout << GREEN "set req complete 5" << RESET << std::endl;
-    	}
     	_req_complete = true;
     }
 }
@@ -402,6 +376,11 @@ void Request::initRequest()
 
 void Request::initBody()
 {
+	if (VERBOSE) 
+	{
+		std::cout << RED << "Current raw body is: " << RESET << std::endl;
+		print_vector(_raw);
+	}
 	// If chunked -> copy body to _body -> continue appending from subsequent chunked reqs
 	// If not chunked -> copy body and parse only if req is complete
 	if ((this->_header_length != -1 && _is_chunked) || (!_is_chunked && _req_complete))
@@ -450,96 +429,6 @@ void	Request::printMap(std::map<std::string, std::string> map)
     }		
 }
 
-// void Request::handleFileUploads()
-// {
-//     // Directory to save files
-//     std::string directory = "wwwroot/database";
-    
-//     // Iterate over file map
-//     for (std::map<std::string, std::string>::const_iterator it = _fileMap.begin(); it != _fileMap.end(); it++)
-//     {
-//         const std::string& filename = it->first;
-//         const std::string& fileContent = it->second;
-//         std::string filePath = directory + "/" + filename;
-
-//         // Open file stream
-//         std::ofstream file(filePath.c_str(), std::ios::binary);
-//         if (!file)
-//         {
-//             std::cerr << "Failed to open file for writing: " << filePath << std::endl;
-//             continue;
-//         }
-
-//         // Write content to file
-//         file.write(fileContent.c_str(), fileContent.size());
-//         // Handle write fails
-//         if (!file)
-//             std::cerr << "Failed to write content to file: " << filePath << std::endl;
-//         file.close();
-//     }
-// }
-
-// void Request::parseBody()
-// {
-//     if (_method == "POST" && _content_type == "multipart/form-data") 
-//     {
-//         if (_boundary.empty() || _body.empty())
-//             return;
-
-//         std::string boundary = "--" + _boundary;
-//         size_t pos = 0;
-
-//         // Look for each boundary
-//         while ((pos = _body.find(boundary, pos)) != std::string::npos) 
-//         {
-//             size_t start = pos + boundary.length();
-//             size_t end = _body.find(boundary, start);
-//             if (end == std::string::npos) {
-//                 break;
-//             }
-
-//             // Extract parts between boundaries
-//             std::string part = _body.substr(start, end - start);
-
-//             // Check for Content-Disposition header
-//             size_t dispositionStart = part.find("Content-Disposition:");
-//             if (dispositionStart != std::string::npos) 
-//             {
-//                 size_t nameStart = part.find("name=\"", dispositionStart) + 6;
-//                 size_t nameEnd = part.find("\"", nameStart);
-//                 std::string key = part.substr(nameStart, nameEnd - nameStart);
-
-//                 // If data is file
-//                 size_t filenameStart = part.find("filename=\"", dispositionStart);
-//                 if (filenameStart != std::string::npos) 
-//                 {
-//                     filenameStart += 10; // Length of "filename=\""
-//                     size_t filenameEnd = part.find("\"", filenameStart);
-//                     std::string filename = part.substr(filenameStart, filenameEnd - filenameStart);
-
-//                     // Store file information
-//                     size_t fileStart = part.find("\r\n\r\n") + 4;
-//                     size_t fileEnd = part.find("\r\n", fileStart);
-//                     std::string fileContent = part.substr(fileStart, fileEnd - fileStart);
-
-//                     _fileMap[filename] = fileContent;
-//                 }
-//                 else 
-//                 {
-//                     // Handle other form data types
-//                     size_t valueStart = part.find("\r\n\r\n") + 4;
-//                     size_t valueEnd = part.find("\r\n", valueStart);
-//                     std::string value = part.substr(valueStart, valueEnd - valueStart);
-
-//                     _bodyMap[key] = value;
-//                 }
-//             }
-//             pos = end;
-//         }
-//     }
-//     handleFileUploads();
-// }
-
 /* Function to handle incomplete header
 	start copying to end of buf of previous read */
 void	Request::handle_incomplete_header(int bytes_read, char *buffer)
@@ -562,11 +451,6 @@ void Request::print_variables() const
     for (std::vector<unsigned char>::const_iterator it = _raw.begin(); it != _raw.end(); it++)
     	std::cout << *it;
     std::cout << "\n\n";
-    // std::cout << "Buffer: ";  // Print first 100 characters of buffer for practicality
-    // for (int i = 0; i < 100 && _buf[i] != '\0'; ++i) {
-    //     std::cout << _buf[i];
-    // }
-    // std::cout << "\n";
     std::cout << GREEN << "start printing variables after raw" << RESET << std::endl;
     std::cout << "Header Length: " << _header_length << "\n";
     std::cout << "Request Complete: " << (_req_complete ? "true" : "false") << "\n";
@@ -604,9 +488,6 @@ void Request::copyRawRequest(char *buf, int bytes_read)
 	size_t curr_size = _raw.size();
 	_raw.reserve(curr_size + bytes_read);
 	_raw.insert(_raw.end(), buf, buf + bytes_read);
-
-	if (VERBOSE)
-		print_vector(_raw);
 }
 
 /*
@@ -634,7 +515,6 @@ Request::Request(char *full_request, int bytes_read) :
 	if (VERBOSE)
 	{
 		// std::cout << _raw << std::endl << RED << "end of req" << RESET << std::endl;
-		// printHeaders(_headers);
 		print_variables();
 	}
 }

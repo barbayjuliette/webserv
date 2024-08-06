@@ -62,9 +62,9 @@ void	CGIPost::process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Reques
 		close(pipe_fd[1]);
 		close(pipe_data[0]);
 
-		std::string str_body(request.getBody().begin(), request.getBody().end());
+		std::vector<unsigned char> body = request.getBody();
 
-		write(pipe_data[1], str_body.c_str(), str_body.size());
+		write(pipe_data[1], reinterpret_cast<const char *>(body.data()), body.size());
 		close(pipe_data[1]);
         waitpid(pid, NULL, 0);
 
