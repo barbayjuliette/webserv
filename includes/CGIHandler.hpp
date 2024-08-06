@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 14:56:13 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 18:00:37 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 19:27:02 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,8 +37,7 @@ class CGIHandler
 
 	public:
 		CGIHandler();
-		// CGIHandler(Request const & request);
-		CGIHandler( CGIHandler const & src );
+		CGIHandler(CGIHandler const & src);
 		~CGIHandler();
 		CGIHandler &		operator=( CGIHandler const & rhs );
 		std::string			intToString(int num);

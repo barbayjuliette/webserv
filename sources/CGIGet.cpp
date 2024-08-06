@@ -12,7 +12,7 @@
 
 #include "CGIGet.hpp"
 
-CGIGet::CGIGet( CGIGet const & src )
+CGIGet::CGIGet(CGIGet const & src) : CGIHandler(src)
 {
 	(void)src;
 }
@@ -29,7 +29,7 @@ CGIGet::CGIGet() : CGIHandler()
 
 CGIGet &		CGIGet::operator=( CGIGet const & rhs )
 {
-	(void)rhs;
+	CGIHandler::operator=(rhs);
 	return(*this);
 }
 

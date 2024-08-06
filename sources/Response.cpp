@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 18:25:59 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 19:42:01 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,11 +54,6 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 
 	getDate();
 	setFullResponse();
-	// std::cout << RED << "Code: " << this->_status_code << std::endl;
-	// std::cout << "Text: " << this->_status_text << std::endl << RESET;
-	// std::cout << this->_path << std::endl;
-	//  Content-Length if there is a body
-	// /!\ Body can be empty string, would be valid request
 }
 
 Response::Response( const Response & src ) :
@@ -67,8 +62,10 @@ _status_text(src._status_text),
 _http_version(src._http_version),
 _body(src._body),
 _full_response(src._full_response),
+_path(src._path),
 _headers(src._headers),
-_config(src._config)
+_config(src._config),
+_location(src._location)
 {
 
 }
@@ -179,7 +176,6 @@ void	Response::respond_get_request(const Request &request)
 
 	if (length >= (int)ext.size() && request.getPath().substr(length - ext.size(), length) == ext)
 	{
-		std::cout << RED << "CGI GET \n" << RESET;
 		CGIGet*	cgi = new CGIGet(request);
 		if (cgi->getError() == 404)
 			set_error(404, "Not Found");
@@ -215,7 +211,6 @@ void	Response::respond_get_request(const Request &request)
 
 void	Response::cgi_post_form(const Request &request)
 {
-	// std::cout << RED << "This is CGI\n" << RESET;
 	CGIPost*	cgi = new CGIPost(request);
 	if (cgi->getError() == 404)
 		set_error(404, "Not Found");
@@ -322,6 +317,14 @@ Response &				Response::operator=( Response const & rhs )
 	if (this != &rhs)
 	{
 		this->_status_code = rhs._status_code;
+		this->_http_version = rhs._http_version;
+		this->_status_text = rhs._status_text;
+		this->_body = rhs._body;
+		this->_full_response = rhs._full_response;
+		this->_path = rhs._path;
+		this->_headers = rhs._headers;
+		this->_config = rhs._config;
+		this->_location = rhs._location;
 	}
 	return (*this);
 }
@@ -449,9 +452,6 @@ void	Response::setContentType(std::string path)
 		_headers["Content-Type"] = "application/pdf";
 	else
 		_headers["Content-Type"] = "text/plain";
-	// std::cout << "Extension: " << ext << std::endl;
-	// std::cout << "Path: " << path << std::endl;
-	// std::cout << "Content-type: " << _headers["Content-Type"] << std::endl;
 }
 
 /* ************************************************************************** */

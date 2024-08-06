@@ -6,15 +6,21 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 15:00:25 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 18:00:26 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 19:32:01 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "CGIHandler.hpp"
 
-CGIHandler::CGIHandler( CGIHandler const & src )
+CGIHandler::CGIHandler(CGIHandler const & src) :
+_result(src._result),
+_content_type(src._content_type),
+_html(src._html),
+_headers(src._headers),
+_full_path(src._full_path),
+_error(src._error)
 {
-	(void)src;
+
 }
 
 CGIHandler::~CGIHandler()
@@ -29,7 +35,15 @@ CGIHandler::CGIHandler() : _error(0)
 
 CGIHandler &		CGIHandler::operator=( CGIHandler const & rhs )
 {
-	(void)rhs;
+	if (this != &rhs)
+	{
+		this->_result = rhs._result;
+		this->_content_type = rhs._content_type;
+		this->_html = rhs._html;
+		this->_headers = rhs._headers;
+		this->_full_path = rhs._full_path;
+		this->_error = rhs._error;
+	}
 	return(*this);
 }
 

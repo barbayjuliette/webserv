@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:00:42 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/16 17:40:22 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 19:45:53 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ _socket(socket), _addr(addr), _request(NULL), _response(NULL)
 
 Client::Client( const Client & src ) :
 _socket(src._socket),
+_addr(src._addr),
 _request(src._request),
 _response(src._response)
 {
@@ -55,6 +56,9 @@ Client &				Client::operator=( Client const & rhs )
 	if (this != &rhs)
 	{
 		this->_socket = rhs._socket;
+		this->_addr = rhs._addr;
+		this->_request = rhs._request;
+		this->_response = rhs._response;
 	}
 	return (*this);
 }

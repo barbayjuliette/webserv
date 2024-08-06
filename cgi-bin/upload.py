@@ -9,6 +9,8 @@ print("Form keys: ", form.keys())
 
 if fileitem.filename:
 	fn = os.path.basename(fileitem.filename.replace("\\", "/" ))
+	if os.path.isdir("./uploads") is False :
+		os.makedirs("./uploads")
 	file = open('./uploads/' + fn, 'wb')
 	file.write(fileitem.file.read())
 	message = 'The file "' + fn + '" was uploaded successfully'

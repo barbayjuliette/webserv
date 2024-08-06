@@ -6,13 +6,13 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/05 21:18:39 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 18:24:10 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 19:36:24 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "CGIPost.hpp"
 
-CGIPost::CGIPost( CGIPost const & src )
+CGIPost::CGIPost(CGIPost const & src) : CGIHandler(src)
 {
 	(void)src;
 }
@@ -29,7 +29,7 @@ CGIPost::CGIPost() : CGIHandler()
 
 CGIPost &		CGIPost::operator=( CGIPost const & rhs )
 {
-	(void)rhs;
+	CGIHandler::operator=(rhs);
 	return(*this);
 }
 

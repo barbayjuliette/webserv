@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/02 20:33:16 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 18:14:05 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 19:35:16 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,10 @@
 
 class CGIGet : public CGIHandler
 {
-	public:
+	private:
 		CGIGet();
+
+	public:
 		CGIGet(Request const & request);
 		CGIGet( CGIGet const & src );
 		~CGIGet();
