@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 		if (argc == 2)
 			config_file = new ConfigFile(argv[1]);
 		else
-			config_file = new ConfigFile("./configs/default.conf");
+			config_file = new ConfigFile("./config_files/default.conf");
 
 		Cluster		*cluster = new Cluster(config_file);
 		cluster->runServers();

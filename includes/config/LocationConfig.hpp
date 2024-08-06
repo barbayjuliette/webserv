@@ -64,6 +64,9 @@ class LocationConfig : public ValidConfig
 		int		parsePathModifier(std::string& token);
 		size_t	comparePath(const std::string& path);
 
+		/* Print */
+		void			printConfig(void);
+
 		/* Accessors */
 		std::string	getPath(void);
 		bool		getMatchExact(void);

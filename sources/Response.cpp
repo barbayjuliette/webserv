@@ -169,8 +169,8 @@ int		Response::is_directory(std::string req_path)
 	else if (autoIndex == true)
 		create_directory_listing(dir_path, req_path);
 	else
-		// set_error(403, "Forbidden");
-		set_error(404, "Not Found");
+		set_error(403, "Forbidden");
+		// set_error(404, "Not Found");
 
 	_headers["Content-Length"] = intToString(this->_body.size());
 	setContentType(_path);

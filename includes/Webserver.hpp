@@ -59,6 +59,7 @@ class Webserver
 		/* Utils */
 		void			check(int num);
 		void			printServerNames(void);
+		void			printConfig(void);
 
 		// Accessors
 		int							getServerSocket();
@@ -68,5 +69,6 @@ class Webserver
 		std::map<int, Client*>		getClients();
 		Client*						getClient(int socket);
 		ServerConfig*				getConfig();
+		int							getBodyMaxLength(void);
 };
 

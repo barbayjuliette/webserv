@@ -35,6 +35,7 @@
 # include <fstream>
 # include <string>
 # include <exception>
+# include <iomanip>
 /* STL */
 # include <vector>
 # include <map>

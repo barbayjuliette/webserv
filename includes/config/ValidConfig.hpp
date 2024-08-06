@@ -14,6 +14,7 @@
 # define VALID_CONFIG_HPP
 
 # include "webserv.hpp"
+# include "Print.hpp"
 
 /* Errors */
 # define PARAM_COUNT_ERR "Invalid number of parameters"

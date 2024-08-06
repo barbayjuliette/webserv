@@ -43,6 +43,9 @@ class ServerConfig : public ValidConfig
 		void			setLocation(const std::string& path, LocationConfig* location);
 		LocationConfig*	matchLocation(const std::string& path);
 
+		/* Print */
+		void			printConfig(void);
+
 		/* Accessors */
 		std::map<std::string, LocationConfig*>	getLocations(void);
 		LocationConfig*	getLocation(const std::string& path);

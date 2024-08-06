@@ -70,8 +70,8 @@ void	ServerConfig::validateKeys(void)
 
 	for (t_strmap::iterator it = _directives.begin(); it != _directives.end(); it++)
 	{
-		if (TRACE)
-			std::cout << "current key: " << it->first << '\n';
+		if (it->first == "root" || it->first == "listen")
+			continue;
 
 		t_dirmap::iterator found = this->_validKeys.find(it->first);
 		if (found == this->_validKeys.end())
@@ -99,8 +99,6 @@ LocationConfig*	ServerConfig::matchLocation(const std::string& path)
 	for (it = _locations.begin(); it != _locations.end(); it++)
 	{
 		size_t	cmp = it->second->comparePath(path);
-		std::cout << "comparing " << path << " : " << CYAN << it->first << RESET
-				<< " => " << cmp << '\n';
 		if (cmp > 0)
 		{
 			match_result[cmp] = it->second;
@@ -120,6 +118,25 @@ LocationConfig*	ServerConfig::matchLocation(const std::string& path)
 		return (match->second);
 	}
 	return (_locations.begin()->second);
+}
+
+/*
+** ---------------------------------- PRINT -----------------------------------
+*/
+
+void	ServerConfig::printConfig(void)
+{
+	Print::printLine("PORT: ", _port);
+	Print::printLine("HOST: ", _host);
+	Print::printLine("ROOT: ", _root);
+	Print::printLine("INDEX: ", _index);
+	Print::printLine("AUTOINDEX: ", _autoindex ? "on" : "off");
+	Print::printLine("BODY MAX LENGTH: ", _body_max_length);
+	if (_redirect.size() > 0)
+		Print::printLine("REDIRECT: ", _redirect);
+	Print::printMap("ERROR PAGES: ", _error_page);
+	Print::printVector("SERVER NAMES: ", _server_name);
+	Print::printVector("ALLOWED METHODS: ", _allowed_methods);
 }
 
 /*

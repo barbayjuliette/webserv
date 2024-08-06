@@ -94,6 +94,20 @@ void	Webserver::check(int num)
 	}
 }
 
+void	Webserver::printConfig(void)
+{
+	_config->printConfig();
+
+	std::map<std::string, LocationConfig*>	locations = _config->getLocations();
+	std::map<std::string, LocationConfig*>::iterator	it;
+
+	for (it = locations.begin(); it != locations.end(); it++)
+	{
+		std::cout << GREEN << "\n--> LOCATION: " << it->second->getPath() << '\n' << RESET;
+		it->second->printConfig();
+	}
+}
+
 void	Webserver::printServerNames(void)
 {
 	std::cout << CYAN << "SERVER NAME(S): " << RESET;
@@ -147,6 +161,11 @@ Client*		Webserver::getClient(int socket)
 ServerConfig*	Webserver::getConfig()
 {
 	return (_config);
+}
+
+int	Webserver::getBodyMaxLength(void)
+{
+	return (_config->getBodyMaxLength());
 }
 
 /* ************************************************************************** */

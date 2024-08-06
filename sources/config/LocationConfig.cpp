@@ -19,7 +19,7 @@
 LocationConfig::LocationConfig() : ValidConfig() {}
 
 LocationConfig::LocationConfig(ServerConfig* server) :
-	ValidConfig(), _server(server), _match_exact(false), _case_sensitive(false)
+	ValidConfig(), _server(server), _match_exact(false), _case_sensitive(true)
 {
 	initValidKeys();
 	this->_path = "/";
@@ -148,22 +148,60 @@ int	LocationConfig::parsePathModifier(std::string& token)
 	return (modifier);
 }
 
+std::string	toLower(std::string str)
+{
+	std::string	res;
+
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		res += std::tolower(str[i]);
+	}
+	return (res);
+}
+
 size_t	LocationConfig::comparePath(const std::string& str)
 {
 	size_t	count = 0;
 	size_t	i = 1;
+	std::string	req_path(str);
 
-	while (i < this->_path.size() && i < str.size())
+	if (!_case_sensitive)
+		std::transform(req_path.begin(), req_path.end(), req_path.begin(), ::tolower);
+
+	std::cout << "req_path: " << RED << req_path << RESET << " vs location: " << CYAN << _path << RESET << " => ";
+
+	while (i < this->_path.size() && i < req_path.size())
 	{
-		if (this->_path[i] == '/' && str[i] == '/')
+		if (this->_path[i] == '/' && req_path[i] == '/')
 			count++;
-		if (this->_path[i] != str[i])
+		if (this->_path[i] != req_path[i])
 			break ;
 		i++;
 	}
 	if ((long)(count + 1) != std::count(this->_path.begin(), this->_path.end(), '/'))
+	{
+		std::cout << "0\n";
 		return (0);
+	}
+	std::cout << count << '\n';
 	return (count);
+}
+
+/*
+** ---------------------------------- PRINT -----------------------------------
+*/
+
+void	LocationConfig::printConfig(void)
+{
+	Print::printLine("CASE SENSITIVE: ", _case_sensitive ? "on" : "off");
+	Print::printLine("ROOT: ", _root);
+	Print::printLine("INDEX: ", _index);
+	Print::printLine("AUTOINDEX: ", _autoindex ? "on" : "off");
+	if (_redirect.size() > 0)
+		Print::printLine("REDIRECT: ", _redirect);
+	Print::printMap("ERROR PAGES: ", _error_page);
+	Print::printVector("ALLOWED METHODS: ", _allowed_methods);
+	Print::printMap("CGI PATH: ", _cgi_path);
 }
 
 /*

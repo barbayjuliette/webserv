@@ -293,7 +293,6 @@ void	ConfigFile::printContexts(std::vector<ServerConfig*>& vec)
 			printMap(loc->second->getDirectives());
 		}
 	}
-
 }
 
 void	ConfigFile::printMap(t_strmap& map)

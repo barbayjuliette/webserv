@@ -535,15 +535,34 @@ int	Cluster::countServers(t_mmap::iterator res)
 	return (count);
 }
 
+/*
+** ---------------------------------- PRINT -----------------------------------
+*/
+
+void	Cluster::printServers(std::vector<Webserver*>& servers)
+{
+	size_t	i = 0;
+
+	for (std::vector<Webserver*>::iterator it = servers.begin(); it != servers.end(); it++)
+	{
+		std::cout << GREEN << "SERVER [" << ++i << "]:\n" << RESET;
+		(*it)->printConfig();
+	}
+}
+
 void	Cluster::printServerSockets(void)
 {
 	t_mmap::iterator	it;
 
 	for (it = _server_sockets.begin(); it != _server_sockets.end(); it++)
 	{
-		std::cout << CYAN << "\nHOST: " << it->second.host << "; PORT: " << it->first << '\n' << RESET;
+		std::cout << "\n-------------------------------------------------------\n\n";
+		std::cout << CYAN << "HOST: " << it->second.host << "; PORT: " << it->first << '\n' << RESET;
 		std::cout << "- Socket fd: " << it->second.fd << '\n';
-		std::cout << "- No. of servers listening: " << countServers(it) << "\n\n";
+		std::cout << "- No. of servers listening: " << countServers(it) << "\n";
+		std::cout << "\n-------------------------------------------------------\n\n";
+		printServers(it->second.servers);
+		std::cout << "\n-------------------------------------------------------\n";
 	}
 }
 
