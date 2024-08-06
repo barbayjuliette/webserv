@@ -81,6 +81,11 @@ void	Client::setResponse(Response* response)
 	_response = response;
 }
 
+void	Client::setServer(Webserver* server)
+{
+	_server = server;
+}
+
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */

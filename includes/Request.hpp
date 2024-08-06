@@ -77,7 +77,6 @@ class Request
 		void 		parseHeader(std::string header);
 		void 		parsePort(std::string header);
 		void		parseContentType();
-		// void 		handleFileUploads();
 
 		void 		checkMethod();
 		void 		checkPath();
@@ -120,7 +119,7 @@ class Request
 		bool								getReqComplete() const;
 		error_type							getError() const;
 		
-		void								setConfig(ServerConfig* config);
+		void								setBodyMaxLength(size_t len)
 
 		void		handle_incomplete_header(int bytes_read, char *buffer);
 		bool		handle_chunk(char *buffer, int bytes_read);

@@ -21,6 +21,7 @@ class Client
 	private:
 		int					_socket;
 		struct sockaddr_in	_addr;
+		Webserver 			*_server;
 		Request				*_request;
 		Response			*_response;
 		// bool		keepAlive;

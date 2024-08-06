@@ -348,6 +348,26 @@ void		Cluster::handle_write_connection(int client_socket)
 		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
 }
 
+void	Cluster::assignServer(int client_socket)
+{
+	Request*	request = _clients[client_socket]->getRequest();
+
+	std::string name = request->getHost();
+	std::string host = request->getHost();
+	if (!isIPAddress(host))
+	{
+		host = getClientIPAddress(client_socket);
+	}
+	_clients[client_socket].setServer((getServerByPort(name, host, request->getPort())));
+	if (!server)
+		throw std::runtime_error("No server matched the request");
+	if (CTRACE)
+	{
+		std::cout << GREEN << "found server match\n" << RESET;
+		server->printServerNames();
+	}
+	request->setBodyMaxLength(request->getServer()->getConfig()->getBodyMaxLength());
+}
 
 /* Preliminary request parsing: extract host and port to determine which server to route to */
 void	Cluster::handle_read_connection(int client_socket)
@@ -371,6 +391,8 @@ void	Cluster::handle_read_connection(int client_socket)
 		{
 			Request*	new_request = new Request(buffer, bytes_read);
 			_clients[client_socket]->setRequest(new_request);
+			if (request->getHeaderLength() != -1)
+				assignServer(client_socket);
 			if (new_request->getReqComplete() == false)
 				return;
 		}
@@ -388,24 +410,10 @@ void	Cluster::handle_read_connection(int client_socket)
 			_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read);
 		if (request->getHeaderLength() != -1 && request->getReqComplete() == true) 
 		{
-			std::string name = request->getHost();
-			std::string host = request->getHost();
-			if (!isIPAddress(host))
-			{
-				host = getClientIPAddress(client_socket);
-			}
-			// request->parseBody();
-			Webserver	*server = getServerByPort(name, host, request->getPort());
-			if (!server)
-				throw std::runtime_error("No server matched the request");
-			if (CTRACE)
-			{
-				std::cout << GREEN << "found server match\n" << RESET;
-				server->printServerNames();
-			}
-			// Set config
-			request->setConfig(server->getConfig());
-			server->create_response(request, _clients[client_socket]);
+			if (!request->getServer())
+				assignServer(client_socket);
+			// TO DO: content length checking
+			request->getServer()->create_response(request, _clients[client_socket]);
 		}
 	}
 }

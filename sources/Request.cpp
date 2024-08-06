@@ -33,6 +33,7 @@ std::string Request::extractHeader()
     return result;
 }
 
+// If content type is multipart/form-data, parse boundary
 void Request::parseContentType()
 {
 	if (_headers.find("content-type") != _headers.end() &&
@@ -623,6 +624,11 @@ bool	Request::getReqComplete() const
 error_type	Request::getError() const
 {
 	return (this->_error);
+}
+
+void Request::setBodyMaxLength(size_t len)
+{
+	this->_body_max_length = len;
 }
 
 /* ************************************************************************** */
