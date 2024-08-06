@@ -6,13 +6,13 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/05 21:18:39 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/05 21:57:06 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/06 19:36:24 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "CGIPost.hpp"
 
-CGIPost::CGIPost( CGIPost const & src )
+CGIPost::CGIPost(CGIPost const & src) : CGIHandler(src)
 {
 	(void)src;
 }
@@ -29,7 +29,7 @@ CGIPost::CGIPost() : CGIHandler()
 
 CGIPost &		CGIPost::operator=( CGIPost const & rhs )
 {
-	(void)rhs;
+	CGIHandler::operator=(rhs);
 	return(*this);
 }
 
@@ -38,9 +38,17 @@ CGIPost::CGIPost(Request const & request) : CGIHandler()
 	int	pipe_fd[2];
 	int	pipe_data[2];
 
+	this->setFullPath("." + request.getPath());
+	if (access(getFullPath().c_str(), F_OK) != 0)
+	{
+		setError(404);
+		return ;
+	}
+
 	if (pipe(pipe_fd) == -1 || pipe(pipe_data) == -1)
 	{
 		std::cout << "Error: " << strerror(errno) << std::endl;
+		setError(500);
 		return ;
 	}
 
@@ -48,10 +56,11 @@ CGIPost::CGIPost(Request const & request) : CGIHandler()
 	if (pid == -1)
 	{
 		std::cout << "Error: " << strerror(errno) << std::endl;
+		setError(500);
 		return ;
 	}
 	if (pid == 0)
-		execute_cgi(request.getPath(), pipe_fd, pipe_data, request);
+		execute_cgi(pipe_fd, pipe_data, request);
 	else
 		process_result_cgi(pid, pipe_fd, pipe_data, request);
 }
@@ -74,25 +83,23 @@ void	CGIPost::process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Reques
 		while ((bytesRead = read(pipe_fd[0], buffer, sizeof(buffer) - 1)) > 0) 
 		{
 			buffer[bytesRead] = '\0';
-			// _result += buffer;
 			setResult(getResult() += buffer);
 		}
 		close(pipe_fd[0]);
-		// std::cout << RED << "Result CGI: " << _result << RESET << std::endl;
 		setContentType();
 		setHtml();
 }
 
 
 // CHILD: Read form data from pipe then send result from cgi via pipe.
-void	CGIPost::execute_cgi(std::string path, int pipe_fd[], int pipe_data[], Request const & request)
+void	CGIPost::execute_cgi(int pipe_fd[], int pipe_data[], Request const & request)
 {
 	close(pipe_fd[0]);
 	close(pipe_data[1]);
 
 	dup2(pipe_data[0], STDIN_FILENO); // Read form data from the pipe
 	dup2(pipe_fd[1], STDOUT_FILENO); // Write result of script to pipe
-	path = "." + path;
+	std::string	path = getFullPath();
 
 	char* const argv[] = 
 	{
@@ -130,5 +137,6 @@ void	CGIPost::execute_cgi(std::string path, int pipe_fd[], int pipe_data[], Requ
 	close(pipe_data[0]);
 	execve("/usr/bin/python3", argv, const_cast<char* const*>(env));
 	std::cout << "Execve failed\n";
+	setError(500);
 }
 
