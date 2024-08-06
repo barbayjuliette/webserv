@@ -96,7 +96,6 @@ class Request
 
 		// Error handling
 		void 			printError(std::string error_msg);
-		void 			printHeaders(const std::map<std::string, std::string>& headers);
 		static void		printMap(std::map<std::string, std::string> map);
 		void 			print_vector(std::vector<unsigned char> vec);
 
