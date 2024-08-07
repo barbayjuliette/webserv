@@ -307,7 +307,7 @@ bool	Request::handle_chunk(char *buffer, int bytes_read)
 	        _body.insert(_body.end(), buffer + i, buffer + i + chunk_size);
 
 	        // Move the pointer past the chunk data and \r\n
-	        i += chunk_size;
+	        i += chunk_size + 2;
 	    }
 	}
 	return _req_complete;
@@ -342,19 +342,16 @@ void Request::initRequest()
 			// If no error, check if content length met
 			if (_error == NO_ERR)
 			{
-				ssize_t raw_size = static_cast<ssize_t>(_raw.size());
-				if (raw_size - _header_length <= _content_length && _content_type != "multipart/form-data")
+				if (_content_type != "multipart/form-data")
 				{
 					if (VERBOSE)
 						std::cout << GREEN "set req complete 1" << RESET << std::endl;
 					_req_complete = true;
 				}
-				else if (raw_size - _header_length > _content_length) // if body length longer than content length, ret invalid
-					_error = BODY_TOO_LONG;
 			}
 		}
 	}
-    if (_content_type == "multipart/form-data") 
+    if (_content_type == "multipart/form-data")
     {
         _is_chunked = true;
     }
@@ -369,11 +366,6 @@ void Request::initRequest()
 
 void Request::initBody()
 {
-	if (VERBOSE) 
-	{
-		std::cout << RED << "Current raw body is: " << RESET << std::endl;
-		print_vector(_raw);
-	}
 	// If chunked -> copy body to _body -> continue appending from subsequent chunked reqs
 	// If not chunked -> copy body and parse only if req is complete
 	if ((this->_header_length != -1 && _is_chunked) || (!_is_chunked && _req_complete))
@@ -399,6 +391,11 @@ void Request::initBody()
 			{
 				_body.assign(body_start, _raw.end());
 				boundary_found();
+				if (VERBOSE) 
+				{
+					std::cout << RED << "Current body is size (" << _body.size() << ") " << RESET << std::endl;
+					print_vector(_body);
+				}
 			}
 			else
 			{
@@ -437,8 +434,11 @@ void	Request::handle_incomplete_header(int bytes_read, char *buffer)
 
 void 	Request::checkBodyLength()
 {
-	if (static_cast<ssize_t>(_raw.size()) - _header_length > _body_max_length)
+	if (_body.size() > static_cast<unsigned long>(_content_length) || \
+		_body.size() > static_cast<unsigned long>(_body_max_length))
+	{
 		_error = BODY_TOO_LONG;
+	}
 }
 
 void Request::print_variables() const 

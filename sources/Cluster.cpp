@@ -409,7 +409,7 @@ void	Cluster::handle_read_connection(int client_socket)
 			if (request->getReqComplete() == false) // If request complete, create response
 				return;
 		}
-		else // if chunked -> process chunk -> create response
+		else if (!request->getReqComplete()) // if chunked -> process chunk -> create response
 			request->handle_chunk(buffer, bytes_read);
 		if (request->getHeaderLength() != -1 && request->getReqComplete() == true) 
 		{
