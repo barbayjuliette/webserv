@@ -319,6 +319,29 @@ Client*		Cluster::getClient(int socket)
 	return (_clients[socket]);
 }
 
+void	Cluster::assignServer(int client_socket)
+{
+	Request*	request = _clients[client_socket]->getRequest();
+
+	std::string name = request->getHost();
+	std::string host = request->getHost();
+	if (!isIPAddress(host))
+	{
+		host = getClientIPAddress(client_socket);
+	}
+	_clients[client_socket]->setServer((getServerByPort(name, host, request->getPort())));
+	if (!_clients[client_socket]->getServer())
+		throw std::runtime_error("No server matched the request");
+	// If server is valid -> set server for request
+	_clients[client_socket]->getRequest()->setServer(_clients[client_socket]->getServer());
+	if (CTRACE)
+	{
+		std::cout << GREEN << "found server match\n" << RESET;
+		_clients[client_socket]->getServer()->printServerNames();
+	}
+	// Set request's body max length to server config's body max len
+	request->setBodyMaxLength(_clients[client_socket]->getServer()->getConfig()->getBodyMaxLength());
+}
 
 /* Preliminary request parsing: extract host and port to determine which server to route to */
 void	Cluster::handle_read_connection(int client_socket)
@@ -342,6 +365,8 @@ void	Cluster::handle_read_connection(int client_socket)
 		{
 			Request*	new_request = new Request(buffer, bytes_read);
 			_clients[client_socket]->setRequest(new_request);
+			if (new_request->getHeaderLength() != -1)
+				assignServer(client_socket);
 			if (new_request->getReqComplete() == false)
 				return;
 		}
@@ -355,28 +380,14 @@ void	Cluster::handle_read_connection(int client_socket)
 			if (request->getReqComplete() == false) // If request complete, create response
 				return;
 		}
-		else // if chunked -> process chunk -> create response
-			_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read);
+		else if (!request->getReqComplete()) // if chunked -> process chunk -> create response
+			request->handle_chunk(buffer, bytes_read);
 		if (request->getHeaderLength() != -1 && request->getReqComplete() == true) 
 		{
-			std::string name = request->getHost();
-			std::string host = request->getHost();
-			if (!isIPAddress(host))
-			{
-				host = getClientIPAddress(client_socket);
-			}
-			// request->parseBody();
-			Webserver	*server = getServerByPort(name, host, request->getPort());
-			if (!server)
-				throw std::runtime_error("No server matched the request");
-			if (CTRACE)
-			{
-				std::cout << GREEN << "\nfound server match\n" << RESET;
-				server->printServerNames();
-			}
-			// Set config
-			request->setConfig(server->getConfig());
-			server->create_response(request, _clients[client_socket]);
+			if (!_clients[client_socket]->getServer())
+				assignServer(client_socket);
+			request->checkBodyLength();
+			request->getServer()->create_response(request, _clients[client_socket]);
 		}
 	}
 }

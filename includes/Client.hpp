@@ -15,12 +15,16 @@
 # include "webserv.hpp"
 # include "Response.hpp"
 # include "Request.hpp"
+# include "Webserver.hpp"
+
+class Webserver;
 
 class Client
 {
 	private:
 		int					_socket;
 		struct sockaddr_in	_addr;
+		Webserver 			*_server;
 		Request				*_request;
 		Response			*_response;
 		// bool		keepAlive;
@@ -35,6 +39,7 @@ class Client
 
 		Request*		getRequest();
 		Response*		getResponse();
+		Webserver*		getServer();
 		int				getSocket();
 		unsigned short	getPort();
 		unsigned long	getIPAddress();
@@ -43,4 +48,5 @@ class Client
 		void			setRequest(Request* request);
 		void			setResponse(Response* response);
 		void			deleteRequest(void);
+		void			setServer(Webserver* server);
 };

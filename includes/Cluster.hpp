@@ -90,6 +90,7 @@ class Cluster
 		/* Print */
 		void			printServerSockets(void);
 		void			printServers(std::vector<Webserver*>& servers);
+		void			assignServer(int client_socket);
 
 		// getter
 		Client*			getClient(int socket);

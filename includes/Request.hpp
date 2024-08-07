@@ -36,11 +36,10 @@ enum error_type {
 	INVALID, // 400
 	NOT_SUPPORTED, // 405
 	CHUNK_AND_LENGTH,
-	REQ_TOO_LONG,
 	POST_MISSING_BODY,
 	INVALID_SIZE,
 	INVALID_EMPTY_REQ,
-	CURR_LENGTH_TOO_LONG,
+	BODY_TOO_LONG,
 	NO_HOST,
 	INVALID_PORT,
 };
@@ -48,6 +47,7 @@ enum error_type {
 class Request
 {
 	private:
+		Webserver							*_server;
 		std::vector<unsigned char>			_raw;
 		ssize_t								_header_length;
 		bool								_req_complete;
@@ -61,7 +61,6 @@ class Request
 		std::string							_boundary;
 		std::string							_host;
 		int									_port;
-		ssize_t								_curr_length;
 		std::map<std::string, std::string>	_headers;
 		std::vector<unsigned char>			_body;
 		error_type							_error;
@@ -77,7 +76,6 @@ class Request
 		void 		parseHeader(std::string header);
 		void 		parsePort(std::string header);
 		void		parseContentType();
-		// void 		handleFileUploads();
 
 		void 		checkMethod();
 		void 		checkPath();
@@ -112,18 +110,21 @@ class Request
 		std::string							getPath() const;
 		std::string							getHttpVersion() const;
 		std::string							getMethod() const;
-		std::vector<unsigned char>							getBody() const;
+		std::vector<unsigned char>			getBody() const;
 		std::string							getHost() const;
 		int									getPort() const;
 		std::map<std::string, std::string>	getHeaders() const;
 		ssize_t								getHeaderLength() const;
 		bool								getReqComplete() const;
 		error_type							getError() const;
+		Webserver*							getServer();
 		
-		void								setConfig(ServerConfig* config);
+		void								setBodyMaxLength(size_t len);
+		void								setServer(Webserver* server);
 
 		void		handle_incomplete_header(int bytes_read, char *buffer);
 		bool		handle_chunk(char *buffer, int bytes_read);
 		static void	parseHostPort(char *buffer, std::string& host, int& port);
 		void 		parseBody();
+		void 		checkBodyLength();
 };

@@ -19,8 +19,6 @@
 
 # define BUFFER_SIZE 50000
 
-class Client;
-
 class Webserver
 {
 	protected:

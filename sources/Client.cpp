@@ -86,6 +86,11 @@ void	Client::setResponse(Response* response)
 	_response = response;
 }
 
+void	Client::setServer(Webserver* server)
+{
+	_server = server;
+}
+
 void	Client::deleteRequest(void)
 {
 	if (_request)
@@ -110,6 +115,11 @@ Response*	Client::getResponse()
 int		Client::getSocket()
 {
 	return (this->_socket);
+}
+
+Webserver *Client::getServer()
+{
+	return (this->_server);
 }
 
 /*struct sockaddr_in {

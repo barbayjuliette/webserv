@@ -72,4 +72,8 @@
 # define RESET "\001\033[0m\002"
 # define WHITESPACE " \f\n\r\t\v"
 
+class Request;
+class Response;
+class Webserver;
+
 #endif
