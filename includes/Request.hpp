@@ -36,11 +36,10 @@ enum error_type {
 	INVALID, // 400
 	NOT_SUPPORTED, // 405
 	CHUNK_AND_LENGTH,
-	REQ_TOO_LONG,
 	POST_MISSING_BODY,
 	INVALID_SIZE,
 	INVALID_EMPTY_REQ,
-	CURR_LENGTH_TOO_LONG,
+	BODY_TOO_LONG,
 	NO_HOST,
 	INVALID_PORT,
 };
@@ -62,7 +61,6 @@ class Request
 		std::string							_boundary;
 		std::string							_host;
 		int									_port;
-		ssize_t								_curr_length;
 		std::map<std::string, std::string>	_headers;
 		std::vector<unsigned char>			_body;
 		error_type							_error;
@@ -128,4 +126,5 @@ class Request
 		bool		handle_chunk(char *buffer, int bytes_read);
 		static void	parseHostPort(char *buffer, std::string& host, int& port);
 		void 		parseBody();
+		void 		checkBodyLength();
 };

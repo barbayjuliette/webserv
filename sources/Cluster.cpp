@@ -410,12 +410,12 @@ void	Cluster::handle_read_connection(int client_socket)
 				return;
 		}
 		else // if chunked -> process chunk -> create response
-			_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read);
+			request->handle_chunk(buffer, bytes_read);
 		if (request->getHeaderLength() != -1 && request->getReqComplete() == true) 
 		{
 			if (!_clients[client_socket]->getServer())
 				assignServer(client_socket);
-			// TO DO: content length checking
+			request->checkBodyLength();
 			request->getServer()->create_response(request, _clients[client_socket]);
 		}
 	}

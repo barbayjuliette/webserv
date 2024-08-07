@@ -221,15 +221,6 @@ bool Request::is_header_complete()
 	if (headerEnd != std::string::npos)
 	{
 		_header_length = headerEnd + 4;
-		// Set curr_length
-		_curr_length = raw_str.length() - _header_length;
-		// Check if body max length exceeded
-			// Arbitrary body max length -> to be set by config file
-		if (_curr_length > _body_max_length)
-		{
-			_error = CURR_LENGTH_TOO_LONG;
-			return true;
-		}
 		return true;
 	}
 	return false;
@@ -351,14 +342,15 @@ void Request::initRequest()
 			// If no error, check if content length met
 			if (_error == NO_ERR)
 			{
-				if (_curr_length - _header_length <= _content_length && _content_type != "multipart/form-data")
+				ssize_t raw_size = static_cast<ssize_t>(_raw.size());
+				if (raw_size - _header_length <= _content_length && _content_type != "multipart/form-data")
 				{
 					if (VERBOSE)
 						std::cout << GREEN "set req complete 1" << RESET << std::endl;
 					_req_complete = true;
 				}
-				else if (_curr_length - _header_length > _content_length) // if body length longer than content length, ret invalid
-					_error = REQ_TOO_LONG;
+				else if (raw_size - _header_length > _content_length) // if body length longer than content length, ret invalid
+					_error = BODY_TOO_LONG;
 			}
 		}
 	}
@@ -413,8 +405,6 @@ void Request::initBody()
 	            if (body_start == _raw.end() && _method == "POST")
 	            	_error = POST_MISSING_BODY;
                 _body.assign(body_start, _raw.end());
-            	// else
-             //    	_error = REQ_TOO_LONG; // Error: insufficient length in _raw
 			}
 		}
 	}
@@ -445,6 +435,12 @@ void	Request::handle_incomplete_header(int bytes_read, char *buffer)
 	}
 }
 
+void 	Request::checkBodyLength()
+{
+	if (static_cast<ssize_t>(_raw.size()) - _header_length > _body_max_length)
+		_error = BODY_TOO_LONG;
+}
+
 void Request::print_variables() const 
 {
   std::cout << "Request Variables:\n";
@@ -463,7 +459,6 @@ void Request::print_variables() const
     std::cout << "HTTP Version: " << _http_version << "\n";
     std::cout << "Port: " << _port << "\n";
     std::cout << "Host: " << _host << "\n";
-    std::cout << "Current Length: " << _curr_length << "\n";
     std::cout << "Boundary: " << _boundary << "\n";
     std::cout << "Headers:\n";
     for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
@@ -554,7 +549,6 @@ Request &				Request::operator=( Request const & rhs )
 		this->_path = rhs._path;
 		this->_http_version = rhs._http_version;
 		this->_port = rhs._port;
-		this->_curr_length = rhs._curr_length;
 		this->_headers = rhs._headers;
 		this->_body = rhs._body;
 		this->_error = rhs._error;
