@@ -566,11 +566,6 @@ Request &				Request::operator=( Request const & rhs )
 ** --------------------------------- ACCESSOR ---------------------------------
 */
 
-void			Request::setConfig(ServerConfig* config)
-{
-	this->_config = config;
-}
-
 std::vector<unsigned char>	Request::getRaw() const
 {
 	return (this->_raw);
@@ -626,9 +621,19 @@ error_type	Request::getError() const
 	return (this->_error);
 }
 
+Webserver *Request::getServer()
+{
+	return (this->_server);
+}
+
 void Request::setBodyMaxLength(size_t len)
 {
 	this->_body_max_length = len;
+}
+
+void	Request::setServer(Webserver* server)
+{
+	_server = server;
 }
 
 /* ************************************************************************** */

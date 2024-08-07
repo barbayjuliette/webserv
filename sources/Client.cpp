@@ -109,6 +109,11 @@ int		Client::getSocket()
 	return (this->_socket);
 }
 
+Webserver *Client::getServer()
+{
+	return (this->_server);
+}
+
 /*struct sockaddr_in {
     short            sin_family;
     unsigned short   sin_port;

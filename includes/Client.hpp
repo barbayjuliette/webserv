@@ -15,6 +15,9 @@
 # include "webserv.hpp"
 # include "Response.hpp"
 # include "Request.hpp"
+# include "Webserver.hpp"
+
+class Webserver;
 
 class Client
 {
@@ -36,6 +39,7 @@ class Client
 
 		Request*		getRequest();
 		Response*		getResponse();
+		Webserver*		getServer();
 		int				getSocket();
 		unsigned short	getPort();
 		unsigned long	getIPAddress();
@@ -43,4 +47,5 @@ class Client
 		void			reset();
 		void			setRequest(Request* request);
 		void			setResponse(Response* response);
+		void			setServer(Webserver* server);
 };

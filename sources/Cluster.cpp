@@ -358,15 +358,18 @@ void	Cluster::assignServer(int client_socket)
 	{
 		host = getClientIPAddress(client_socket);
 	}
-	_clients[client_socket].setServer((getServerByPort(name, host, request->getPort())));
-	if (!server)
+	_clients[client_socket]->setServer((getServerByPort(name, host, request->getPort())));
+	if (!_clients[client_socket]->getServer())
 		throw std::runtime_error("No server matched the request");
+	// If server is valid -> set server for request
+	_clients[client_socket]->getRequest()->setServer(_clients[client_socket]->getServer());
 	if (CTRACE)
 	{
 		std::cout << GREEN << "found server match\n" << RESET;
-		server->printServerNames();
+		_clients[client_socket]->getServer()->printServerNames();
 	}
-	request->setBodyMaxLength(request->getServer()->getConfig()->getBodyMaxLength());
+	// Set request's body max length to server config's body max len
+	request->setBodyMaxLength(_clients[client_socket]->getServer()->getConfig()->getBodyMaxLength());
 }
 
 /* Preliminary request parsing: extract host and port to determine which server to route to */
@@ -391,7 +394,7 @@ void	Cluster::handle_read_connection(int client_socket)
 		{
 			Request*	new_request = new Request(buffer, bytes_read);
 			_clients[client_socket]->setRequest(new_request);
-			if (request->getHeaderLength() != -1)
+			if (new_request->getHeaderLength() != -1)
 				assignServer(client_socket);
 			if (new_request->getReqComplete() == false)
 				return;
@@ -410,7 +413,7 @@ void	Cluster::handle_read_connection(int client_socket)
 			_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read);
 		if (request->getHeaderLength() != -1 && request->getReqComplete() == true) 
 		{
-			if (!request->getServer())
+			if (!_clients[client_socket]->getServer())
 				assignServer(client_socket);
 			// TO DO: content length checking
 			request->getServer()->create_response(request, _clients[client_socket]);

@@ -48,6 +48,7 @@ enum error_type {
 class Request
 {
 	private:
+		Webserver							*_server;
 		std::vector<unsigned char>			_raw;
 		ssize_t								_header_length;
 		bool								_req_complete;
@@ -111,15 +112,17 @@ class Request
 		std::string							getPath() const;
 		std::string							getHttpVersion() const;
 		std::string							getMethod() const;
-		std::vector<unsigned char>							getBody() const;
+		std::vector<unsigned char>			getBody() const;
 		std::string							getHost() const;
 		int									getPort() const;
 		std::map<std::string, std::string>	getHeaders() const;
 		ssize_t								getHeaderLength() const;
 		bool								getReqComplete() const;
 		error_type							getError() const;
+		Webserver*							getServer();
 		
-		void								setBodyMaxLength(size_t len)
+		void								setBodyMaxLength(size_t len);
+		void								setServer(Webserver* server);
 
 		void		handle_incomplete_header(int bytes_read, char *buffer);
 		bool		handle_chunk(char *buffer, int bytes_read);

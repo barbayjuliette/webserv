@@ -87,6 +87,7 @@ class Cluster
 		int				countServers(std::string& host, int port);
 		int				countServers(t_mmap::iterator res);
 		void			printServerSockets(void);
+		void			assignServer(int client_socket);
 
 		// getter
 		Client*			getClient(int socket);
