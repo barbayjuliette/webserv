@@ -29,11 +29,11 @@ class ServerConfig;
 class LocationConfig : public ValidConfig
 {
 	private:
-		ServerConfig*	_server;
-		std::string		_path;
+		ServerConfig*						_server;
+		std::string							_path;
 		std::map<std::string, std::string>	_cgi_path; //[ext] = path
-		bool			_match_exact;
-		bool			_case_sensitive;
+		bool								_match_exact;
+		bool								_case_sensitive;
 
 		LocationConfig(); //should not be constructed without server
 
@@ -68,9 +68,10 @@ class LocationConfig : public ValidConfig
 		void			printConfig(void);
 
 		/* Accessors */
-		std::string	getPath(void);
-		bool		getMatchExact(void);
-		bool		getCaseSensitive(void);
+		std::string	getPath(void) const;
+		std::string	getCGIPath(std::string ext) const;
+		bool		getMatchExact(void) const;
+		bool		getCaseSensitive(void) const;
 };
 
 #endif

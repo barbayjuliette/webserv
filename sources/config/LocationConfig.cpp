@@ -208,17 +208,24 @@ void	LocationConfig::printConfig(void)
 ** -------------------------------- ACCESSORS ---------------------------------
 */
 
-std::string	LocationConfig::getPath(void)
+std::string	LocationConfig::getPath(void) const
 {
 	return (this->_path);
 }
 
-bool	LocationConfig::getMatchExact(void)
+std::string	LocationConfig::getCGIPath(std::string ext) const
+{
+	if (this->_cgi_path.find(ext) == this->_cgi_path.end())
+		return ("");
+	return (_cgi_path.at(ext));
+}
+
+bool	LocationConfig::getMatchExact(void) const
 {
 	return (this->_match_exact);
 }
 
-bool LocationConfig::getCaseSensitive(void)
+bool LocationConfig::getCaseSensitive(void) const
 {
 	return (this->_case_sensitive);
 }

@@ -13,6 +13,12 @@
 #include "Response.hpp"
 
 /*
+** -------------------------- INIT STATIC VARIABLES ---------------------------
+*/
+
+std::map<int, std::string>	Response::_status_lookup;
+
+/*
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
@@ -20,6 +26,9 @@ Response::Response() {}
 
 Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 {
+	if (this->_status_lookup.empty())
+		init_status_lookup();
+
 	_location = _config->matchLocation(request.getPath());
 	if (_location->getRedirect().size() > 0)
 	{
@@ -36,21 +45,20 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 
 	if (request.getError() != NO_ERR && request.getError() != NOT_SUPPORTED)
 	{
-		set_error(400, "Bad Request");
+		set_error(400);
 		_headers["Content-Length"] = intToString(this->_body.size());
 		std::cout << "Error: " << request.getError() << std::endl;
 	}
 	else if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
-		this->set_allow_methods(false);
+		set_allow_methods(false);
 	else if (request.getMethod() == "GET")
-		this->respond_get_request(request);
+		respond_get_request(request);
 	else if (request.getMethod() == "POST")
-		this->respond_post_request(request);
-
+		respond_post_request(request);
 	else if (request.getMethod() == "DELETE")
-		this->respond_delete_request();
+		respond_delete_request();
 	else
-		this->set_allow_methods(false);
+		set_allow_methods(false);
 
 	_headers["Cache-Control"] = "no-cache, private";
 	this->_http_version = request.getHttpVersion();
@@ -88,14 +96,14 @@ Response::~Response() {}
 ** --------------------------------- METHODS ----------------------------------
 */
 
-int		Response::method_is_allowed(std::string method, std::vector<std::string> allowed)
+bool	Response::method_is_allowed(std::string method, std::vector<std::string> allowed)
 {
 	std::vector<std::string>::iterator it = std::find(allowed.begin(), allowed.end(), method);
 	if (it != allowed.end())
 	{
-		return (1);
+		return (true);
 	}
-	return (0);
+	return (false);
 }
 
 std::string	Response::create_html(std::string source, std::string req_path)
@@ -114,7 +122,7 @@ void	Response::create_directory_listing(std::string path, std::string req_path)
 	DIR* dir = opendir(no_slash.c_str());
 	if (!dir)
 	{
-		set_error(404, "Not Found");
+		set_error(404);
 		_headers["Content-Length"] = intToString(this->_body.size());
 		return ;
 	}
@@ -135,8 +143,7 @@ void	Response::create_directory_listing(std::string path, std::string req_path)
 
 	_body = index.str();
 	_headers["Content-Length"] = intToString(this->_body.size());
-	this->_status_code = 200;
-	this->_status_text = "OK";
+	set_success();
 }
 
 int		Response::is_directory(std::string req_path)
@@ -146,10 +153,10 @@ int		Response::is_directory(std::string req_path)
 
 	struct	stat				filename;
 	stat(_path.c_str(), &filename);
-	// std::cout << RED << "Path: " << _path;
+	// std::cout << RED << "Path: " << _path << RESET << std::endl;
 	// std::cout << RED << "filename: " << filename.st_mode << RESET << std::endl;
 
-	if (this->_path[this->_path.size() - 1] == '/')
+	if (this->_path[this->_path.size() - 1] == '/') // Set path to index file
 	{
 		setPath(this->_path + _location->getIndex());
 	}
@@ -161,38 +168,50 @@ int		Response::is_directory(std::string req_path)
 	else
 		return (1);
 
-	if (access(this->_path.c_str(), F_OK) == 0) // Index exists, we show that one
+	std::cout << GREEN << "After - Path: " << _path << "\ndir_path: " << dir_path << RESET << std::endl;
+	std::cout << access(dir_path.c_str(), F_OK) << '\n';
+
+	if (access(dir_path.c_str(), F_OK) == -1) // Requested directory does not exist
+		set_error(404);
+	else // Directory exists:
 	{
-		setContentType(_path);
-		return (1); // Continue the respond_get_request
+		if (access(this->_path.c_str(), F_OK) == 0) // Index exists, we show that one
+		{
+			setContentType(_path);
+			return (1); // Continue the respond_get_request
+		}
+		else if (autoIndex == true) // If no index, check if autoindex is enabled
+			create_directory_listing(dir_path, req_path);
+		else // No index and autoindex is disabled
+			set_error(403);
 	}
-	else if (autoIndex == true)
-		create_directory_listing(dir_path, req_path);
-	else
-		set_error(403, "Forbidden");
-		// set_error(404, "Not Found");
 
 	_headers["Content-Length"] = intToString(this->_body.size());
 	setContentType(_path);
 	return (0);
 }
 
+std::string	Response::extract_cgi_extension(const std::string& req_path)
+{
+	size_t	i = req_path.rfind('.');
+	if (i == std::string::npos)
+		return ("");
+	return (req_path.substr(i, std::string::npos));
+}
+
 void	Response::respond_get_request(const Request &request)
 {
-	
-	std::string		ext = ".py";
-	int				length = request.getPath().size();
+	std::string	req_ext = extract_cgi_extension(request.getPath());
 
-	if (length >= (int)ext.size() && request.getPath().substr(length - ext.size(), length) == ext)
+	if (_location->getCGIPath(req_ext).size() > 0)
 	{
 		CGIGet*	cgi = new CGIGet(request);
-		if (cgi->getError() == 404)
-			set_error(404, "Not Found");
+		if (cgi->getError() != 0)
+			set_error(cgi->getError());
 		else
 		{
 			_body = cgi->getHtml();
-			this->_status_code = 200;
-			this->_status_text = "OK";
+			set_success();
 			_headers["Content-Type"] = cgi->getContentType();
 		}
 		_headers["Content-Length"] = intToString(this->_body.size());
@@ -209,11 +228,10 @@ void	Response::respond_get_request(const Request &request)
 	{
 		while (page.get(c))
 			_body += c;
-		this->_status_code = 200;
-		this->_status_text = "OK";
+		set_success();
 	}
 	else
-		set_error(404, "Not Found");
+		set_error(404);
 	_headers["Content-Length"] = intToString(this->_body.size());
 	page.close();
 }
@@ -221,16 +239,13 @@ void	Response::respond_get_request(const Request &request)
 void	Response::cgi_post_form(const Request &request)
 {
 	CGIPost*	cgi = new CGIPost(request);
-	if (cgi->getError() == 404)
-		set_error(404, "Not Found");
-	else if (cgi->getError() == 500)
-		set_error(500, "Internal Server Error");
+	if (cgi->getError() != 0)
+		set_error(cgi->getError());
 	else
 	{
 		_body = cgi->getHtml();
 		_headers["Content-Type"] = cgi->getContentType();
-		this->_status_code = 200;
-		this->_status_text = "OK";
+		set_success();
 	}
 	_headers["Content-Length"] = intToString(this->_body.size());
 	delete (cgi);
@@ -239,69 +254,39 @@ void	Response::cgi_post_form(const Request &request)
 void	Response::respond_post_request(const Request &request)
 {
 	std::ifstream				page(this->_path.c_str());
+	std::string	req_ext = extract_cgi_extension(request.getPath());
 
-	// TO DO Check only if finishes with extension.
-	if (request.getPath().substr(0, 8) == "/cgi-bin")
+	// Check if finishes with CGI extension.
+	if (_location->getCGIPath(req_ext).size() > 0)
 		cgi_post_form(request);
 	else if (!page.good())// Path does not exist : 404
-		set_error(404, "Not Found");
+		set_error(404);
 	else // Page exists but not allowed to do POST
 		set_allow_methods(true);
 	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
-void	Response::set_error(int code, std::string text)
-{
-	this->_status_code = code;
-	this->_status_text = text;
-	_body = get_error_page(_status_code);
-}
-
 void	Response::respond_delete_request()
 {
 	if (access(this->_path.c_str(), F_OK) == -1)
-		set_error(404, "Not found");
+		set_error(404);
 	else if (remove(this->_path.c_str()) == 0)
 	{
-		this->_status_code = 200;
-		this->_status_text = "OK";
+		set_success();
 		_body = "<p>Resource deleted</p>";
 	}
 	else
 	{
 		if (errno == EACCES || errno == EPERM)
 		{
-			set_error(403, "Forbidden");
+			set_error(403);
 			std::cout << "checking error number\n";
 		}
 		else
-			set_error(500, "Internal Server Error");
+			set_error(500);
 		std::cout << "Error deleting resource\n";
 	}
 	_headers["Content-Length"] = intToString(this->_body.size());
-}
-
-void	Response::set_allow_methods(bool post)
-{
-	std::vector<std::string>::iterator it;
-	std::string							methods;
-	std::vector<std::string> 			allowed_methods = _location->getAllowedMethods();
-
-	for (it = allowed_methods.begin(); it != allowed_methods.end(); it++)
-	{
-		if (post && *it == "POST")
-			continue ;
-		methods += *it;
-		if (it + 1 != allowed_methods.end())
-		{
-			if(!(*(it + 1) == "POST" && post))
-				methods += ", ";
-		}
-	}
-	_headers["Allow"] = methods;
-	set_error(405, "Method Not Allowed");
-	_headers["Content-Length"] = intToString(this->_body.size());
-	std::cout << "ALLOWED METHODS: " << methods << std::endl;
 }
 
 void		Response::getDate()
@@ -336,6 +321,34 @@ Response &				Response::operator=( Response const & rhs )
 		this->_location = rhs._location;
 	}
 	return (*this);
+}
+
+/*
+** ---------------------------------- STATUS ----------------------------------
+*/
+
+void	Response::init_status_lookup(void)
+{
+	this->_status_lookup[200] = "OK";
+	this->_status_lookup[400] = "Bad Request";
+	this->_status_lookup[403] = "Forbidden";
+	this->_status_lookup[404] = "Not Found";
+	this->_status_lookup[405] = "Method Not Allowed";
+	this->_status_lookup[408] = "Request Timeout";
+	this->_status_lookup[500] = "Internal Server Error";
+}
+
+void	Response::set_success(void)
+{
+	this->_status_code = 200;
+	this->_status_text = _status_lookup[_status_code];
+}
+
+void	Response::set_error(int code)
+{
+	this->_status_code = code;
+	this->_status_text = _status_lookup[_status_code];
+	this->_body = get_error_page(_status_code);
 }
 
 std::string		Response::get_error_page(int num)
@@ -461,6 +474,29 @@ void	Response::setContentType(std::string path)
 		_headers["Content-Type"] = "application/pdf";
 	else
 		_headers["Content-Type"] = "text/plain";
+}
+
+void	Response::set_allow_methods(bool post)
+{
+	std::vector<std::string>::iterator it;
+	std::string							methods;
+	std::vector<std::string> 			allowed_methods = _location->getAllowedMethods();
+
+	for (it = allowed_methods.begin(); it != allowed_methods.end(); it++)
+	{
+		if (post && *it == "POST")
+			continue ;
+		methods += *it;
+		if (it + 1 != allowed_methods.end())
+		{
+			if(!(*(it + 1) == "POST" && post))
+				methods += ", ";
+		}
+	}
+	_headers["Allow"] = methods;
+	set_error(405);
+	_headers["Content-Length"] = intToString(this->_body.size());
+	std::cout << "ALLOWED METHODS: " << methods << std::endl;
 }
 
 /* ************************************************************************** */
