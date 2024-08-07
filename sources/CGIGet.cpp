@@ -33,12 +33,26 @@ CGIGet &		CGIGet::operator=( CGIGet const & rhs )
 	return(*this);
 }
 
-CGIGet::CGIGet(Request const & request) : CGIHandler()
+std::string	CGIGet::get_cgi_location(std::string location)
+{
+	if (location[location.size() - 1] == '/')
+		return ("." + location.substr(0, location.size() - 1));
+	return ("." + location);
+}
+
+CGIGet::CGIGet(Request const & request, LocationConfig* location, std::string ext) : CGIHandler()
 {
 	int	pipe_fd[2];
 
-	setFullPath("./cgi-bin" + request.getPath());
-	
+	this->_cgi_path = location->getCGIPath(ext);
+	std::string	cgi_location = get_cgi_location(location->getPath());
+	std::cout << CYAN << "CGIGet: location: " << cgi_location << '\n';
+
+	// setFullPath("./cgi-bin" + request.getPath());
+	setFullPath(cgi_location + request.getPath());
+	std::cout << "CGIGet: full path: " << getFullPath() << '\n';
+	std::cout << "cgi_path: " << this->_cgi_path << '\n' << RESET;
+
 	if (access(getFullPath().c_str(), F_OK) != 0)
 	{
 		setError(404);

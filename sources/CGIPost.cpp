@@ -33,11 +33,12 @@ CGIPost &		CGIPost::operator=( CGIPost const & rhs )
 	return(*this);
 }
 
-CGIPost::CGIPost(Request const & request) : CGIHandler()
+CGIPost::CGIPost(Request const & request, LocationConfig* location, std::string ext) : CGIHandler()
 {
 	int	pipe_fd[2];
 	int	pipe_data[2];
 
+	this->_cgi_path = location->getCGIPath(ext);
 	this->setFullPath("." + request.getPath());
 	if (access(getFullPath().c_str(), F_OK) != 0)
 	{
@@ -103,7 +104,7 @@ void	CGIPost::execute_cgi(int pipe_fd[], int pipe_data[], Request const & reques
 
 	char* const argv[] = 
 	{
-		const_cast<char*>("/usr/bin/python3"),
+		const_cast<char*>(this->_cgi_path.c_str()),
 		const_cast<char*>(path.c_str()),
 		NULL
 	};
@@ -135,7 +136,7 @@ void	CGIPost::execute_cgi(int pipe_fd[], int pipe_data[], Request const & reques
 	};
 	close(pipe_fd[1]);
 	close(pipe_data[0]);
-	execve("/usr/bin/python3", argv, const_cast<char* const*>(env));
+	execve(this->_cgi_path.c_str(), argv, const_cast<char* const*>(env));
 	std::cout << "Execve failed\n";
 	setError(500);
 }

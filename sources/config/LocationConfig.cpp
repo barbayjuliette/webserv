@@ -159,27 +159,34 @@ std::string	toLower(std::string str)
 	return (res);
 }
 
+/* Compare location with request URI
+- If location directive is case-insensitive: convert paths to lowercase
+-  */
 size_t	LocationConfig::comparePath(const std::string& str)
 {
 	size_t	count = 0;
 	size_t	i = 1;
+	std::string	path(this->_path);
 	std::string	req_path(str);
 
 	if (!_case_sensitive)
+	{
 		std::transform(req_path.begin(), req_path.end(), req_path.begin(), ::tolower);
+		std::transform(path.begin(), path.end(), path.begin(), ::tolower);
+	}
 
 	if (TRACE)
-		std::cout << "req_path: " << RED << req_path << RESET << " vs location: " << CYAN << _path << RESET << " => ";
+		std::cout << "req_path: " << RED << req_path << RESET << " vs location: " << CYAN << path << RESET << " => ";
 
-	while (i < this->_path.size() && i < req_path.size())
+	while (i < path.size() && i < req_path.size())
 	{
-		if (this->_path[i] == '/' && req_path[i] == '/')
+		if (path[i] == '/' && req_path[i] == '/')
 			count++;
-		if (this->_path[i] != req_path[i])
+		if (path[i] != req_path[i])
 			break ;
 		i++;
 	}
-	if ((long)(count + 1) != std::count(this->_path.begin(), this->_path.end(), '/'))
+	if ((long)(count + 1) < std::count(path.begin(), path.end(), '/'))
 		count = 0;
 	if (TRACE)
 		std::cout << count << '\n';
@@ -198,9 +205,9 @@ void	LocationConfig::printConfig(void)
 	Print::printLine("AUTOINDEX: ", _autoindex ? "on" : "off");
 	if (_redirect.size() > 0)
 		Print::printLine("REDIRECT: ", _redirect);
-	Print::printMap("ERROR PAGES: ", _error_page);
 	Print::printVector("ALLOWED METHODS: ", _allowed_methods);
 	Print::printMap("CGI PATH: ", _cgi_path);
+	Print::printMap("ERROR PAGES: ", _error_page);
 }
 
 /*
@@ -216,7 +223,7 @@ std::string	LocationConfig::getCGIPath(std::string ext) const
 {
 	if (this->_cgi_path.find(ext) == this->_cgi_path.end())
 		return ("");
-	return (_cgi_path.at(ext));
+	return (this->_cgi_path.at(ext));
 }
 
 bool	LocationConfig::getMatchExact(void) const

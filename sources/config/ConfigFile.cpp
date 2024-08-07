@@ -22,8 +22,8 @@ ConfigFile::ConfigFile(const char *file)
 {
 	openFile(file);
 	readFile();
-	if (TRACE)
-		printContexts(this->_servers);
+	// if (TRACE)
+	// 	printContexts(this->_servers);
 	validateConfig();
 }
 
@@ -172,8 +172,8 @@ void	ConfigFile::validateConfig(void)
 {
 	for (std::vector<ServerConfig*>::iterator it = this->_servers.begin(); it != this->_servers.end(); it++)
 	{
-		if (TRACE)
-			std::cout << CYAN << "\nCHECKING SERVER DIRECTIVES:\n" << RESET;
+		// if (TRACE)
+		// 	std::cout << CYAN << "\nCHECKING SERVER DIRECTIVES:\n" << RESET;
 		(*it)->validateKeys();
 
 		std::map<std::string, LocationConfig*>	locations = (*it)->getLocations();
@@ -181,8 +181,8 @@ void	ConfigFile::validateConfig(void)
 
 		for (loc = locations.begin(); loc != locations.end(); loc++)
 		{
-			if (TRACE)
-				std::cout << CYAN << "\nCHECKING LOCATION DIRECTIVES: " << loc->second->getPath() << '\n' << RESET;
+			// if (TRACE)
+			// 	std::cout << CYAN << "\nCHECKING LOCATION DIRECTIVES: " << loc->second->getPath() << '\n' << RESET;
 			loc->second->validateKeys();
 		}
 	}

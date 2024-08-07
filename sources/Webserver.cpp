@@ -16,15 +16,7 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-Webserver::Webserver()
-{
-	// signal(SIGINT, signal_handler);
-	// signal(SIGTERM, signal_handler);
-	// _instance = this;
-	_port = 8080;
-
-	// initServerSocket(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 1024);
-}
+Webserver::Webserver() {}
 
 Webserver::Webserver(ServerConfig* config)
 {
@@ -32,8 +24,6 @@ Webserver::Webserver(ServerConfig* config)
 	_host = _config->getHost();
 	_port = _config->getPort();
 	_server_name = _config->getServerName();
-
-	// initServerSocket(_config->getAddressInfo(), 12);
 }
 
 Webserver::Webserver( const Webserver & src ):
@@ -134,6 +124,11 @@ int	Webserver::getServerSocket()
 int	Webserver::getPort()
 {
 	return (_port);
+}
+
+std::string	Webserver::getHost()
+{
+	return (_host);
 }
 
 std::vector<std::string>	Webserver::getServerName()

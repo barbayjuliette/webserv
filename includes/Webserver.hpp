@@ -30,9 +30,10 @@ class Webserver
 		ServerConfig*				_config;
 		std::map<int, Client*>		_clients;
 
+		Webserver(); //should not be constructed without server config
+
 	public:
 		/* Constructors */
-		Webserver();
 		Webserver(ServerConfig *config);
 		Webserver( Webserver const & src );
 
@@ -62,6 +63,7 @@ class Webserver
 		// Accessors
 		int							getServerSocket();
 		int							getPort();
+		std::string					getHost();
 		std::vector<std::string>	getServerName();
 		struct sockaddr_in*			getAddress();
 		std::map<int, Client*>		getClients();

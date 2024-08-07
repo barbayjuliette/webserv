@@ -24,6 +24,10 @@
 # include <iostream>
 # include "webserv.hpp"
 # include "Request.hpp"
+# include "LocationConfig.hpp"
+
+class Request;
+class LocationConfig;
 
 class CGIHandler
 {

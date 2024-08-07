@@ -128,17 +128,15 @@ LocationConfig*	ServerConfig::matchLocation(const std::string& path)
 
 void	ServerConfig::printConfig(void)
 {
-	Print::printLine("PORT: ", _port);
-	Print::printLine("HOST: ", _host);
+	Print::printVector("SERVER NAMES: ", _server_name);
 	Print::printLine("ROOT: ", _root);
 	Print::printLine("INDEX: ", _index);
 	Print::printLine("AUTOINDEX: ", _autoindex ? "on" : "off");
 	Print::printLine("BODY MAX LENGTH: ", _body_max_length);
+	Print::printVector("ALLOWED METHODS: ", _allowed_methods);
 	if (_redirect.size() > 0)
 		Print::printLine("REDIRECT: ", _redirect);
 	Print::printMap("ERROR PAGES: ", _error_page);
-	Print::printVector("SERVER NAMES: ", _server_name);
-	Print::printVector("ALLOWED METHODS: ", _allowed_methods);
 }
 
 /*

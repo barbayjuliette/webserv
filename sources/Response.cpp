@@ -201,7 +201,7 @@ void	Response::respond_get_request(const Request &request)
 
 	if (_location->getCGIPath(req_ext).size() > 0)
 	{
-		CGIHandler*	cgi = new CGIGet(request);
+		CGIHandler*	cgi = new CGIGet(request, _location, req_ext);
 		process_cgi_response(cgi);
 		delete (cgi);
 		return ;
@@ -231,7 +231,7 @@ void	Response::respond_post_request(const Request &request)
 
 	if (_location->getCGIPath(req_ext).size() > 0) // Check if finishes with CGI extension.
 	{
-		CGIHandler*	cgi = new CGIPost(request);
+		CGIHandler*	cgi = new CGIPost(request, _location, req_ext);
 		process_cgi_response(cgi);
 		delete cgi;
 	}

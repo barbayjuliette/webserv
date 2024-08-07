@@ -39,8 +39,6 @@ Cluster::Cluster(ConfigFile* config_file)
 	{
 		std::string	host = configs[i]->getHost();
 		int	port = configs[i]->getPort();
-		if (CTRACE)
-			std::cout << CYAN << "\ncurrent server config: " << host << ':' << port << '\n' << RESET;
 
 		t_mmap::iterator	res = findHostPort(host, port);
 		if (res == _server_sockets.end())
@@ -155,8 +153,8 @@ void	Cluster::addServerSocket(std::string& host, int port, int socket_fd)
 	socket.host = host;
 	_server_sockets.insert(std::make_pair(port, socket));
 
-	if (CTRACE)
-		std::cout << GREEN << "created socket for port: " << port << ", socket_fd: " << findHostPort(host, port)->second.fd << '\n' << RESET;
+	// if (CTRACE)
+	// 	std::cout << GREEN << "created socket for port: " << port << ", socket_fd: " << findHostPort(host, port)->second.fd << '\n' << RESET;
 }
 
 void	Cluster::addServer(std::string& host, int port, Webserver *new_server)
@@ -164,8 +162,8 @@ void	Cluster::addServer(std::string& host, int port, Webserver *new_server)
 	t_mmap::iterator	it = findHostPort(host, port);
 	it->second.servers.push_back(new_server);
 
-	if (CTRACE)
-		std::cout << GREEN << "there are now " << countServers(it) << " servers listening to " << host << ':' << port << ".\n" << RESET;
+	// if (CTRACE)
+	// 	std::cout << GREEN << "there are now " << countServers(it) << " servers listening to " << host << ':' << port << ".\n" << RESET;
 }
 
 /*
@@ -557,7 +555,8 @@ void	Cluster::printServers(std::vector<Webserver*>& servers)
 
 	for (std::vector<Webserver*>::iterator it = servers.begin(); it != servers.end(); it++)
 	{
-		std::cout << GREEN << "SERVER [" << ++i << "]:\n" << RESET;
+		std::cout << GREEN << "SERVER [" << ++i << "]: ";
+		std::cout << (*it)->getHost() << ":" << (*it)->getPort() << '\n' << RESET;
 		(*it)->printConfig();
 	}
 }
