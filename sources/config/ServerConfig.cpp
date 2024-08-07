@@ -91,7 +91,8 @@ void	ServerConfig::setLocation(const std::string& path, LocationConfig* location
 
 LocationConfig*	ServerConfig::matchLocation(const std::string& path)
 {
-	std::cout << "inside matchLocation: path: " << path << '\n';
+	if (TRACE)
+		std::cout << "inside matchLocation: path: " << path << '\n';
 
 	std::map<size_t, LocationConfig*>	match_result;
 
@@ -102,10 +103,12 @@ LocationConfig*	ServerConfig::matchLocation(const std::string& path)
 		if (cmp > 0)
 		{
 			match_result[cmp] = it->second;
-			std::cout << "\t--> added to match_result\n\n";
+			if (TRACE)
+				std::cout << "\t--> added to match_result\n\n";
 		}
 	}
-	std::cout << "no. of match_result: " << match_result.size() << '\n';
+	if (TRACE)
+		std::cout << "no. of match_result: " << match_result.size() << '\n';
 
 	if (match_result.size() == 1)
 		return (match_result.begin()->second);
@@ -114,7 +117,6 @@ LocationConfig*	ServerConfig::matchLocation(const std::string& path)
 	{
 		std::map<size_t, LocationConfig*>::iterator	match = match_result.end();
 		match--;
-		std::cout << "count: " << match->first << '\n';
 		return (match->second);
 	}
 	return (_locations.begin()->second);

@@ -32,6 +32,8 @@
 # include "Print.hpp"
 
 class CGIHandler;
+class CGIGet;
+class CGIPost;
 
 class Response
 {
@@ -62,21 +64,24 @@ class Response
 
 		/* Handle HTTP methods */
 		bool		method_is_allowed(std::string, std::vector<std::string> allowed);
-		void		set_allow_methods(bool flag);
-
 		void		respond_get_request(const Request &request);
 		void		respond_post_request(const Request &request);
 		void		respond_delete_request(void);
-		std::string	intToString(int num);
-		void		getDate();
 		int			is_directory(std::string req_path);
-		std::string	get_index_page(void);
 		void		create_directory_listing(std::string path, std::string req_path);
 		std::string	create_html(std::string source, std::string path);
+		std::string	get_index_page(void);
+		std::string	intToString(int num);
 
-		/* CGI */
-		void		cgi_post_form(const Request &request);
+		/* CGI utils */
+		void		process_cgi_response(CGIHandler* cgi);
 		std::string	extract_cgi_extension(const std::string& req_path);
+
+		/* Setters */
+		void		setFullResponse();
+		void		setPath(std::string new_path);
+		void		setContentType(std::string path);
+		void		set_allow_methods(bool flag);
 
 		/* Accessors */
 		int									getStatusCode() const;
@@ -86,7 +91,5 @@ class Response
 		std::string							getBody() const;
 		std::string							getPath() const;
 		std::string							getFullResponse() const;
-		void								setFullResponse();
-		void								setPath(std::string new_path);
-		void								setContentType(std::string path);
+		void								getDate();
 };

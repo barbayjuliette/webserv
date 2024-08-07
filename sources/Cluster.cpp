@@ -395,8 +395,9 @@ void		Cluster::handle_write_connection(int client_socket)
 	if (bytes_sent == response->getFullResponse().size())
 	{
 		if (CTRACE)
-		{
 			std::cout << CYAN << "\ninside handle_write_connection: " << client_socket << '\n' << RESET;
+		if (DEBUG)
+		{
 			std::cout << GREEN << "---- Response sent to client ----\n" << RESET;
 			std::cout << response->getFullResponse() << std::endl;
 			std::cout << GREEN << "End of response\n" << RESET;
@@ -405,10 +406,10 @@ void		Cluster::handle_write_connection(int client_socket)
 		{
 			client->reset();
 		}
-		// else
-		// {
-		// 	removeClient(client_socket);
-		// }
+		else
+		{
+			removeClient(client_socket);
+		}
 	}
 	else
 		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;

@@ -38,7 +38,7 @@ class CGIHandler
 	public:
 		CGIHandler();
 		CGIHandler(CGIHandler const & src);
-		~CGIHandler();
+		virtual ~CGIHandler();
 		CGIHandler &		operator=( CGIHandler const & rhs );
 		std::string			intToString(int num);
 

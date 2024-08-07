@@ -168,7 +168,8 @@ size_t	LocationConfig::comparePath(const std::string& str)
 	if (!_case_sensitive)
 		std::transform(req_path.begin(), req_path.end(), req_path.begin(), ::tolower);
 
-	std::cout << "req_path: " << RED << req_path << RESET << " vs location: " << CYAN << _path << RESET << " => ";
+	if (TRACE)
+		std::cout << "req_path: " << RED << req_path << RESET << " vs location: " << CYAN << _path << RESET << " => ";
 
 	while (i < this->_path.size() && i < req_path.size())
 	{
@@ -179,11 +180,9 @@ size_t	LocationConfig::comparePath(const std::string& str)
 		i++;
 	}
 	if ((long)(count + 1) != std::count(this->_path.begin(), this->_path.end(), '/'))
-	{
-		std::cout << "0\n";
-		return (0);
-	}
-	std::cout << count << '\n';
+		count = 0;
+	if (TRACE)
+		std::cout << count << '\n';
 	return (count);
 }
 
