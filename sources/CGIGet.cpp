@@ -46,7 +46,7 @@ CGIGet::CGIGet(Request const & request, LocationConfig* location, std::string ex
 
 	this->_cgi_path = location->getCGIPath(ext);
 	std::string	cgi_location = get_cgi_location(location->getPath());
-	std::cout << CYAN << "CGIGet: location: " << cgi_location << '\n';
+	std::cout << RED << "CGIGet: location: " << cgi_location << '\n';
 
 	// setFullPath("./cgi-bin" + request.getPath());
 	setFullPath(cgi_location + request.getPath());
@@ -110,7 +110,7 @@ void	CGIGet::execute_cgi(int pipe_fd[], Request const & request)
 
 	char* const argv[] = 
 	{
-		const_cast<char*>("/usr/bin/python3"),
+		const_cast<char*>(this->_cgi_path.c_str()),
 		const_cast<char*>(path.c_str()),
 		NULL
 	};
@@ -139,7 +139,7 @@ void	CGIGet::execute_cgi(int pipe_fd[], Request const & request)
 		NULL
 	};
 	close(pipe_fd[1]);
-	execve("/usr/bin/python3", argv, const_cast<char* const*>(env));
+	execve(this->_cgi_path.c_str(), argv, const_cast<char* const*>(env));
 	std::cerr << "Execve failed\n";
 	setError(500);
 }

@@ -404,7 +404,7 @@ void		Cluster::handle_write_connection(int client_socket)
 	if (bytes_sent == response->getFullResponse().size())
 	{
 		if (CTRACE)
-			std::cout << CYAN << "\ninside handle_write_connection: " << client_socket << '\n' << RESET;
+			std::cout << CYAN << "\ninside handle_write_connection: fd " << client_socket << "\n\n" << RESET;
 		if (DEBUG)
 		{
 			std::cout << GREEN << "---- Response sent to client ----\n" << RESET;
@@ -555,7 +555,7 @@ void	Cluster::printServers(std::vector<Webserver*>& servers)
 
 	for (std::vector<Webserver*>::iterator it = servers.begin(); it != servers.end(); it++)
 	{
-		std::cout << GREEN << "SERVER [" << ++i << "]: ";
+		std::cout << GREEN << "\n\nSERVER [" << ++i << "]: ";
 		std::cout << (*it)->getHost() << ":" << (*it)->getPort() << '\n' << RESET;
 		(*it)->printConfig();
 	}

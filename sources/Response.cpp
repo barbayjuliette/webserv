@@ -33,12 +33,12 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 	if (_location->getRedirect().size() > 0)
 	{
 		_path = _location->getRoot() + _location->getRedirect();
-		std::cout << "RESPONSE - REDIRECT: " << _path << '\n';
+		std::cout << CYAN << "RESPONSE - REDIRECT: " << RESET << _path << '\n';
 	}
 	else
 	{
 		_path = _location->getRoot() + request.getPath().substr(1, std::string::npos);
-		std::cout << "RESPONSE - PATH: " << _path << '\n';
+		std::cout << CYAN << "RESPONSE - PATH: " << RESET << _path << '\n';
 	}
 
 	setContentType(_path);
