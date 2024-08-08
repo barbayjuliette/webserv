@@ -48,7 +48,7 @@ class ValidConfig
 		t_strvec		_server_name;
 		t_strvec		_allowed_methods;
 		t_strvec		_cgi_ext; //cgi file extensions
-		t_strvec		_cgi_path;
+		t_strvec		_cgi_exec; //paths to cgi executable
 
 		std::map<int, std::string>			_error_page;
 		std::map<std::string, t_directive>	_validKeys;

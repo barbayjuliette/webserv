@@ -22,7 +22,7 @@ LocationConfig::LocationConfig(ServerConfig* server) :
 	ValidConfig(), _server(server), _match_exact(false), _case_sensitive(true)
 {
 	initValidKeys();
-	this->_path = "/";
+	this->_prefix = "/";
 }
 
 LocationConfig::LocationConfig(const LocationConfig& other) : ValidConfig(other)
@@ -59,12 +59,12 @@ void	LocationConfig::validateKeys(void)
 	else
 		this->_root = this->_server->getRoot();
 
-	if (_directives.find("cgi_ext") != _directives.end() && _directives.find("cgi_path") != _directives.end())
-		parseCGIPath(_directives["cgi_ext"], _directives["cgi_path"]);
+	if (_directives.find("cgi_ext") != _directives.end() && _directives.find("cgi_exec") != _directives.end())
+		parseCGIPath(_directives["cgi_ext"], _directives["cgi_exec"]);
 
 	for (t_strmap::iterator it = _directives.begin(); it != _directives.end(); it++)
 	{
-		if (it->first == "cgi_ext" || it->first == "cgi_path" || it->first == "root")
+		if (it->first == "cgi_ext" || it->first == "cgi_exec" || it->first == "root")
 			continue;
 
 		t_dirmap::iterator found = this->_validKeys.find(it->first);
@@ -82,17 +82,17 @@ void	LocationConfig::parseCGIPath(t_strvec& exts, t_strvec& paths)
 
 	for (size_t i = 0; i < exts.size(); i++)
 	{
-		_cgi_path[exts[i]] = paths[i];
+		_cgi_exec[exts[i]] = paths[i];
 	}
 	// std::cout << "printing cgi map:\n";
-	// for (std::map<std::string, std::string>::iterator it = _cgi_path.begin(); it != _cgi_path.end(); it++)
+	// for (std::map<std::string, std::string>::iterator it = _cgi_exec.begin(); it != _cgi_exec.end(); it++)
 	// {
 	// 	std::cout << it->first << ": " << it->second << '\n';
 	// }
 }
 
-/* Syntax: location [modifier] [URI] (+ inline open brace '{' if applicable) */
-void	LocationConfig::parsePath(t_strvec& tokens)
+/* Syntax: location [modifier] [URI prefix] (+ inline open brace '{' if applicable) */
+void	LocationConfig::parsePrefix(t_strvec& tokens)
 {
 	t_strvec::iterator	last = tokens.end();
 	last--;
@@ -104,7 +104,7 @@ void	LocationConfig::parsePath(t_strvec& tokens)
 
 	t_strvec::iterator	current = tokens.begin();
 	current++;
-	if (parsePathModifier(*current) == -1)
+	if (parsePrefixModifier(*current) == -1)
 	{
 		if (tokens.size() >= 3)
 			throw InvalidConfigError("Invalid parameters for location block");
@@ -112,10 +112,10 @@ void	LocationConfig::parsePath(t_strvec& tokens)
 	else
 		current++;
 
-	this->_path = *current;
+	this->_prefix = *current;
 }
 
-int	LocationConfig::checkPathModifier(std::string& token)
+int	LocationConfig::checkPrefixModifier(std::string& token)
 {
 	std::string	arr[3] = {"=", "~", "~*"};
 
@@ -127,9 +127,9 @@ int	LocationConfig::checkPathModifier(std::string& token)
 	return (-1);
 }
 
-int	LocationConfig::parsePathModifier(std::string& token)
+int	LocationConfig::parsePrefixModifier(std::string& token)
 {
-	int modifier = checkPathModifier(token);
+	int modifier = checkPrefixModifier(token);
 
 	switch (modifier)
 	{
@@ -159,34 +159,51 @@ std::string	toLower(std::string str)
 	return (res);
 }
 
+/* If location is CGI block: instead of prefix, check if extension is a valid CGI extensions */
+bool	LocationConfig::compareExtension(const std::string& str)
+{
+	std::string	req_path(str);
+	size_t	i = req_path.rfind('.');
+	if (i == std::string::npos)
+		return (false);
+
+	std::string	req_ext = req_path.substr(i, std::string::npos);
+
+	if (getCGIExec(req_ext).size() > 0)
+	{
+		std::cout << RED << req_ext << " is a CGI extension; returning CGI block\n" << RESET;
+		return (true);
+	}
+	return (false);
+}
+
 /* Compare location with request URI
-- If location directive is case-insensitive: convert paths to lowercase
--  */
+- If location directive is case-insensitive: convert paths to lowercase */
 size_t	LocationConfig::comparePath(const std::string& str)
 {
 	size_t	count = 0;
 	size_t	i = 1;
-	std::string	path(this->_path);
+	std::string	prefix(this->_prefix);
 	std::string	req_path(str);
 
 	if (!_case_sensitive)
 	{
 		std::transform(req_path.begin(), req_path.end(), req_path.begin(), ::tolower);
-		std::transform(path.begin(), path.end(), path.begin(), ::tolower);
+		std::transform(prefix.begin(), prefix.end(), prefix.begin(), ::tolower);
 	}
 
 	if (TRACE)
-		std::cout << "req_path: " << RED << req_path << RESET << " vs location: " << CYAN << path << RESET << " => ";
+		std::cout << "req_path: " << RED << req_path << RESET << " vs location: " << CYAN << prefix << RESET << " => ";
 
-	while (i < path.size() && i < req_path.size())
+	while (i < prefix.size() && i < req_path.size())
 	{
-		if (path[i] == '/' && req_path[i] == '/')
+		if (prefix[i] == '/' && req_path[i] == '/')
 			count++;
-		if (path[i] != req_path[i])
+		if (prefix[i] != req_path[i])
 			break ;
 		i++;
 	}
-	if ((long)(count + 1) < std::count(path.begin(), path.end(), '/'))
+	if ((long)(count + 1) < std::count(prefix.begin(), prefix.end(), '/'))
 		count = 0;
 	if (TRACE)
 		std::cout << count << '\n';
@@ -206,7 +223,7 @@ void	LocationConfig::printConfig(void)
 	if (_redirect.size() > 0)
 		Print::printLine("REDIRECT: ", _redirect);
 	Print::printVector("ALLOWED METHODS: ", _allowed_methods);
-	Print::printMap("CGI PATH: ", _cgi_path);
+	Print::printMap("CGI PATH: ", _cgi_exec);
 	Print::printMap("ERROR PAGES: ", _error_page);
 }
 
@@ -214,16 +231,21 @@ void	LocationConfig::printConfig(void)
 ** -------------------------------- ACCESSORS ---------------------------------
 */
 
-std::string	LocationConfig::getPath(void) const
+std::string	LocationConfig::getPrefix(void) const
 {
-	return (this->_path);
+	return (this->_prefix);
 }
 
-std::string	LocationConfig::getCGIPath(std::string ext) const
+std::string	LocationConfig::getCGIExec(std::string ext) const
 {
-	if (this->_cgi_path.find(ext) == this->_cgi_path.end())
+	if (this->_cgi_exec.find(ext) == this->_cgi_exec.end())
 		return ("");
-	return (this->_cgi_path.at(ext));
+	return (this->_cgi_exec.at(ext));
+}
+
+bool	LocationConfig::isCGILocation(void) const
+{
+	return (!this->_cgi_exec.empty());
 }
 
 bool	LocationConfig::getMatchExact(void) const

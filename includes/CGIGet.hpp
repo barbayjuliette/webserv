@@ -29,5 +29,5 @@ class CGIGet : public CGIHandler
 
 		void			execute_cgi(int pipe_fd[], Request const & request);
 		void			process_result_cgi(int pid, int pipe_fd[]);
-		std::string		get_cgi_location(std::string location);
+		std::string		get_cgi_location(std::string prefix, std::string req_path);
 };

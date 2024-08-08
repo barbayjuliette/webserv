@@ -210,10 +210,8 @@ int		Response::is_directory(std::string req_path)
 void	Response::respond_get_request(const Request &request)
 {
 	std::string	req_ext = extract_cgi_extension(request.getPath());
-	std::cout << req_ext << '\n';
-	std::cout << _location->getCGIPath(req_ext) << '\n';
 
-	if (_location->getCGIPath(req_ext).size() > 0)
+	if (_location->getCGIExec(req_ext).size() > 0)
 	{
 		CGIHandler*	cgi = new CGIGet(request, _location, req_ext);
 		process_cgi_response(cgi);
@@ -243,7 +241,7 @@ void	Response::respond_post_request(const Request &request)
 	std::ifstream				page(this->_path.c_str());
 	std::string	req_ext = extract_cgi_extension(request.getPath());
 
-	if (_location->getCGIPath(req_ext).size() > 0) // Check if finishes with CGI extension.
+	if (_location->getCGIExec(req_ext).size() > 0) // Check if finishes with CGI extension.
 	{
 		CGIHandler*	cgi = new CGIPost(request, _location, req_ext);
 		process_cgi_response(cgi);
