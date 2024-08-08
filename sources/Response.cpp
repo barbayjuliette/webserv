@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 19:42:01 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/08 17:14:07 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ std::map<int, std::string>	Response::_status_lookup;
 
 Response::Response() {}
 
-Response::Response(Request &request, ServerConfig *conf) : _config(conf)
+Response::Response(Request &request, ServerConfig *conf) : _body(""), _config(conf)
 {
 	if (this->_status_lookup.empty())
 		init_status_lookup();
@@ -34,6 +34,13 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 	{
 		_path = _location->getRoot() + _location->getRedirect();
 		std::cout << CYAN << "RESPONSE - REDIRECT: " << RESET << _path << '\n';
+		this->_status_code = 301;
+		this->_status_text = "Moved Permanently";
+		_headers["Location"] = "/database/";
+		setHeaders(request);
+		// std::cout << "FULL REDIRECT RESPONSE: \n";
+		// std::cout << getFullResponse() << std::endl;
+		return ;
 	}
 	else
 	{
@@ -60,6 +67,11 @@ Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 	else
 		set_allow_methods(false);
 
+	setHeaders(request);
+}
+
+void	Response::setHeaders(Request &request)
+{
 	_headers["Cache-Control"] = "no-cache, private";
 	this->_http_version = request.getHttpVersion();
 
@@ -297,6 +309,7 @@ void	Response::process_cgi_response(CGIHandler* cgi)
 void	Response::init_status_lookup(void)
 {
 	this->_status_lookup[200] = "OK";
+	this->_status_lookup[301] = "Moved Permanently";
 	this->_status_lookup[400] = "Bad Request";
 	this->_status_lookup[403] = "Forbidden";
 	this->_status_lookup[404] = "Not Found";
@@ -374,7 +387,8 @@ void	Response::setFullResponse()
 		stream << it->first << ": " << it->second << "\r\n";
 	}
 	stream << "\r\n";
-	stream << this->_body;
+	if (!_body.empty())
+		stream << this->_body;
 
 	this->_full_response = stream.str();
 }
