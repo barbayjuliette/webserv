@@ -198,6 +198,8 @@ int		Response::is_directory(std::string req_path)
 void	Response::respond_get_request(const Request &request)
 {
 	std::string	req_ext = extract_cgi_extension(request.getPath());
+	std::cout << req_ext << '\n';
+	std::cout << _location->getCGIPath(req_ext) << '\n';
 
 	if (_location->getCGIPath(req_ext).size() > 0)
 	{
@@ -237,7 +239,7 @@ void	Response::respond_post_request(const Request &request)
 	}
 	else if (!page.good())// Path does not exist : 404
 		set_error(404);
-	else // Page exists but not allowed to do POST
+	else // Page exists but cgi is not enabled
 		set_allow_methods(true);
 	_headers["Content-Length"] = intToString(this->_body.size());
 }

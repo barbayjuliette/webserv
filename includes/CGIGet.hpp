@@ -17,7 +17,7 @@
 class CGIGet : public CGIHandler
 {
 	private:
-		std::string		_cgi_path;
+		std::string		_cgi_exec;
 
 		CGIGet();
 

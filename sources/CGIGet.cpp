@@ -33,25 +33,14 @@ CGIGet &		CGIGet::operator=( CGIGet const & rhs )
 	return(*this);
 }
 
-std::string	CGIGet::get_cgi_location(std::string location)
-{
-	if (location[location.size() - 1] == '/')
-		return ("." + location.substr(0, location.size() - 1));
-	return ("." + location);
-}
-
 CGIGet::CGIGet(Request const & request, LocationConfig* location, std::string ext) : CGIHandler()
 {
 	int	pipe_fd[2];
 
-	this->_cgi_path = location->getCGIPath(ext);
-	std::string	cgi_location = get_cgi_location(location->getPath());
-	std::cout << RED << "CGIGet: location: " << cgi_location << '\n';
-
-	// setFullPath("./cgi-bin" + request.getPath());
-	setFullPath(cgi_location + request.getPath());
+	this->_cgi_exec = location->getCGIPath(ext);
+	setFullPath("." + request.getPath());
 	std::cout << "CGIGet: full path: " << getFullPath() << '\n';
-	std::cout << "cgi_path: " << this->_cgi_path << '\n' << RESET;
+	std::cout << "cgi_path: " << this->_cgi_exec << '\n' << RESET;
 
 	if (access(getFullPath().c_str(), F_OK) != 0)
 	{
@@ -110,7 +99,7 @@ void	CGIGet::execute_cgi(int pipe_fd[], Request const & request)
 
 	char* const argv[] = 
 	{
-		const_cast<char*>(this->_cgi_path.c_str()),
+		const_cast<char*>(this->_cgi_exec.c_str()),
 		const_cast<char*>(path.c_str()),
 		NULL
 	};
@@ -139,7 +128,7 @@ void	CGIGet::execute_cgi(int pipe_fd[], Request const & request)
 		NULL
 	};
 	close(pipe_fd[1]);
-	execve(this->_cgi_path.c_str(), argv, const_cast<char* const*>(env));
+	execve(this->_cgi_exec.c_str(), argv, const_cast<char* const*>(env));
 	std::cerr << "Execve failed\n";
 	setError(500);
 }
