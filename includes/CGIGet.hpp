@@ -10,7 +10,6 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-
 #pragma once
 
 # include "CGIHandler.hpp"
@@ -18,14 +17,17 @@
 class CGIGet : public CGIHandler
 {
 	private:
+		std::string		_cgi_exec;
+
 		CGIGet();
 
 	public:
-		CGIGet(Request const & request);
+		CGIGet(Request const & request, LocationConfig* location, std::string ext);
 		CGIGet( CGIGet const & src );
 		~CGIGet();
 		CGIGet &		operator=( CGIGet const & rhs );
 
 		void			execute_cgi(int pipe_fd[], Request const & request);
 		void			process_result_cgi(int pid, int pipe_fd[]);
+		std::string		get_cgi_location(std::string location);
 };

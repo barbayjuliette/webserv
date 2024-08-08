@@ -86,7 +86,11 @@ class Cluster
 		static void		signal_handler(int signum);
 		int				countServers(std::string& host, int port);
 		int				countServers(t_mmap::iterator res);
+
+		/* Print */
 		void			printServerSockets(void);
+		void			printServers(std::vector<Webserver*>& servers);
+		void			assignServer(int client_socket);
 
 		// getter
 		Client*			getClient(int socket);

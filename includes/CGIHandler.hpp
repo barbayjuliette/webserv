@@ -24,6 +24,10 @@
 # include <iostream>
 # include "webserv.hpp"
 # include "Request.hpp"
+# include "LocationConfig.hpp"
+
+class Request;
+class LocationConfig;
 
 class CGIHandler
 {
@@ -38,7 +42,7 @@ class CGIHandler
 	public:
 		CGIHandler();
 		CGIHandler(CGIHandler const & src);
-		~CGIHandler();
+		virtual ~CGIHandler();
 		CGIHandler &		operator=( CGIHandler const & rhs );
 		std::string			intToString(int num);
 

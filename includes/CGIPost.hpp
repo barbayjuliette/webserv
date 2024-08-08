@@ -17,10 +17,12 @@
 class CGIPost : public CGIHandler 
 {
 	private:
+		std::string		_cgi_exec;
+
 		CGIPost();
 
 	public:
-		CGIPost(Request const & request);
+		CGIPost(Request const & request, LocationConfig* location, std::string ext);
 		CGIPost(CGIPost const & src);
 		~CGIPost();
 		CGIPost &		operator=( CGIPost const & rhs );

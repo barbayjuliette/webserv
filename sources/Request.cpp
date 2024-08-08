@@ -33,6 +33,7 @@ std::string Request::extractHeader()
     return result;
 }
 
+// If content type is multipart/form-data, parse boundary
 void Request::parseContentType()
 {
 	if (_headers.find("content-type") != _headers.end() &&
@@ -220,15 +221,6 @@ bool Request::is_header_complete()
 	if (headerEnd != std::string::npos)
 	{
 		_header_length = headerEnd + 4;
-		// Set curr_length
-		_curr_length = raw_str.length() - _header_length;
-		// Check if body max length exceeded
-			// Arbitrary body max length -> to be set by config file
-		if (_curr_length > _body_max_length)
-		{
-			_error = CURR_LENGTH_TOO_LONG;
-			return true;
-		}
 		return true;
 	}
 	return false;
@@ -315,7 +307,7 @@ bool	Request::handle_chunk(char *buffer, int bytes_read)
 	        _body.insert(_body.end(), buffer + i, buffer + i + chunk_size);
 
 	        // Move the pointer past the chunk data and \r\n
-	        i += chunk_size;
+	        i += chunk_size + 2;
 	    }
 	}
 	return _req_complete;
@@ -350,18 +342,16 @@ void Request::initRequest()
 			// If no error, check if content length met
 			if (_error == NO_ERR)
 			{
-				if (_curr_length - _header_length <= _content_length && _content_type != "multipart/form-data")
+				if (_content_type != "multipart/form-data")
 				{
 					if (VERBOSE)
 						std::cout << GREEN "set req complete 1" << RESET << std::endl;
 					_req_complete = true;
 				}
-				else if (_curr_length - _header_length > _content_length) // if body length longer than content length, ret invalid
-					_error = REQ_TOO_LONG;
 			}
 		}
 	}
-    if (_content_type == "multipart/form-data") 
+    if (_content_type == "multipart/form-data")
     {
         _is_chunked = true;
     }
@@ -376,11 +366,6 @@ void Request::initRequest()
 
 void Request::initBody()
 {
-	if (VERBOSE) 
-	{
-		std::cout << RED << "Current raw body is: " << RESET << std::endl;
-		print_vector(_raw);
-	}
 	// If chunked -> copy body to _body -> continue appending from subsequent chunked reqs
 	// If not chunked -> copy body and parse only if req is complete
 	if ((this->_header_length != -1 && _is_chunked) || (!_is_chunked && _req_complete))
@@ -406,14 +391,17 @@ void Request::initBody()
 			{
 				_body.assign(body_start, _raw.end());
 				boundary_found();
+				if (VERBOSE) 
+				{
+					std::cout << RED << "Current body is size (" << _body.size() << ") " << RESET << std::endl;
+					print_vector(_body);
+				}
 			}
 			else
 			{
 	            if (body_start == _raw.end() && _method == "POST")
 	            	_error = POST_MISSING_BODY;
                 _body.assign(body_start, _raw.end());
-            	// else
-             //    	_error = REQ_TOO_LONG; // Error: insufficient length in _raw
 			}
 		}
 	}
@@ -444,6 +432,15 @@ void	Request::handle_incomplete_header(int bytes_read, char *buffer)
 	}
 }
 
+void 	Request::checkBodyLength()
+{
+	if (_body.size() > static_cast<unsigned long>(_content_length) || \
+		_body.size() > static_cast<unsigned long>(_body_max_length))
+	{
+		_error = BODY_TOO_LONG;
+	}
+}
+
 void Request::print_variables() const 
 {
   std::cout << "Request Variables:\n";
@@ -462,7 +459,6 @@ void Request::print_variables() const
     std::cout << "HTTP Version: " << _http_version << "\n";
     std::cout << "Port: " << _port << "\n";
     std::cout << "Host: " << _host << "\n";
-    std::cout << "Current Length: " << _curr_length << "\n";
     std::cout << "Boundary: " << _boundary << "\n";
     std::cout << "Headers:\n";
     for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
@@ -553,7 +549,6 @@ Request &				Request::operator=( Request const & rhs )
 		this->_path = rhs._path;
 		this->_http_version = rhs._http_version;
 		this->_port = rhs._port;
-		this->_curr_length = rhs._curr_length;
 		this->_headers = rhs._headers;
 		this->_body = rhs._body;
 		this->_error = rhs._error;
@@ -564,11 +559,6 @@ Request &				Request::operator=( Request const & rhs )
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */
-
-void			Request::setConfig(ServerConfig* config)
-{
-	this->_config = config;
-}
 
 std::vector<unsigned char>	Request::getRaw() const
 {
@@ -623,6 +613,21 @@ bool	Request::getReqComplete() const
 error_type	Request::getError() const
 {
 	return (this->_error);
+}
+
+Webserver *Request::getServer()
+{
+	return (this->_server);
+}
+
+void Request::setBodyMaxLength(size_t len)
+{
+	this->_body_max_length = len;
+}
+
+void	Request::setServer(Webserver* server)
+{
+	_server = server;
 }
 
 /* ************************************************************************** */

@@ -25,7 +25,6 @@ class ServerConfig : public ValidConfig
 {
 	private:
 		std::map<std::string, LocationConfig*>	_locations;
-		// std::map<std::string, t_directive>		_validKeys;
 
 	public:
 		/* Constructors */
@@ -43,6 +42,9 @@ class ServerConfig : public ValidConfig
 		void			validateKeys(void); //overload
 		void			setLocation(const std::string& path, LocationConfig* location);
 		LocationConfig*	matchLocation(const std::string& path);
+
+		/* Print */
+		void			printConfig(void);
 
 		/* Accessors */
 		std::map<std::string, LocationConfig*>	getLocations(void);

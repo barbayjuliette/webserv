@@ -32,6 +32,8 @@ class ConfigFile
 		std::vector<ServerConfig*>		_servers;
 		int								_open_braces;
 
+		ConfigFile(); //should not be constructed without a file parameter
+
 	public:
 		enum e_context
 		{
@@ -41,7 +43,6 @@ class ConfigFile
 		};
 
 		/* Constructors */
-		ConfigFile();
 		ConfigFile(const char *file);
 		ConfigFile(const ConfigFile& src);
 

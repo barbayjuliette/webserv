@@ -16,7 +16,7 @@
 
 int main(int argc, char **argv)
 {
-	if (argc != 2)
+	if (argc > 2)
 	{
 		std::cout << RED << "./webserv [configuration file]\n" << RESET;
 		return (0);
@@ -24,14 +24,18 @@ int main(int argc, char **argv)
 
 	try
 	{
-		ConfigFile	*config_file = new ConfigFile(argv[1]);
-		Cluster		*cluster = new Cluster(config_file);
+		ConfigFile	*config_file;
+		if (argc == 2)
+			config_file = new ConfigFile(argv[1]);
+		else
+			config_file = new ConfigFile("./config_files/default.conf");
 
+		Cluster		*cluster = new Cluster(config_file);
 		cluster->runServers();
 	}
 	catch (std::exception& e)
 	{
-		std::cerr << RED << "Error: " << e.what() << ".\n" << RESET;
+		std::cerr << RED << e.what() << ".\n" << RESET;
 	}
 	return (0);
 }

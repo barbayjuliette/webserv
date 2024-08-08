@@ -14,11 +14,11 @@
 # define WEBSERV_HPP
 
 #ifndef VERBOSE
-# define VERBOSE 1
+# define VERBOSE 0
 #endif
 
 #ifndef DEBUG
-# define DEBUG 0
+# define DEBUG 1
 #endif
 
 #ifndef TRACE
@@ -26,7 +26,7 @@
 #endif
 
 #ifndef CTRACE
-# define CTRACE 0
+# define CTRACE 1
 #endif
 
 /* C++ headers */
@@ -35,6 +35,7 @@
 # include <fstream>
 # include <string>
 # include <exception>
+# include <iomanip>
 /* STL */
 # include <vector>
 # include <map>
@@ -70,5 +71,9 @@
 # define RED "\001\033[1;31m\002"
 # define RESET "\001\033[0m\002"
 # define WHITESPACE " \f\n\r\t\v"
+
+class Request;
+class Response;
+class Webserver;
 
 #endif

@@ -33,12 +33,15 @@ CGIGet &		CGIGet::operator=( CGIGet const & rhs )
 	return(*this);
 }
 
-CGIGet::CGIGet(Request const & request) : CGIHandler()
+CGIGet::CGIGet(Request const & request, LocationConfig* location, std::string ext) : CGIHandler()
 {
 	int	pipe_fd[2];
 
-	setFullPath("./cgi-bin" + request.getPath());
-	
+	this->_cgi_exec = location->getCGIPath(ext);
+	setFullPath("." + request.getPath());
+	std::cout << "CGIGet: full path: " << getFullPath() << '\n';
+	std::cout << "cgi_path: " << this->_cgi_exec << '\n' << RESET;
+
 	if (access(getFullPath().c_str(), F_OK) != 0)
 	{
 		setError(404);
@@ -96,7 +99,7 @@ void	CGIGet::execute_cgi(int pipe_fd[], Request const & request)
 
 	char* const argv[] = 
 	{
-		const_cast<char*>("/usr/bin/python3"),
+		const_cast<char*>(this->_cgi_exec.c_str()),
 		const_cast<char*>(path.c_str()),
 		NULL
 	};
@@ -125,7 +128,7 @@ void	CGIGet::execute_cgi(int pipe_fd[], Request const & request)
 		NULL
 	};
 	close(pipe_fd[1]);
-	execve("/usr/bin/python3", argv, const_cast<char* const*>(env));
+	execve(this->_cgi_exec.c_str(), argv, const_cast<char* const*>(env));
 	std::cerr << "Execve failed\n";
 	setError(500);
 }

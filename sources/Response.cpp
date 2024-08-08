@@ -13,6 +13,12 @@
 #include "Response.hpp"
 
 /*
+** -------------------------- INIT STATIC VARIABLES ---------------------------
+*/
+
+std::map<int, std::string>	Response::_status_lookup;
+
+/*
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
@@ -20,29 +26,39 @@ Response::Response() {}
 
 Response::Response(Request &request, ServerConfig *conf) : _config(conf)
 {
+	if (this->_status_lookup.empty())
+		init_status_lookup();
+
 	_location = _config->matchLocation(request.getPath());
-	_path = _location->getRoot() + request.getPath().substr(1, std::string::npos);
-	std::cout << "RESPONSE - PATH: " << _path << '\n';
+	if (_location->getRedirect().size() > 0)
+	{
+		_path = _location->getRoot() + _location->getRedirect();
+		std::cout << CYAN << "RESPONSE - REDIRECT: " << RESET << _path << '\n';
+	}
+	else
+	{
+		_path = _location->getRoot() + request.getPath().substr(1, std::string::npos);
+		std::cout << CYAN << "RESPONSE - PATH: " << RESET << _path << '\n';
+	}
 
 	setContentType(_path);
 
 	if (request.getError() != NO_ERR && request.getError() != NOT_SUPPORTED)
 	{
-		set_error(400, "Bad Request");
+		set_error(400);
 		_headers["Content-Length"] = intToString(this->_body.size());
 		std::cout << "Error: " << request.getError() << std::endl;
 	}
 	else if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
-		this->set_allow_methods(false);
+		set_allow_methods(false);
 	else if (request.getMethod() == "GET")
-		this->respond_get_request(request);
+		respond_get_request(request);
 	else if (request.getMethod() == "POST")
-		this->respond_post_request(request);
-
+		respond_post_request(request);
 	else if (request.getMethod() == "DELETE")
-		this->respond_delete_request();
+		respond_delete_request();
 	else
-		this->set_allow_methods(false);
+		set_allow_methods(false);
 
 	_headers["Cache-Control"] = "no-cache, private";
 	this->_http_version = request.getHttpVersion();
@@ -77,17 +93,38 @@ _location(src._location)
 Response::~Response() {}
 
 /*
+** --------------------------------- OVERLOAD ---------------------------------
+*/
+
+Response &				Response::operator=( Response const & rhs )
+{
+	if (this != &rhs)
+	{
+		this->_status_code = rhs._status_code;
+		this->_status_text = rhs._status_text;
+		this->_http_version = rhs._http_version;
+		this->_body = rhs._body;
+		this->_full_response = rhs._full_response;
+		this->_path = rhs._path;
+		this->_headers = rhs._headers;
+		this->_config = rhs._config;
+		this->_location = rhs._location;
+	}
+	return (*this);
+}
+
+/*
 ** --------------------------------- METHODS ----------------------------------
 */
 
-int		Response::method_is_allowed(std::string method, std::vector<std::string> allowed)
+bool	Response::method_is_allowed(std::string method, std::vector<std::string> allowed)
 {
 	std::vector<std::string>::iterator it = std::find(allowed.begin(), allowed.end(), method);
 	if (it != allowed.end())
 	{
-		return (1);
+		return (true);
 	}
-	return (0);
+	return (false);
 }
 
 std::string	Response::create_html(std::string source, std::string req_path)
@@ -106,7 +143,7 @@ void	Response::create_directory_listing(std::string path, std::string req_path)
 	DIR* dir = opendir(no_slash.c_str());
 	if (!dir)
 	{
-		set_error(404, "Not Found");
+		set_error(404);
 		_headers["Content-Length"] = intToString(this->_body.size());
 		return ;
 	}
@@ -118,7 +155,7 @@ void	Response::create_directory_listing(std::string path, std::string req_path)
 	while ((dr = readdir(dir)))
 	{
 		std::string	name = dr->d_name;
-		if (name == "." || name == "..")
+		if (name == "." || name == ".." || name[0] == '.')
 			continue;
 		index << create_html(dr->d_name, req_path);
 	}
@@ -127,41 +164,31 @@ void	Response::create_directory_listing(std::string path, std::string req_path)
 
 	_body = index.str();
 	_headers["Content-Length"] = intToString(this->_body.size());
-	this->_status_code = 200;
-	this->_status_text = "OK";
+	set_success();
 }
 
 int		Response::is_directory(std::string req_path)
 {
-	bool						autoIndex = _location->getAutoindex();
-	std::string					dir_path = _path;
+	std::string					dir_path = this->_path;
 
 	struct	stat				filename;
-	stat(_path.c_str(), &filename);
-	// std::cout << RED << "Path: " << _path;
-	// std::cout << RED << "filename: " << filename.st_mode << RESET << std::endl;
+	if (stat(dir_path.c_str(), &filename) == -1 || !S_ISDIR(filename.st_mode))
+		return (1); // Does not exist, or is not a directory => No need to check index or autoindex
 
-	if (this->_path[this->_path.size() - 1] == '/')
-	{
-		setPath(this->_path + "index.html");
-	}
-	else if (S_ISDIR(filename.st_mode))
-	{
-		setPath(this->_path + "/index.html");
+	// Is directory: Set path to index file
+	if (dir_path[dir_path.size() - 1] != '/') // Append backslash if not present
 		dir_path += "/";
-	}
-	else
-		return (1);
+	setPath(dir_path + _location->getIndex());
 
 	if (access(this->_path.c_str(), F_OK) == 0) // Index exists, we show that one
 	{
 		setContentType(_path);
 		return (1); // Continue the respond_get_request
 	}
-	else if (autoIndex == true)
+	else if (_location->getAutoindex() == true) // If no index, check if autoindex is enabled
 		create_directory_listing(dir_path, req_path);
-	else
-		set_error(404, "Not Found");
+	else // If no index and autoindex is disabled
+		set_error(403);
 
 	_headers["Content-Length"] = intToString(this->_body.size());
 	setContentType(_path);
@@ -170,27 +197,18 @@ int		Response::is_directory(std::string req_path)
 
 void	Response::respond_get_request(const Request &request)
 {
-	
-	std::string		ext = ".py";
-	int				length = request.getPath().size();
+	std::string	req_ext = extract_cgi_extension(request.getPath());
+	std::cout << req_ext << '\n';
+	std::cout << _location->getCGIPath(req_ext) << '\n';
 
-	if (length >= (int)ext.size() && request.getPath().substr(length - ext.size(), length) == ext)
+	if (_location->getCGIPath(req_ext).size() > 0)
 	{
-		CGIGet*	cgi = new CGIGet(request);
-		if (cgi->getError() == 404)
-			set_error(404, "Not Found");
-		else
-		{
-			_body = cgi->getHtml();
-			this->_status_code = 200;
-			this->_status_text = "OK";
-			_headers["Content-Type"] = cgi->getContentType();
-		}
-		_headers["Content-Length"] = intToString(this->_body.size());
+		CGIHandler*	cgi = new CGIGet(request, _location, req_ext);
+		process_cgi_response(cgi);
 		delete (cgi);
 		return ;
 	}
-	
+
 	if (is_directory(request.getPath()) == 0)
 		return ;
 
@@ -200,133 +218,106 @@ void	Response::respond_get_request(const Request &request)
 	{
 		while (page.get(c))
 			_body += c;
-		this->_status_code = 200;
-		this->_status_text = "OK";
+		set_success();
 	}
 	else
-		set_error(404, "Not Found");
+		set_error(404);
 	_headers["Content-Length"] = intToString(this->_body.size());
 	page.close();
-}
-
-void	Response::cgi_post_form(const Request &request)
-{
-	CGIPost*	cgi = new CGIPost(request);
-	if (cgi->getError() == 404)
-		set_error(404, "Not Found");
-	else if (cgi->getError() == 500)
-		set_error(500, "Internal Server Error");
-	else
-	{
-		_body = cgi->getHtml();
-		_headers["Content-Type"] = cgi->getContentType();
-		this->_status_code = 200;
-		this->_status_text = "OK";
-	}
-	_headers["Content-Length"] = intToString(this->_body.size());
-	delete (cgi);
 }
 
 void	Response::respond_post_request(const Request &request)
 {
 	std::ifstream				page(this->_path.c_str());
+	std::string	req_ext = extract_cgi_extension(request.getPath());
 
-	// TO DO Check only if finishes with extension.
-	if (request.getPath().substr(0, 8) == "/cgi-bin")
-		cgi_post_form(request);
+	if (_location->getCGIPath(req_ext).size() > 0) // Check if finishes with CGI extension.
+	{
+		CGIHandler*	cgi = new CGIPost(request, _location, req_ext);
+		process_cgi_response(cgi);
+		delete cgi;
+	}
 	else if (!page.good())// Path does not exist : 404
-		set_error(404, "Not Found");
-	else // Page exists but not allowed to do POST
+		set_error(404);
+	else // Page exists but cgi is not enabled
 		set_allow_methods(true);
 	_headers["Content-Length"] = intToString(this->_body.size());
-}
-
-void	Response::set_error(int code, std::string text)
-{
-	this->_status_code = code;
-	this->_status_text = text;
-	_body = get_error_page(_status_code);
 }
 
 void	Response::respond_delete_request()
 {
 	if (access(this->_path.c_str(), F_OK) == -1)
-		set_error(404, "Not found");
+		set_error(404);
 	else if (remove(this->_path.c_str()) == 0)
 	{
-		this->_status_code = 200;
-		this->_status_text = "OK";
+		set_success();
 		_body = "<p>Resource deleted</p>";
 	}
 	else
 	{
 		if (errno == EACCES || errno == EPERM)
 		{
-			set_error(403, "Forbidden");
+			set_error(403);
 			std::cout << "checking error number\n";
 		}
 		else
-			set_error(500, "Internal Server Error");
+			set_error(500);
 		std::cout << "Error deleting resource\n";
 	}
 	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
-void	Response::set_allow_methods(bool post)
-{
-	std::vector<std::string>::iterator it;
-	std::string							methods;
-	std::vector<std::string> 			allowed_methods = _location->getAllowedMethods();
+/*
+** -------------------------------- CGI UTILS ---------------------------------
+*/
 
-	for (it = allowed_methods.begin(); it != allowed_methods.end(); it++)
-	{
-		if (post && *it == "POST")
-			continue ;
-		methods += *it;
-		if (it + 1 != allowed_methods.end())
-		{
-			if(!(*(it + 1) == "POST" && post))
-				methods += ", ";
-		}
-	}
-	_headers["Allow"] = methods;
-	set_error(405, "Method Not Allowed");
-	_headers["Content-Length"] = intToString(this->_body.size());
-	std::cout << "ALLOWED METHODS: " << methods << std::endl;
+std::string	Response::extract_cgi_extension(const std::string& req_path)
+{
+	size_t	i = req_path.rfind('.');
+	if (i == std::string::npos)
+		return ("");
+	return (req_path.substr(i, std::string::npos));
 }
 
-void		Response::getDate()
+void	Response::process_cgi_response(CGIHandler* cgi)
 {
-    time_t time;
-    std::time(&time);
-
-    struct tm *gmt;
-    gmt = std::gmtime(&time);
-    char formatted_date[30];
-    std::strftime(formatted_date, sizeof(formatted_date), "%a, %d %b %Y %H:%M:%S GMT", gmt);
-    // std::cout << std::string(formatted_date) << std::endl;
-	_headers["Date"] = formatted_date;
+	if (cgi->getError() != 0)
+		set_error(cgi->getError());
+	else
+	{
+		_body = cgi->getHtml();
+		_headers["Content-Type"] = cgi->getContentType();
+		set_success();
+	}
+	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
 /*
-** --------------------------------- OVERLOAD ---------------------------------
+** ---------------------------------- STATUS ----------------------------------
 */
 
-Response &				Response::operator=( Response const & rhs )
+void	Response::init_status_lookup(void)
 {
-	if (this != &rhs)
-	{
-		this->_status_code = rhs._status_code;
-		this->_http_version = rhs._http_version;
-		this->_status_text = rhs._status_text;
-		this->_body = rhs._body;
-		this->_full_response = rhs._full_response;
-		this->_path = rhs._path;
-		this->_headers = rhs._headers;
-		this->_config = rhs._config;
-		this->_location = rhs._location;
-	}
-	return (*this);
+	this->_status_lookup[200] = "OK";
+	this->_status_lookup[400] = "Bad Request";
+	this->_status_lookup[403] = "Forbidden";
+	this->_status_lookup[404] = "Not Found";
+	this->_status_lookup[405] = "Method Not Allowed";
+	this->_status_lookup[408] = "Request Timeout";
+	this->_status_lookup[500] = "Internal Server Error";
+}
+
+void	Response::set_success(void)
+{
+	this->_status_code = 200;
+	this->_status_text = _status_lookup[_status_code];
+}
+
+void	Response::set_error(int code)
+{
+	this->_status_code = code;
+	this->_status_text = _status_lookup[_status_code];
+	this->_body = get_error_page(_status_code);
 }
 
 std::string		Response::get_error_page(int num)
@@ -365,47 +356,12 @@ std::string	Response::intToString(int num)
 }
 
 /*
-** --------------------------------- ACCESSOR ---------------------------------
+** ---------------------------------- SETTER ----------------------------------
 */
-
-int	Response::getStatusCode() const
-{
-	return (this->_status_code);
-}
-
-std::string	Response::getStatusText() const
-{
-	return (this->_status_text);
-}
-
-std::string	Response::getHttpVersion() const
-{
-	return (this->_http_version);
-}
-
-std::map<std::string, std::string>	Response::getHeaders() const
-{
-	return (this->_headers);
-}
-
-std::string	Response::getBody() const
-{
-	return (this->_body);
-}
-
-std::string	Response::getPath() const
-{
-	return (this->_path);
-}
 
 void	Response::setPath(std::string new_path)
 {
 	this->_path = new_path;
-}
-
-std::string	Response::getFullResponse() const
-{
-	return (this->_full_response);
 }
 
 void	Response::setFullResponse()
@@ -452,6 +408,81 @@ void	Response::setContentType(std::string path)
 		_headers["Content-Type"] = "application/pdf";
 	else
 		_headers["Content-Type"] = "text/plain";
+}
+
+void	Response::set_allow_methods(bool post)
+{
+	std::vector<std::string>::iterator it;
+	std::string							methods;
+	std::vector<std::string> 			allowed_methods = _location->getAllowedMethods();
+
+	for (it = allowed_methods.begin(); it != allowed_methods.end(); it++)
+	{
+		if (post && *it == "POST")
+			continue ;
+		methods += *it;
+		if (it + 1 != allowed_methods.end())
+		{
+			if(!(*(it + 1) == "POST" && post))
+				methods += ", ";
+		}
+	}
+	_headers["Allow"] = methods;
+	set_error(405);
+	_headers["Content-Length"] = intToString(this->_body.size());
+	std::cout << "ALLOWED METHODS: " << methods << std::endl;
+}
+
+/*
+** --------------------------------- ACCESSOR ---------------------------------
+*/
+
+int	Response::getStatusCode() const
+{
+	return (this->_status_code);
+}
+
+std::string	Response::getStatusText() const
+{
+	return (this->_status_text);
+}
+
+std::string	Response::getHttpVersion() const
+{
+	return (this->_http_version);
+}
+
+std::map<std::string, std::string>	Response::getHeaders() const
+{
+	return (this->_headers);
+}
+
+std::string	Response::getBody() const
+{
+	return (this->_body);
+}
+
+std::string	Response::getPath() const
+{
+	return (this->_path);
+}
+
+std::string	Response::getFullResponse() const
+{
+	return (this->_full_response);
+}
+
+void		Response::getDate()
+{
+    time_t time;
+    std::time(&time);
+
+    struct tm *gmt;
+    gmt = std::gmtime(&time);
+    char formatted_date[30];
+    std::strftime(formatted_date, sizeof(formatted_date), "%a, %d %b %Y %H:%M:%S GMT", gmt);
+    // std::cout << std::string(formatted_date) << std::endl;
+	_headers["Date"] = formatted_date;
 }
 
 /* ************************************************************************** */

@@ -19,8 +19,6 @@
 
 # define BUFFER_SIZE 50000
 
-class Client;
-
 class Webserver
 {
 	protected:
@@ -32,9 +30,10 @@ class Webserver
 		ServerConfig*				_config;
 		std::map<int, Client*>		_clients;
 
+		Webserver(); //should not be constructed without server config
+
 	public:
 		/* Constructors */
-		Webserver();
 		Webserver(ServerConfig *config);
 		Webserver( Webserver const & src );
 
@@ -59,14 +58,17 @@ class Webserver
 		/* Utils */
 		void			check(int num);
 		void			printServerNames(void);
+		void			printConfig(void);
 
 		// Accessors
 		int							getServerSocket();
 		int							getPort();
+		std::string					getHost();
 		std::vector<std::string>	getServerName();
 		struct sockaddr_in*			getAddress();
 		std::map<int, Client*>		getClients();
 		Client*						getClient(int socket);
 		ServerConfig*				getConfig();
+		int							getBodyMaxLength(void);
 };
 

@@ -22,9 +22,24 @@ ConfigFile::ConfigFile(const char *file)
 {
 	openFile(file);
 	readFile();
-	if (TRACE)
-		printContexts(this->_servers);
+	// if (TRACE)
+	// 	printContexts(this->_servers);
 	validateConfig();
+}
+
+ConfigFile::ConfigFile(const ConfigFile& src)
+{
+	*this = src;
+}
+
+ConfigFile&	ConfigFile::operator=(const ConfigFile& other)
+{
+	if (this != &other)
+	{
+		this->_servers = other._servers;
+		this->_open_braces = other._open_braces;
+	}
+	return (*this);
 }
 
 /*
@@ -48,8 +63,11 @@ void	ConfigFile::openFile(const char *file)
 	this->_config.open(file, std::ios::in);
 	if (!this->_config)
 	{
-		std::cout << file << std::endl;
-		throw ConfigReadError("Failed to open configuration file");
+		throw ConfigReadError("Failed to open " + std::string(file));
+	}
+	if (!ValidConfig::isRegularFile(file))
+	{
+		throw ConfigReadError(std::string(file) + " is not a regular file");
 	}
 }
 
@@ -108,9 +126,9 @@ void	ConfigFile::readServerContext(ServerConfig* server)
 
 		if (checkContext(tokens[0]) == LOCATION)
 		{
-			LocationConfig	*location = new LocationConfig();
+			LocationConfig	*location = new LocationConfig(server);
 
-			location->setPath(tokens);
+			location->parsePath(tokens);
 			server->setLocation(location->getPath(), location);
 			readLocationContext(location);
 		}
@@ -154,8 +172,8 @@ void	ConfigFile::validateConfig(void)
 {
 	for (std::vector<ServerConfig*>::iterator it = this->_servers.begin(); it != this->_servers.end(); it++)
 	{
-		if (TRACE)
-			std::cout << CYAN << "\nCHECKING SERVER DIRECTIVES:\n" << RESET;
+		// if (TRACE)
+		// 	std::cout << CYAN << "\nCHECKING SERVER DIRECTIVES:\n" << RESET;
 		(*it)->validateKeys();
 
 		std::map<std::string, LocationConfig*>	locations = (*it)->getLocations();
@@ -163,8 +181,8 @@ void	ConfigFile::validateConfig(void)
 
 		for (loc = locations.begin(); loc != locations.end(); loc++)
 		{
-			if (TRACE)
-				std::cout << CYAN << "\nCHECKING LOCATION DIRECTIVES: " << loc->second->getPath() << '\n' << RESET;
+			// if (TRACE)
+			// 	std::cout << CYAN << "\nCHECKING LOCATION DIRECTIVES: " << loc->second->getPath() << '\n' << RESET;
 			loc->second->validateKeys();
 		}
 	}
@@ -275,7 +293,6 @@ void	ConfigFile::printContexts(std::vector<ServerConfig*>& vec)
 			printMap(loc->second->getDirectives());
 		}
 	}
-
 }
 
 void	ConfigFile::printMap(t_strmap& map)
@@ -302,7 +319,7 @@ std::vector<ServerConfig*>	ConfigFile::getServers(void)
 */
 
 ConfigFile::ConfigReadError::ConfigReadError(const std::string& message) \
-	: _message("Configuration file: " + message) {};
+	: _message("Config error: " + message) {};
 
 ConfigFile::ConfigReadError::~ConfigReadError() throw() {}
 

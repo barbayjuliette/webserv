@@ -39,8 +39,6 @@ Cluster::Cluster(ConfigFile* config_file)
 	{
 		std::string	host = configs[i]->getHost();
 		int	port = configs[i]->getPort();
-		if (CTRACE)
-			std::cout << CYAN << "\ncurrent server config: " << host << ':' << port << '\n' << RESET;
 
 		t_mmap::iterator	res = findHostPort(host, port);
 		if (res == _server_sockets.end())
@@ -77,12 +75,17 @@ Cluster&	Cluster::operator=(const Cluster& src)
 Cluster::~Cluster()
 {
 	t_mmap::iterator	it;
-
 	for (it = _server_sockets.begin(); it != _server_sockets.end(); it++)
 	{
 		std::vector<Webserver*>	servers = it->second.servers;
 		for (size_t i = 0; i < servers.size(); i++)
 			delete servers[i];
+	}
+
+	std::map<int, Client*>::iterator	it_client;
+	for (it_client = _clients.begin() ; it_client != _clients.end(); it_client++)
+	{
+		delete (it_client->second);
 	}
 
 	if (_config_file)
@@ -150,8 +153,8 @@ void	Cluster::addServerSocket(std::string& host, int port, int socket_fd)
 	socket.host = host;
 	_server_sockets.insert(std::make_pair(port, socket));
 
-	if (CTRACE)
-		std::cout << GREEN << "created socket for port: " << port << ", socket_fd: " << findHostPort(host, port)->second.fd << '\n' << RESET;
+	// if (CTRACE)
+	// 	std::cout << GREEN << "created socket for port: " << port << ", socket_fd: " << findHostPort(host, port)->second.fd << '\n' << RESET;
 }
 
 void	Cluster::addServer(std::string& host, int port, Webserver *new_server)
@@ -159,8 +162,8 @@ void	Cluster::addServer(std::string& host, int port, Webserver *new_server)
 	t_mmap::iterator	it = findHostPort(host, port);
 	it->second.servers.push_back(new_server);
 
-	if (CTRACE)
-		std::cout << GREEN << "there are now " << countServers(it) << " servers listening to " << host << ':' << port << ".\n" << RESET;
+	// if (CTRACE)
+	// 	std::cout << GREEN << "there are now " << countServers(it) << " servers listening to " << host << ':' << port << ".\n" << RESET;
 }
 
 /*
@@ -206,10 +209,6 @@ void	Cluster::removeFromEpoll(int socket_fd)
 	}
 }
 
-/*
-** --------------------------------- METHODS ----------------------------------
-*/
-
 /* Monitor all sockets for the specified events
 - If EPOLLIN flag is set for the server socket: there is a new client connection incoming
 - Call the corresponding Webserver instance to handle the events */
@@ -217,7 +216,6 @@ void	Cluster::runServers(void)
 {
 	initEpoll();
 	struct epoll_event	ep_events[MAX_EVENTS];
-	std::vector<ServerConfig*>	configs = _config_file->getServers();
 
 	while (true)
 	{
@@ -253,6 +251,10 @@ void	Cluster::runServers(void)
 		}
 	}
 }
+
+/*
+** ----------------------------- HANDLE CONNECTIONS ----------------------------
+*/
 
 /* Add new client to the clients map
 - Create epoll_event struct for the new client socket and register it to be monitored */
@@ -315,39 +317,29 @@ Client*		Cluster::getClient(int socket)
 	return (_clients[socket]);
 }
 
-void		Cluster::handle_write_connection(int client_socket)
+void	Cluster::assignServer(int client_socket)
 {
-	Client			*client = getClient(client_socket);
-	if (!client)
-		return ;
-	Response		*response = client->getResponse();
-	unsigned int	bytes_sent;
-	if (!response)
-		return ;
+	Request*	request = _clients[client_socket]->getRequest();
 
-	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
-	if (bytes_sent == response->getFullResponse().size())
+	std::string name = request->getHost();
+	std::string host = request->getHost();
+	if (!isIPAddress(host))
 	{
-		if (CTRACE)
-		{
-			std::cout << CYAN << "inside handle_write_connection: " << client_socket << '\n' << RESET;
-			std::cout << GREEN << "---- Response sent to client ----\n" << RESET;
-			std::cout << response->getFullResponse() << std::endl;
-			std::cout << GREEN << "End of response\n" << RESET;
-		}
-		if ((response->getHeaders())["Connection"] == "keep-alive")
-		{
-			client->reset();
-		}
-		// else
-		// {
-		// 	removeClient(client_socket);
-		// }
+		host = getClientIPAddress(client_socket);
 	}
-	else
-		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
+	_clients[client_socket]->setServer((getServerByPort(name, host, request->getPort())));
+	if (!_clients[client_socket]->getServer())
+		throw std::runtime_error("No server matched the request");
+	// If server is valid -> set server for request
+	_clients[client_socket]->getRequest()->setServer(_clients[client_socket]->getServer());
+	if (CTRACE)
+	{
+		std::cout << GREEN << "found server match\n" << RESET;
+		_clients[client_socket]->getServer()->printServerNames();
+	}
+	// Set request's body max length to server config's body max len
+	request->setBodyMaxLength(_clients[client_socket]->getServer()->getConfig()->getBodyMaxLength());
 }
-
 
 /* Preliminary request parsing: extract host and port to determine which server to route to */
 void	Cluster::handle_read_connection(int client_socket)
@@ -371,6 +363,8 @@ void	Cluster::handle_read_connection(int client_socket)
 		{
 			Request*	new_request = new Request(buffer, bytes_read);
 			_clients[client_socket]->setRequest(new_request);
+			if (new_request->getHeaderLength() != -1)
+				assignServer(client_socket);
 			if (new_request->getReqComplete() == false)
 				return;
 		}
@@ -384,31 +378,55 @@ void	Cluster::handle_read_connection(int client_socket)
 			if (request->getReqComplete() == false) // If request complete, create response
 				return;
 		}
-		else // if chunked -> process chunk -> create response
-			_clients[client_socket]->getRequest()->handle_chunk(buffer, bytes_read);
+		else if (!request->getReqComplete()) // if chunked -> process chunk -> create response
+			request->handle_chunk(buffer, bytes_read);
 		if (request->getHeaderLength() != -1 && request->getReqComplete() == true) 
 		{
-			std::string name = request->getHost();
-			std::string host = request->getHost();
-			if (!isIPAddress(host))
-			{
-				host = getClientIPAddress(client_socket);
-			}
-			// request->parseBody();
-			Webserver	*server = getServerByPort(name, host, request->getPort());
-			if (!server)
-				throw std::runtime_error("No server matched the request");
-			if (CTRACE)
-			{
-				std::cout << GREEN << "found server match\n" << RESET;
-				server->printServerNames();
-			}
-			// Set config
-			request->setConfig(server->getConfig());
-			server->create_response(request, _clients[client_socket]);
+			if (!_clients[client_socket]->getServer())
+				assignServer(client_socket);
+			request->checkBodyLength();
+			request->getServer()->create_response(request, _clients[client_socket]);
 		}
 	}
 }
+
+void		Cluster::handle_write_connection(int client_socket)
+{
+	Client			*client = getClient(client_socket);
+	if (!client)
+		return ;
+	Response		*response = client->getResponse();
+	unsigned int	bytes_sent;
+	if (!response)
+		return ;
+
+	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
+	if (bytes_sent == response->getFullResponse().size())
+	{
+		if (CTRACE)
+			std::cout << CYAN << "\ninside handle_write_connection: fd " << client_socket << "\n\n" << RESET;
+		if (DEBUG)
+		{
+			std::cout << GREEN << "---- Response sent to client ----\n" << RESET;
+			std::cout << response->getFullResponse() << std::endl;
+			std::cout << GREEN << "End of response\n" << RESET;
+		}
+		if ((response->getHeaders())["Connection"] == "keep-alive")
+		{
+			client->reset();
+		}
+		else
+		{
+			removeClient(client_socket);
+		}
+	}
+	else
+		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
+}
+
+/*
+** -------------------------------- SERVER UTILS --------------------------------
+*/
 
 Webserver*	Cluster::getServerByPort(const std::string& name, const std::string& host, int port)
 {
@@ -442,10 +460,6 @@ Webserver*	Cluster::getServerByName(std::vector<Webserver*>& servers, const std:
 	}
 	return (servers[0]);
 }
-
-/*
-** ---------------------------------- UTILS -----------------------------------
-*/
 
 bool	Cluster::is_server_socket(const int fd)
 {
@@ -505,25 +519,6 @@ std::string	Cluster::getClientIPAddress(const int client_socket)
 	return (stream.str());
 }
 
-void	Cluster::check(int num)
-{
-	if (num < 0)
-	{
-		std::cerr << strerror(errno) << std::endl;
-		exit(1);
-	}
-}
-
-void	Cluster::signal_handler(int signum)
-{
-	if (_instance)
-	{
-		delete (_instance);
-	}
-	std::cout << "\nSignal received, webserver closed. Bye bye!" << std::endl;
-	exit(signum);
-}
-
 int	Cluster::countServers(std::string& host, int port)
 {
 	int	count = 0;
@@ -550,14 +545,57 @@ int	Cluster::countServers(t_mmap::iterator res)
 	return (count);
 }
 
+/*
+** ---------------------------------- PRINT -----------------------------------
+*/
+
+void	Cluster::printServers(std::vector<Webserver*>& servers)
+{
+	size_t	i = 0;
+
+	for (std::vector<Webserver*>::iterator it = servers.begin(); it != servers.end(); it++)
+	{
+		std::cout << GREEN << "\n\nSERVER [" << ++i << "]: ";
+		std::cout << (*it)->getHost() << ":" << (*it)->getPort() << '\n' << RESET;
+		(*it)->printConfig();
+	}
+}
+
 void	Cluster::printServerSockets(void)
 {
 	t_mmap::iterator	it;
 
 	for (it = _server_sockets.begin(); it != _server_sockets.end(); it++)
 	{
-		std::cout << CYAN << "\nHOST: " << it->second.host << "; PORT: " << it->first << '\n' << RESET;
+		std::cout << "\n-------------------------------------------------------\n\n";
+		std::cout << CYAN << "HOST: " << it->second.host << "; PORT: " << it->first << '\n' << RESET;
 		std::cout << "- Socket fd: " << it->second.fd << '\n';
-		std::cout << "- No. of servers listening: " << countServers(it) << "\n\n";
+		std::cout << "- No. of servers listening: " << countServers(it) << "\n";
+		std::cout << "\n-------------------------------------------------------\n\n";
+		printServers(it->second.servers);
+		std::cout << "\n-------------------------------------------------------\n";
 	}
+}
+
+/*
+** ---------------------------------- UTILS -----------------------------------
+*/
+
+void	Cluster::check(int num)
+{
+	if (num < 0)
+	{
+		std::cerr << strerror(errno) << std::endl;
+		exit(1);
+	}
+}
+
+void	Cluster::signal_handler(int signum)
+{
+	if (_instance)
+	{
+		delete (_instance);
+	}
+	std::cout << "\nSignal received, webserver closed. Bye bye!" << std::endl;
+	exit(signum);
 }

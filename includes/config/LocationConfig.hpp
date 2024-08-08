@@ -14,9 +14,11 @@
 # define LOCATION_CONFIG_HPP
 
 # include "ValidConfig.hpp"
+# include "ServerConfig.hpp"
 
 class ConfigFile;
 class ValidConfig;
+class ServerConfig;
 
 /* Each location block is nested inside a server block
 - path: the location identifier to compare with a requested url
@@ -27,10 +29,13 @@ class ValidConfig;
 class LocationConfig : public ValidConfig
 {
 	private:
-		std::string	_path; //location-specific directive
-		bool		_match_exact;
-		bool		_case_sensitive;
-		// std::map<std::string, t_directive>	_validKeys;
+		ServerConfig*						_server;
+		std::string							_path;
+		std::map<std::string, std::string>	_cgi_path; //[ext] = path
+		bool								_match_exact;
+		bool								_case_sensitive;
+
+		LocationConfig(); //should not be constructed without server
 
 	public:
 		enum e_modifier
@@ -41,7 +46,7 @@ class LocationConfig : public ValidConfig
 		};
 
 		/* Constructors */
-		LocationConfig();
+		LocationConfig(ServerConfig* server);
 		LocationConfig(const LocationConfig& src);
 
 		/* Operator overload */
@@ -53,14 +58,20 @@ class LocationConfig : public ValidConfig
 		/* Validation functions */
 		void	initValidKeys(void); //overload
 		void	validateKeys(void); //overload
-		void	setPath(t_strvec& tokens);
+		void	parseCGIPath(t_strvec& exts, t_strvec& paths);
+		void	parsePath(t_strvec& tokens);
 		int		checkPathModifier(std::string& path);
-		int		setPathModifier(std::string& token);
+		int		parsePathModifier(std::string& token);
+		size_t	comparePath(const std::string& path);
+
+		/* Print */
+		void			printConfig(void);
 
 		/* Accessors */
-		std::string	getPath(void);
-		bool		getMatchExact(void);
-		bool		getCaseSensitive(void);
+		std::string	getPath(void) const;
+		std::string	getCGIPath(std::string ext) const;
+		bool		getMatchExact(void) const;
+		bool		getCaseSensitive(void) const;
 };
 
 #endif

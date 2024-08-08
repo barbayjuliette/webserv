@@ -16,15 +16,7 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-Webserver::Webserver()
-{
-	// signal(SIGINT, signal_handler);
-	// signal(SIGTERM, signal_handler);
-	// _instance = this;
-	_port = 8080;
-
-	// initServerSocket(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY, 1024);
-}
+Webserver::Webserver() {}
 
 Webserver::Webserver(ServerConfig* config)
 {
@@ -32,8 +24,6 @@ Webserver::Webserver(ServerConfig* config)
 	_host = _config->getHost();
 	_port = _config->getPort();
 	_server_name = _config->getServerName();
-
-	// initServerSocket(_config->getAddressInfo(), 12);
 }
 
 Webserver::Webserver( const Webserver & src ):
@@ -64,14 +54,14 @@ Webserver&	Webserver::operator=( Webserver const & rhs )
 
 Webserver::~Webserver()
 {
-	close(_server_socket);
+	// close(_server_socket);
 
-	std::map<int, Client*>::iterator	it;
-	for (it = _clients.begin() ; it != _clients.end(); it++)
-	{
-		delete (it->second);
-	}
-	_clients.clear();
+	// std::map<int, Client*>::iterator	it;
+	// for (it = _clients.begin() ; it != _clients.end(); it++)
+	// {
+	// 	delete (it->second);
+	// }
+	// _clients.clear();
 }
 
 /*
@@ -82,8 +72,7 @@ void	Webserver::create_response(Request *request, Client *client)
 {
 	Response	*_response = new Response(*request, this->_config);
 	client->setResponse(_response);
-	// Delete request
-	client->setRequest(NULL);
+	client->deleteRequest();
 }
 
 void	Webserver::check(int num)
@@ -92,6 +81,20 @@ void	Webserver::check(int num)
 	{
 		std::cerr << strerror(errno) << std::endl;
 		exit(1);
+	}
+}
+
+void	Webserver::printConfig(void)
+{
+	_config->printConfig();
+
+	std::map<std::string, LocationConfig*>	locations = _config->getLocations();
+	std::map<std::string, LocationConfig*>::iterator	it;
+
+	for (it = locations.begin(); it != locations.end(); it++)
+	{
+		std::cout << GREEN << "\n--> LOCATION: " << it->second->getPath() << '\n' << RESET;
+		it->second->printConfig();
 	}
 }
 
@@ -123,6 +126,11 @@ int	Webserver::getPort()
 	return (_port);
 }
 
+std::string	Webserver::getHost()
+{
+	return (_host);
+}
+
 std::vector<std::string>	Webserver::getServerName()
 {
 	return (_server_name);
@@ -148,6 +156,11 @@ Client*		Webserver::getClient(int socket)
 ServerConfig*	Webserver::getConfig()
 {
 	return (_config);
+}
+
+int	Webserver::getBodyMaxLength(void)
+{
+	return (_config->getBodyMaxLength());
 }
 
 /* ************************************************************************** */

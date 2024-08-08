@@ -46,16 +46,16 @@ ServerConfig::~ServerConfig()
 
 void	ServerConfig::initValidKeys(void)
 {
-	this->_validKeys["listen"] = &ServerConfig::setListenPort;
-	this->_validKeys["body_max_length"] = &ServerConfig::setBodyMaxLength;
-	this->_validKeys["autoindex"] = &ServerConfig::setAutoindex;
-	this->_validKeys["error_page"] = &ServerConfig::setErrorPages;
-	this->_validKeys["host"] = &ServerConfig::setHost;
-	this->_validKeys["root"] = &ServerConfig::setRoot;
-	this->_validKeys["server_name"] = &ServerConfig::setServerName;
-	this->_validKeys["index"] = &ServerConfig::setIndex;
-	this->_validKeys["redirect"] = &ServerConfig::setRedirect;
-	this->_validKeys["allowed_methods"] = &ServerConfig::setAllowedMethods;
+	this->_validKeys["listen"] = &ServerConfig::parseListenPort;
+	this->_validKeys["body_max_length"] = &ServerConfig::parseBodyMaxLength;
+	this->_validKeys["autoindex"] = &ServerConfig::parseAutoindex;
+	this->_validKeys["error_page"] = &ServerConfig::parseErrorPages;
+	this->_validKeys["host"] = &ServerConfig::parseHost;
+	this->_validKeys["root"] = &ServerConfig::parseRoot;
+	this->_validKeys["server_name"] = &ServerConfig::parseServerName;
+	this->_validKeys["index"] = &ServerConfig::parseIndex;
+	this->_validKeys["redirect"] = &ServerConfig::parseRedirect;
+	this->_validKeys["allowed_methods"] = &ServerConfig::parseAllowedMethods;
 }
 
 /* Function for validating all directives in the map
@@ -63,25 +63,25 @@ void	ServerConfig::initValidKeys(void)
 void	ServerConfig::validateKeys(void)
 {
 	if (_directives.find("root") != _directives.end())
-		setRoot(_directives["root"]);
+		parseRoot(_directives["root"]);
 
 	if (_directives.find("listen") != _directives.end())
-		setListenPort(_directives["listen"]);
+		parseListenPort(_directives["listen"]);
 
 	for (t_strmap::iterator it = _directives.begin(); it != _directives.end(); it++)
 	{
-		if (TRACE)
-			std::cout << "current key: " << it->first << '\n';
+		if (it->first == "root" || it->first == "listen")
+			continue;
 
 		t_dirmap::iterator found = this->_validKeys.find(it->first);
 		if (found == this->_validKeys.end())
-			throw InvalidConfigError("Invalid server directive");
+			throw InvalidConfigError("Unsupported server directive => " + it->first);
 		t_directive	handlerFunction = found->second;
 		(this->*handlerFunction)(it->second);
 	}
 
 	if (_locations.empty())
-		_locations["/"] = new LocationConfig();
+		_locations["/"] = new LocationConfig(this);
 }
 
 void	ServerConfig::setLocation(const std::string& path, LocationConfig* location)
@@ -91,16 +91,52 @@ void	ServerConfig::setLocation(const std::string& path, LocationConfig* location
 
 LocationConfig*	ServerConfig::matchLocation(const std::string& path)
 {
-	// std::cout << "inside matchLocation: path: " << path << '\n';
-	if (_locations.find(path) != _locations.end())
+	if (TRACE)
+		std::cout << "inside matchLocation: path: " << path << '\n';
+
+	std::map<size_t, LocationConfig*>	match_result;
+
+	std::map<std::string, LocationConfig*>::iterator	it;
+	for (it = _locations.begin(); it != _locations.end(); it++)
 	{
-		return (_locations[path]);
+		size_t	cmp = it->second->comparePath(path);
+		if (cmp > 0)
+		{
+			match_result[cmp] = it->second;
+			if (TRACE)
+				std::cout << "\t--> added to match_result\n\n";
+		}
 	}
-	else
+	if (TRACE)
+		std::cout << "no. of match_result: " << match_result.size() << '\n';
+
+	if (match_result.size() == 1)
+		return (match_result.begin()->second);
+
+	if (match_result.size() > 0)
 	{
-		//path matching logic
+		std::map<size_t, LocationConfig*>::iterator	match = match_result.end();
+		match--;
+		return (match->second);
 	}
 	return (_locations.begin()->second);
+}
+
+/*
+** ---------------------------------- PRINT -----------------------------------
+*/
+
+void	ServerConfig::printConfig(void)
+{
+	Print::printVector("SERVER NAMES: ", _server_name);
+	Print::printLine("ROOT: ", _root);
+	Print::printLine("INDEX: ", _index);
+	Print::printLine("AUTOINDEX: ", _autoindex ? "on" : "off");
+	Print::printLine("BODY MAX LENGTH: ", _body_max_length);
+	Print::printVector("ALLOWED METHODS: ", _allowed_methods);
+	if (_redirect.size() > 0)
+		Print::printLine("REDIRECT: ", _redirect);
+	Print::printMap("ERROR PAGES: ", _error_page);
 }
 
 /*

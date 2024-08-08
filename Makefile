@@ -20,7 +20,7 @@ DFLAGS	= -MMD -MP # handle header dependencies
 RM		= rm -fr
 
 # enable/disable debug modes
-DEBUG	?= 1
+DEBUG	?= 0
 TRACE	?= 0
 MODE	= -DDEBUG=$(DEBUG) -DTRACE=$(TRACE)
 
