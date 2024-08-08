@@ -89,6 +89,10 @@ void	ServerConfig::setLocation(const std::string& path, LocationConfig* location
 	_locations[path] = location;
 }
 
+/* Location matching:
+- If CGI block is defined: check request path for valid CGI extension
+- Iterate over all location blocks, store all with matching prefix
+- If there are multiple matches, return the location with the longest matching prefix */
 LocationConfig*	ServerConfig::matchLocation(const std::string& path)
 {
 	if (TRACE)
@@ -99,6 +103,9 @@ LocationConfig*	ServerConfig::matchLocation(const std::string& path)
 	std::map<std::string, LocationConfig*>::iterator	it;
 	for (it = _locations.begin(); it != _locations.end(); it++)
 	{
+		if (it->second->isCGILocation() && it->second->compareExtension(path))
+			return (it->second);
+
 		size_t	cmp = it->second->comparePath(path);
 		if (cmp > 0)
 		{

@@ -93,7 +93,7 @@ void	Webserver::printConfig(void)
 
 	for (it = locations.begin(); it != locations.end(); it++)
 	{
-		std::cout << GREEN << "\n--> LOCATION: " << it->second->getPath() << '\n' << RESET;
+		std::cout << GREEN << "\n--> LOCATION: " << it->second->getPrefix() << '\n' << RESET;
 		it->second->printConfig();
 	}
 }

@@ -128,8 +128,8 @@ void	ConfigFile::readServerContext(ServerConfig* server)
 		{
 			LocationConfig	*location = new LocationConfig(server);
 
-			location->parsePath(tokens);
-			server->setLocation(location->getPath(), location);
+			location->parsePrefix(tokens);
+			server->setLocation(location->getPrefix(), location);
 			readLocationContext(location);
 		}
 		else
@@ -182,7 +182,7 @@ void	ConfigFile::validateConfig(void)
 		for (loc = locations.begin(); loc != locations.end(); loc++)
 		{
 			// if (TRACE)
-			// 	std::cout << CYAN << "\nCHECKING LOCATION DIRECTIVES: " << loc->second->getPath() << '\n' << RESET;
+			// 	std::cout << CYAN << "\nCHECKING LOCATION DIRECTIVES: " << loc->second->getPrefix() << '\n' << RESET;
 			loc->second->validateKeys();
 		}
 	}
@@ -286,7 +286,7 @@ void	ConfigFile::printContexts(std::vector<ServerConfig*>& vec)
 
 		for (loc = locations.begin(); loc != locations.end(); loc++)
 		{
-			std::cout << CYAN << "--> LOCATION: " << loc->second->getPath();
+			std::cout << CYAN << "--> LOCATION: " << loc->second->getPrefix();
 			std::cout << "\n--> match exact: " << loc->second->getMatchExact();
 			std::cout << "; case sensitive: " << loc->second->getCaseSensitive();
 			std::cout << '\n' << RESET;

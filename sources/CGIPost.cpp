@@ -38,7 +38,7 @@ CGIPost::CGIPost(Request const & request, LocationConfig* location, std::string 
 	int	pipe_fd[2];
 	int	pipe_data[2];
 
-	this->_cgi_exec = location->getCGIPath(ext);
+	this->_cgi_exec = location->getCGIExec(ext);
 	this->setFullPath("." + request.getPath());
 	if (access(getFullPath().c_str(), F_OK) != 0)
 	{

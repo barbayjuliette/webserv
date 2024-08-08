@@ -30,8 +30,8 @@ class LocationConfig : public ValidConfig
 {
 	private:
 		ServerConfig*						_server;
-		std::string							_path;
-		std::map<std::string, std::string>	_cgi_path; //[ext] = path
+		std::string							_prefix;
+		std::map<std::string, std::string>	_cgi_exec; //[ext] = exec path
 		bool								_match_exact;
 		bool								_case_sensitive;
 
@@ -59,17 +59,19 @@ class LocationConfig : public ValidConfig
 		void	initValidKeys(void); //overload
 		void	validateKeys(void); //overload
 		void	parseCGIPath(t_strvec& exts, t_strvec& paths);
-		void	parsePath(t_strvec& tokens);
-		int		checkPathModifier(std::string& path);
-		int		parsePathModifier(std::string& token);
+		void	parsePrefix(t_strvec& tokens);
+		int		checkPrefixModifier(std::string& path);
+		int		parsePrefixModifier(std::string& token);
 		size_t	comparePath(const std::string& path);
+		bool	compareExtension(const std::string& path);
 
 		/* Print */
-		void			printConfig(void);
+		void		printConfig(void);
 
 		/* Accessors */
-		std::string	getPath(void) const;
-		std::string	getCGIPath(std::string ext) const;
+		std::string	getPrefix(void) const;
+		std::string	getCGIExec(std::string ext) const;
+		bool		isCGILocation(void) const;
 		bool		getMatchExact(void) const;
 		bool		getCaseSensitive(void) const;
 };
