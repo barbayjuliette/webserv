@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 19:43:35 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/08 17:05:51 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,6 +82,7 @@ class Response
 		void		setPath(std::string new_path);
 		void		setContentType(std::string path);
 		void		set_allow_methods(bool flag);
+		void		setHeaders(Request &request);
 
 		/* Accessors */
 		int									getStatusCode() const;
