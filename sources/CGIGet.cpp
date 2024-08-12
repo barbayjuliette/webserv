@@ -33,15 +33,6 @@ CGIGet &		CGIGet::operator=( CGIGet const & rhs )
 	return(*this);
 }
 
-std::string		CGIGet::get_cgi_location(std::string prefix, std::string req_path)
-{
-	if (!req_path.compare(0, prefix.size(), prefix))
-		return ("." + req_path);
-	if (prefix[prefix.size() - 1] == '/')
-		return ("." + prefix.substr(0, prefix.size() - 1) + req_path);
-	return ("." + prefix + req_path);
-}
-
 CGIGet::CGIGet(Request const & request, LocationConfig* location, std::string ext) : CGIHandler()
 {
 	int	pipe_fd[2];

@@ -45,6 +45,7 @@ class CGIHandler
 		virtual ~CGIHandler();
 		CGIHandler &		operator=( CGIHandler const & rhs );
 		std::string			intToString(int num);
+		std::string			get_cgi_location(std::string prefix, std::string req_path);
 
 		std::string	getResult();
 		std::string	getHtml();
