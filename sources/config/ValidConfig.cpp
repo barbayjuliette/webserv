@@ -133,9 +133,11 @@ void	ValidConfig::parseRoot(const t_strvec& tokens)
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
 
-	if (!isDirectory(tokens[0]))
-		throw InvalidConfigError("Invalid root directory");
-	this->_root = tokens[0];
+	std::string	root(tokens[0]);
+	if (root[root.size() - 1] != '/')
+		root += "/";
+
+	this->_root = root;
 }
 
 void	ValidConfig::parseRedirect(const t_strvec& tokens)
@@ -143,7 +145,11 @@ void	ValidConfig::parseRedirect(const t_strvec& tokens)
 	if (tokens.size() != 1)
 		throw InvalidConfigError(PARAM_COUNT_ERR);
 
-	this->_redirect = tokens[0];
+	std::string	redirect(tokens[0]);
+	if (redirect.size() > 0 && redirect[0] != '/')
+		redirect = "/" + redirect;
+
+	this->_redirect = redirect;
 }
 
 void	ValidConfig::parseServerName(const t_strvec& tokens)
@@ -181,8 +187,6 @@ void	ValidConfig::parseErrorPages(const t_strvec& tokens)
 		int	status_code = strToInt(status);
 
 		std::string	error_page = tokens[i].substr(delimiter + 1, std::string::npos);
-		if (!isRegularFile(error_page))
-			throw InvalidConfigError("Invalid error page");
 
 		this->_error_page[status_code] = error_page;
 	}
@@ -233,24 +237,6 @@ bool	ValidConfig::isStatusCode(const std::string& str)
 	if (nb < 100 || nb > 599)
 		return (false);
 	return (true);
-}
-
-int	ValidConfig::isDirectory(const std::string& str)
-{
-	struct stat	buffer;
-	const char	*path = str.c_str();
-
-	stat(path, &buffer);
-	return (S_ISDIR(buffer.st_mode));
-}
-
-int	ValidConfig::isRegularFile(const std::string& str)
-{
-	struct stat	buffer;
-	const char	*path = str.c_str();
-
-	stat(path, &buffer);
-	return (S_ISREG(buffer.st_mode));
 }
 
 /*

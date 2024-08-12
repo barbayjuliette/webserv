@@ -32,22 +32,11 @@ Response::Response(Request &request, ServerConfig *conf) : _body(""), _config(co
 	_location = _config->matchLocation(request.getPath());
 	if (_location->getRedirect().size() > 0)
 	{
-		_path = _location->getRoot() + _location->getRedirect();
-		std::cout << CYAN << "RESPONSE - REDIRECT: " << RESET << _path << '\n';
-		this->_status_code = 301;
-		this->_status_text = "Moved Permanently";
-		_headers["Location"] = "/database/";
-		setHeaders(request);
-		// std::cout << "FULL REDIRECT RESPONSE: \n";
-		// std::cout << getFullResponse() << std::endl;
+		respond_redirect(request);
 		return ;
 	}
-	else
-	{
-		_path = _location->getRoot() + request.getPath().substr(1, std::string::npos);
-		std::cout << CYAN << "RESPONSE - PATH: " << RESET << _path << '\n';
-	}
 
+	_path = _location->getRoot() + request.getPath().substr(1, std::string::npos);
 	setContentType(_path);
 
 	if (request.getError() != NO_ERR && request.getError() != NOT_SUPPORTED)
@@ -70,7 +59,7 @@ Response::Response(Request &request, ServerConfig *conf) : _body(""), _config(co
 	setHeaders(request);
 }
 
-void	Response::setHeaders(Request &request)
+void	Response::setHeaders(const Request &request)
 {
 	_headers["Cache-Control"] = "no-cache, private";
 	this->_http_version = request.getHttpVersion();
@@ -275,6 +264,15 @@ void	Response::respond_delete_request()
 		std::cout << "Error deleting resource\n";
 	}
 	_headers["Content-Length"] = intToString(this->_body.size());
+}
+
+void	Response::respond_redirect(const Request &request)
+{
+	_path = _location->getRoot() + _location->getRedirect().substr(1, std::string::npos);
+	this->_status_code = 301;
+	this->_status_text = _status_lookup[_status_code];
+	_headers["Location"] = _location->getRedirect();
+	setHeaders(request);
 }
 
 /*

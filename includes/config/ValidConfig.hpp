@@ -86,8 +86,6 @@ class ValidConfig
 		int				strToSizet(const std::string& str);
 		std::string		intToStr(const int nb);
 		bool			isStatusCode(const std::string& str);
-		int				isDirectory(const std::string& str);
-		static int		isRegularFile(const std::string& str);
 		bool			isValidMethod(const std::string& str);
 
 		/* Accessors */

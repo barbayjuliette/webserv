@@ -68,6 +68,7 @@ class ConfigFile
 		void	trimSemicolon(t_strvec& tokens);
 		void	checkBraces(t_strvec& tokens);
 		int		checkContext(std::string& context);
+		int		isRegularFile(const std::string& str);
 
 		/* Accessors */
 		std::vector<ServerConfig*>	getServers(void);

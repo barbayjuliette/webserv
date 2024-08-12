@@ -67,6 +67,7 @@ class Response
 		void		respond_get_request(const Request &request);
 		void		respond_post_request(const Request &request);
 		void		respond_delete_request(void);
+		void		respond_redirect(const Request &request);
 		int			is_directory(std::string req_path);
 		void		create_directory_listing(std::string path, std::string req_path);
 		std::string	create_html(std::string source, std::string path);
@@ -82,7 +83,7 @@ class Response
 		void		setPath(std::string new_path);
 		void		setContentType(std::string path);
 		void		set_allow_methods(bool flag);
-		void		setHeaders(Request &request);
+		void		setHeaders(const Request &request);
 
 		/* Accessors */
 		int									getStatusCode() const;

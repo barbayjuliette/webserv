@@ -65,7 +65,7 @@ void	ConfigFile::openFile(const char *file)
 	{
 		throw ConfigReadError("Failed to open " + std::string(file));
 	}
-	if (!ValidConfig::isRegularFile(file))
+	if (!isRegularFile(file))
 	{
 		throw ConfigReadError(std::string(file) + " is not a regular file");
 	}
@@ -264,6 +264,15 @@ int	ConfigFile::checkContext(std::string& context)
 			return (i);
 	}
 	return (-1);
+}
+
+int	ConfigFile::isRegularFile(const std::string& str)
+{
+	struct stat	buffer;
+	const char	*path = str.c_str();
+
+	stat(path, &buffer);
+	return (S_ISREG(buffer.st_mode));
 }
 
 /*
