@@ -84,11 +84,6 @@ void	LocationConfig::parseCGIPath(t_strvec& exts, t_strvec& paths)
 	{
 		_cgi_exec[exts[i]] = paths[i];
 	}
-	// std::cout << "printing cgi map:\n";
-	// for (std::map<std::string, std::string>::iterator it = _cgi_exec.begin(); it != _cgi_exec.end(); it++)
-	// {
-	// 	std::cout << it->first << ": " << it->second << '\n';
-	// }
 }
 
 /* Syntax: location [modifier] [URI prefix] (+ inline open brace '{' if applicable) */
@@ -171,7 +166,8 @@ bool	LocationConfig::compareExtension(const std::string& str)
 
 	if (getCGIExec(req_ext).size() > 0)
 	{
-		std::cout << RED << req_ext << " is a CGI extension; returning CGI block\n" << RESET;
+		if (TRACE)
+			std::cout << RED << req_ext << " is a CGI extension; returning CGI block\n" << RESET;
 		return (true);
 	}
 	return (false);
