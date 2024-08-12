@@ -204,16 +204,30 @@ void	ConfigFile::checkDuplicateServers(void)
 				t_strvec	names_2 = _servers[j]->getServerName();
 
 				if (names_1.empty() || names_2.empty())
-					throw ValidConfig::InvalidConfigError(_servers[i]->getHost(), _servers[i]->getPort(), "no unique server name");
+				{
+					warnDuplicateServers(_servers[i]->getHost(), _servers[i]->getPort(), "No unique server name");
+					return ;
+				}
 
 				for (size_t k = 0; k < names_1.size(); k++)
 				{
 					if (std::find(names_2.begin(), names_2.end(), names_1[k]) != names_2.end())
-						throw ValidConfig::InvalidConfigError(_servers[i]->getHost(), _servers[i]->getPort(), names_1[k]);
+					{
+						warnDuplicateServers(_servers[i]->getHost(), _servers[i]->getPort(), names_1[k]);
+						return ;
+					}
 				}
 			}
 		}
 	}
+}
+
+void	ConfigFile::warnDuplicateServers(std::string host, int port, std::string name)
+{
+	std::cerr << RED << "Warning: Duplicate server detected in config file.\n"
+		<< "Host: " << host
+		<< "; Port: " << port
+		<< "; Server name: " << name << '\n' << RESET;
 }
 
 /*

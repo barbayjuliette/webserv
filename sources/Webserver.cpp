@@ -91,10 +91,13 @@ void	Webserver::printConfig(void)
 	std::map<std::string, LocationConfig*>	locations = _config->getLocations();
 	std::map<std::string, LocationConfig*>::iterator	it;
 
+	std::cout << CYAN << std::setw(20) << "LOCATIONS: " << RESET;
+
 	for (it = locations.begin(); it != locations.end(); it++)
 	{
-		std::cout << GREEN << "\n--> LOCATION: " << it->second->getPrefix() << '\n' << RESET;
-		it->second->printConfig();
+		// if (it != locations.begin())
+		// 	std::cout << "\t";
+		std::cout << it->first << '\n';
 	}
 }
 
