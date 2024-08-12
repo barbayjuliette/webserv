@@ -411,6 +411,10 @@ void	Cluster::handle_read_connection(int client_socket)
 			if (!_clients[client_socket]->getServer())
 				assignServer(client_socket);
 			request->checkBodyLength();
+			if (TIMEOUT_DEBUG)
+			{
+				request->print_variables();
+			}
 			request->getServer()->create_response(request, _clients[client_socket]);
 		}
 	}

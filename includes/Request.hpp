@@ -55,6 +55,7 @@ class Request
 		ssize_t								_body_max_length;
 		ssize_t								_content_length;
 		bool								_is_chunked;
+		bool 								_encoding_chunked;
 		std::string							_method;
 		std::string							_path;
 		std::string							_http_version;
@@ -81,6 +82,8 @@ class Request
 		void 		checkMethod();
 		void 		checkPath();
 		std::string extractHeader();
+		void		appendChunkedBody(char *buffer, int bytes_read);
+		void		getInitialChunk(std::vector<unsigned char>::iterator body_start);
 
 		void		initBody();
 		void 		initRequest();
@@ -92,15 +95,12 @@ class Request
 		void		copyRawRequest(char *buf, int bytes_read);
 		bool 		findSequence(const std::vector <unsigned char> &vec, \
 			const std::vector<unsigned char>& seq);
-		void 			print_error(std::string msg);
+		void 		print_error(std::string msg);
 
 		// Error handling
 		void 			printError(std::string error_msg);
 		static void		printMap(std::map<std::string, std::string> map);
 		void 			print_vector(std::vector<unsigned char> vec);
-
-		// Debug
-		void 			print_variables() const;
 
 	public:
 		Request(char *full_request, int bytes_read);
@@ -129,4 +129,8 @@ class Request
 		static void	parseHostPort(char *buffer, std::string& host, int& port);
 		void 		parseBody();
 		void 		checkBodyLength();
+
+		// Debug
+		void 			print_variables() const;
+
 };
