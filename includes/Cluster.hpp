@@ -19,7 +19,8 @@
 # include "ConfigFile.hpp"
 
 # define MAX_EVENTS 10
-# define TIMEOUT 1000
+# define TIMEOUT 3
+# define REQ_TIMEOUT 3
 
 class ConfigFile;
 class ServerConfig;
@@ -86,6 +87,7 @@ class Cluster
 		static void		signal_handler(int signum);
 		int				countServers(std::string& host, int port);
 		int				countServers(t_mmap::iterator res);
+		void 			checkTimeout(void);
 
 		/* Print */
 		void			printServerSockets(void);

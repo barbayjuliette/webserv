@@ -209,6 +209,32 @@ void	Cluster::removeFromEpoll(int socket_fd)
 	}
 }
 
+void Cluster::checkTimeout(void)
+{
+	std::map<int /*socket fd*/, Client*>::iterator it;
+	time_t now = time(NULL);
+
+	// if (TIMEOUT_DEBUG)
+	// {
+	// 	std::cout << "checking timeout 1" << std::endl;
+	// }
+	for (it = _clients.begin(); it != _clients.end(); it++)
+	{
+		if (TIMEOUT_DEBUG)
+		{
+			std::cout << "checking timeout" << std::endl;
+		}
+		if (now - it->second->getRequest()->getTimeout() > REQ_TIMEOUT)
+		{
+			if (TIMEOUT_DEBUG)
+			{
+				std::cout << "Closing connection due to timeout" << std::endl;
+			}
+			removeClient(it->first);
+		}
+	}
+}
+
 /* Monitor all sockets for the specified events
 - If EPOLLIN flag is set for the server socket: there is a new client connection incoming
 - Call the corresponding Webserver instance to handle the events */
@@ -221,7 +247,8 @@ void	Cluster::runServers(void)
 	{
 		int	num_of_events = epoll_wait(_epoll_fd, ep_events, MAX_EVENTS, TIMEOUT);
 		check(num_of_events);
-
+		if (num_of_events == 0)
+			checkTimeout();
 		for (int i = 0; i < num_of_events; i++)
 		{
 			int	event_fd = ep_events[i].data.fd;
@@ -244,7 +271,6 @@ void	Cluster::runServers(void)
 						std::cerr << RED << e.what() << ".\n" << RESET;
 					}
 				}
-				// TODO
 				if (event_type & EPOLLOUT)
 					handle_write_connection(client_socket);
 			}

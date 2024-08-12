@@ -532,6 +532,7 @@ Request::Request(char *full_request, int bytes_read) :
 	_is_chunked(false),
 	_error(NO_ERR)
 {
+	_timeout = time(NULL);
 	copyRawRequest(full_request, bytes_read);
 	if (this->_raw.size() == 0)
 	{
@@ -653,6 +654,11 @@ error_type	Request::getError() const
 Webserver *Request::getServer()
 {
 	return (this->_server);
+}
+
+time_t	Request::getTimeout()
+{
+	return (this->_timeout);
 }
 
 void Request::setBodyMaxLength(size_t len)

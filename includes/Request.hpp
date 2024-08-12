@@ -48,6 +48,7 @@ class Request
 {
 	private:
 		Webserver							*_server;
+		time_t								_timeout;
 		std::vector<unsigned char>			_raw;
 		ssize_t								_header_length;
 		bool								_req_complete;
@@ -119,7 +120,7 @@ class Request
 		bool								getReqComplete() const;
 		error_type							getError() const;
 		Webserver*							getServer();
-		
+		time_t								getTimeout();
 		void								setBodyMaxLength(size_t len);
 		void								setServer(Webserver* server);
 

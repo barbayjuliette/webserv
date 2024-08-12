@@ -13,8 +13,12 @@
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
 
+#ifndef TIMEOUT_DEBUG
+# define TIMEOUT_DEBUG 1
+#endif
+
 #ifndef VERBOSE
-# define VERBOSE 0
+# define VERBOSE 1
 #endif
 
 #ifndef DEBUG
@@ -26,7 +30,7 @@
 #endif
 
 #ifndef CTRACE
-# define CTRACE 1
+# define CTRACE 0
 #endif
 
 /* C++ headers */
@@ -64,6 +68,7 @@
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <sys/wait.h>
+# include <time.h>
 
 /* Colours */
 # define CYAN "\001\033[1;36m\002"
