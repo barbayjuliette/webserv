@@ -170,7 +170,9 @@ void	ConfigFile::addKeyValues(t_strvec& tokens, t_strmap& map)
 
 void	ConfigFile::validateConfig(void)
 {
-	for (std::vector<ServerConfig*>::iterator it = this->_servers.begin(); it != this->_servers.end(); it++)
+	std::vector<ServerConfig*>::iterator	it;
+
+	for (it = this->_servers.begin(); it != this->_servers.end(); it++)
 	{
 		// if (TRACE)
 		// 	std::cout << CYAN << "\nCHECKING SERVER DIRECTIVES:\n" << RESET;
@@ -186,7 +188,20 @@ void	ConfigFile::validateConfig(void)
 			loc->second->validateKeys();
 		}
 	}
+	// checkDuplicateServers();
 }
+
+// void	ConfigFile::checkDuplicateServers(void)
+// {
+// 	for (size_t i = 0; i < _servers.size() - 1; i++)
+// 	{
+// 		if (_servers[i]->getPort() == _servers[i + 1]->getPort()
+// 			&& _servers[i]->getHost() == _servers[i + 1]->getHost())
+// 		{
+
+// 		}
+// 	}
+// }
 
 /*
 ** --------------------------- TOKENIZATION UTILS -----------------------------

@@ -54,6 +54,21 @@ class Print
 			}
 		}
 
+		template <typename T, typename V>
+		static void	printMultimap(std::multimap<T, V>& mmap)
+		{
+			if (mmap.empty())
+				return ;
+
+			typename std::multimap<T, V>::iterator	it;
+			for (it = mmap.begin(); it != mmap.end(); it++)
+			{
+				std::cout << GREEN << std::setw(21) << "[" << it->first << "] = " << RESET;
+				printValue("", it->second);
+				std::cout << '\n';
+			}
+		}
+
 		template <typename T>
 		static void	printVector(std::string message, T& vec)
 		{

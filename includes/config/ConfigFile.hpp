@@ -59,6 +59,7 @@ class ConfigFile
 		void	readLocationContext(LocationConfig* location);
 		void	addKeyValues(t_strvec& tokens, t_strmap& map);
 		void	validateConfig(void);
+		void	checkDuplicateServers(void);
 
 		/* Utils */
 		void	printContexts(std::vector<ServerConfig*>& vec);
