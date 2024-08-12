@@ -309,8 +309,15 @@ std::string	ValidConfig::getErrorPage(int status_code)
 ** -------------------------------- EXCEPTIONS --------------------------------
 */
 
-ValidConfig::InvalidConfigError::InvalidConfigError(const std::string& message) \
+ValidConfig::InvalidConfigError::InvalidConfigError(const std::string& message)
 	: _message("Invalid config: " + message) {};
+
+ValidConfig::InvalidConfigError::InvalidConfigError(const std::string& host, const int port, const std::string& name)
+{
+	std::stringstream	stream;
+	stream << port;
+	_message = "Duplicate config: " + host + ":" + stream.str() + " - " + name;
+}
 
 ValidConfig::InvalidConfigError::~InvalidConfigError() throw() {}
 
@@ -318,4 +325,3 @@ const char	*ValidConfig::InvalidConfigError::what() const throw()
 {
 	return (_message.c_str());
 }
-

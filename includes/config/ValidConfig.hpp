@@ -110,6 +110,7 @@ class ValidConfig
 
 			public:
 				InvalidConfigError(const std::string& message);
+				InvalidConfigError(const std::string& host, const int port, const std::string& name);
 				virtual	~InvalidConfigError() throw();
 				virtual const char	*what() const throw();
 		};

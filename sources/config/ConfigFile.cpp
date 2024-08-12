@@ -188,20 +188,33 @@ void	ConfigFile::validateConfig(void)
 			loc->second->validateKeys();
 		}
 	}
-	// checkDuplicateServers();
+	checkDuplicateServers();
 }
 
-// void	ConfigFile::checkDuplicateServers(void)
-// {
-// 	for (size_t i = 0; i < _servers.size() - 1; i++)
-// 	{
-// 		if (_servers[i]->getPort() == _servers[i + 1]->getPort()
-// 			&& _servers[i]->getHost() == _servers[i + 1]->getHost())
-// 		{
+void	ConfigFile::checkDuplicateServers(void)
+{
+	for (size_t i = 0; i < _servers.size() - 1; i++)
+	{
+		for (size_t j = i + 1; j < _servers.size(); j++)
+		{
+			if (_servers[i]->getPort() == _servers[j]->getPort()
+				&& _servers[i]->getHost() == _servers[j]->getHost())
+			{
+				t_strvec	names_1 = _servers[i]->getServerName();
+				t_strvec	names_2 = _servers[j]->getServerName();
 
-// 		}
-// 	}
-// }
+				if (names_1.empty() || names_2.empty())
+					throw ValidConfig::InvalidConfigError(_servers[i]->getHost(), _servers[i]->getPort(), "no unique server name");
+
+				for (size_t k = 0; k < names_1.size(); k++)
+				{
+					if (std::find(names_2.begin(), names_2.end(), names_1[k]) != names_2.end())
+						throw ValidConfig::InvalidConfigError(_servers[i]->getHost(), _servers[i]->getPort(), names_1[k]);
+				}
+			}
+		}
+	}
+}
 
 /*
 ** --------------------------- TOKENIZATION UTILS -----------------------------

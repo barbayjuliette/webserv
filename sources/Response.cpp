@@ -227,7 +227,7 @@ void	Response::respond_get_request(const Request &request)
 
 void	Response::respond_post_request(const Request &request)
 {
-	std::ifstream				page(this->_path.c_str());
+	// std::ifstream				page(this->_path.c_str());
 	std::string	req_ext = extract_cgi_extension(request.getPath());
 
 	if (_location->getCGIExec(req_ext).size() > 0) // Check if finishes with CGI extension.
@@ -236,10 +236,13 @@ void	Response::respond_post_request(const Request &request)
 		process_cgi_response(cgi);
 		delete cgi;
 	}
-	else if (!page.good())// Path does not exist : 404
-		set_error(404);
+	// else if (!page.good())// Path does not exist : 404
+	// 	set_error(404);
 	else // Page exists but cgi is not enabled
+	{
+		std::cerr << RED << "POST only allowed with CGI\n" << RESET;
 		set_allow_methods(true);
+	}
 	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
@@ -440,7 +443,8 @@ void	Response::set_allow_methods(bool post)
 	_headers["Allow"] = methods;
 	set_error(405);
 	_headers["Content-Length"] = intToString(this->_body.size());
-	std::cout << "ALLOWED METHODS: " << methods << std::endl;
+	if (!post)
+		std::cerr << RED << "ALLOWED METHODS: " << methods << std::endl << RESET;
 }
 
 /*
