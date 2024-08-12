@@ -6,7 +6,7 @@
 #    By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/07/09 14:32:15 by agan              #+#    #+#              #
-#    Updated: 2024/08/05 21:58:40 by jbarbay          ###   ########.fr        #
+#    Updated: 2024/08/12 14:41:03 by jbarbay          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -20,8 +20,8 @@ DFLAGS	= -MMD -MP # handle header dependencies
 RM		= rm -fr
 
 # enable/disable debug modes
-DEBUG	?= 0
-TRACE	?= 0
+DEBUG	?= 1
+TRACE	?= 1
 MODE	= -DDEBUG=$(DEBUG) -DTRACE=$(TRACE)
 
 # directories

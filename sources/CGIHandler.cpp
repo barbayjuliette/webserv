@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 15:00:25 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 19:32:01 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/12 14:31:57 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,7 +80,6 @@ void		CGIHandler::setHeaders()
 		_headers = "";
 	else
 		_headers = _result.substr(0, pos);
-	// std::cout << "Headers: " << _headers << std::endl;
 }
 
 void	CGIHandler::setContentType()
@@ -98,12 +97,11 @@ void	CGIHandler::setContentType()
 	{
 		// TO DO Error 
 		this->_content_type = "text/plain";
-		std::cout << "No Content-type found in CGI\n";
+		std::cerr << "No Content-type found in CGI\n";
 		return ;
 	}
 
 	this->_content_type = _headers.substr(pos + 13, low.find("/n", pos + 13) - 1);
-	std::cout << "Content_type: " << _content_type << std::endl;
 }
 
 void	CGIHandler::setHtml()
@@ -115,7 +113,6 @@ void	CGIHandler::setHtml()
 		_html = _result;
 	else
 		_html = _result.substr(pos + delim.size() + 1, _result.size());
-	std::cout << "HTML: " << _html << std::endl;
 }
 
 void	CGIHandler::setResult(std::string result)

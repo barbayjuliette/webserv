@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 12:59:40 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/07/12 19:26:28 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/12 13:26:31 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,6 @@ class Client
 		Webserver 			*_server;
 		Request				*_request;
 		Response			*_response;
-		// bool		keepAlive;
 		Client();
 
 	public:

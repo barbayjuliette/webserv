@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:33 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/02 19:44:23 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/12 13:42:31 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -551,12 +551,27 @@ Request::Request(char *full_request, int bytes_read) :
 }
 
 Request::Request( const Request & src ):
+	_server(src._server),
 	_raw(src._raw),
+	_header_length(src._header_length),
+	_req_complete(src._req_complete),
+	_body_max_length(src._body_max_length),
+	_content_length(src._content_length),
+	_is_chunked(src._is_chunked),
 	_method(src._method),
 	_path(src._path),
 	_http_version(src._http_version),
+	_content_type(src._content_type),
+	_boundary(src._boundary),
+	_host(src._host),
+	_port(src._port),
 	_headers(src._headers),
-	_body(src._body)
+	_body(src._body),
+	_error(src._error),
+	_config(src._config),
+	_formData(src._formData),
+	_bodyMap(src._bodyMap),
+	_fileMap(src._fileMap)
 {}
 
 /*
@@ -574,6 +589,7 @@ Request &				Request::operator=( Request const & rhs )
 {
 	if (this != &rhs)
 	{
+		this->_server = rhs._server;
 		this->_raw = rhs._raw;
 		this->_header_length = rhs._header_length;
 		this->_req_complete = rhs._req_complete;
@@ -583,10 +599,17 @@ Request &				Request::operator=( Request const & rhs )
 		this->_method = rhs._method;
 		this->_path = rhs._path;
 		this->_http_version = rhs._http_version;
+		this->_content_type = rhs._content_type;
+		this->_boundary = rhs._boundary;
+		this->_host = rhs._host;
 		this->_port = rhs._port;
 		this->_headers = rhs._headers;
 		this->_body = rhs._body;
 		this->_error = rhs._error;
+		this->_config = rhs._config;
+		this->_formData = rhs._formData;
+		this->_bodyMap = rhs._bodyMap;
+		this->_fileMap = rhs._fileMap;
 	}
 	return (*this);
 }
