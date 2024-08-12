@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:00:42 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 19:45:53 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/12 13:27:08 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,13 +22,14 @@ Client::Client()
 }
 
 Client::Client(int socket, struct sockaddr_in addr) :
-_socket(socket), _addr(addr), _request(NULL), _response(NULL)
+_socket(socket), _addr(addr), _server(NULL), _request(NULL), _response(NULL)
 {
 }
 
 Client::Client( const Client & src ) :
 _socket(src._socket),
 _addr(src._addr),
+_server(src._server),
 _request(src._request),
 _response(src._response)
 {
@@ -57,6 +58,7 @@ Client &				Client::operator=( Client const & rhs )
 	{
 		this->_socket = rhs._socket;
 		this->_addr = rhs._addr;
+		this->_server = rhs._server;
 		this->_request = rhs._request;
 		this->_response = rhs._response;
 	}
@@ -122,15 +124,6 @@ Webserver *Client::getServer()
 	return (this->_server);
 }
 
-/*struct sockaddr_in {
-    short            sin_family;
-    unsigned short   sin_port;
-    struct in_addr   sin_addr;
-    char             sin_zero[8];
-};
-struct in_addr {
-    unsigned long s_addr;
-};*/
 unsigned short	Client::getPort()
 {
 	return (this->_addr.sin_port);

@@ -43,17 +43,8 @@ class Webserver
 		/* Operator overload */
 		Webserver &		operator=( Webserver const & rhs );
 
-		/* Init sockets */
-		void			initServerSocket(struct addrinfo *addr, int backlog);
-		void			setAddress(struct sockaddr_in* addr);
-
 		/* Connections */
-		void			accept_new_connections(void);
-		void			handle_connections(int client_socket, uint32_t event_type);
-		void			handle_read_connection(int client_socket);
-		void			handle_write_connection(int client_socket);
 		void			create_response(Request *request, Client *client);
-		void			removeClient(int client_socket);
 
 		/* Utils */
 		void			check(int num);

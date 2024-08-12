@@ -28,7 +28,11 @@ Webserver::Webserver(ServerConfig* config)
 
 Webserver::Webserver( const Webserver & src ):
 _server_socket(src._server_socket),
+_host(src._host),
+_port(src._port),
+_server_name(src._server_name),
 _address(src._address),
+_config(src._config),
 _clients(src._clients)
 {}
 
@@ -41,6 +45,9 @@ Webserver&	Webserver::operator=( Webserver const & rhs )
 	if ( this != &rhs )
 	{
 		this->_server_socket = rhs._server_socket;
+		this->_host = rhs._host;
+		this->_port = rhs._port;
+		this->_server_name = rhs._server_name;
 		this->_address = rhs._address;
 		this->_config = rhs._config;
 		this->_clients = rhs._clients;

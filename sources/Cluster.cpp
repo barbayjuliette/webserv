@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Cluster.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yliew <marvin@42.fr>                       +#+  +:+       +#+        */
+/*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/17 19:18:04 by yliew             #+#    #+#             */
-/*   Updated: 2024/07/17 19:18:06 by yliew            ###   ########.fr       */
+/*   Updated: 2024/08/12 13:31:12 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,13 @@ int			Cluster::_epoll_fd = -1;
 */
 
 Cluster::Cluster() {}
+
+Cluster::Cluster(const Cluster& src) :
+_server_sockets(src._server_sockets),
+_clients(src._clients)
+{
+
+}
 
 Cluster::Cluster(ConfigFile* config_file)
 {
@@ -60,10 +67,8 @@ Cluster&	Cluster::operator=(const Cluster& src)
 {
 	if (this != &src)
 	{
-		this->_instance = src._instance;
-		this->_config_file = src._config_file;
-		this->_epoll_fd = src._epoll_fd;
 		this->_server_sockets = src._server_sockets;
+		this->_clients = src._clients;
 	}
 	return (*this);
 }

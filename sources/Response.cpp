@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/08 17:14:07 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/12 14:28:10 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -266,13 +266,10 @@ void	Response::respond_delete_request()
 	else
 	{
 		if (errno == EACCES || errno == EPERM)
-		{
 			set_error(403);
-			std::cout << "checking error number\n";
-		}
 		else
 			set_error(500);
-		std::cout << "Error deleting resource\n";
+		std::cerr << "Error deleting resource\n";
 	}
 	_headers["Content-Length"] = intToString(this->_body.size());
 }
@@ -486,14 +483,13 @@ std::string	Response::getFullResponse() const
 
 void		Response::getDate()
 {
-    time_t time;
-    std::time(&time);
+	time_t time;
+	std::time(&time);
 
-    struct tm *gmt;
-    gmt = std::gmtime(&time);
-    char formatted_date[30];
-    std::strftime(formatted_date, sizeof(formatted_date), "%a, %d %b %Y %H:%M:%S GMT", gmt);
-    // std::cout << std::string(formatted_date) << std::endl;
+	struct tm *gmt;
+	gmt = std::gmtime(&time);
+	char formatted_date[30];
+	std::strftime(formatted_date, sizeof(formatted_date), "%a, %d %b %Y %H:%M:%S GMT", gmt);
 	_headers["Date"] = formatted_date;
 }
 

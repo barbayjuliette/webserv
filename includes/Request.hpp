@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:06:01 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/02 19:44:27 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/12 13:43:35 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,6 +125,5 @@ class Request
 		void		handle_incomplete_header(int bytes_read, char *buffer);
 		bool		handle_chunk(char *buffer, int bytes_read);
 		static void	parseHostPort(char *buffer, std::string& host, int& port);
-		void 		parseBody();
 		void 		checkBodyLength();
 };
