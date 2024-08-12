@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/05 21:15:42 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 19:35:30 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/12 15:37:17 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 # include "CGIHandler.hpp"
 
-class CGIPost : public CGIHandler 
+class CGIPost : public CGIHandler
 {
 	private:
 		std::string		_cgi_exec;

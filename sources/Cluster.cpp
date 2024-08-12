@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/17 19:18:04 by yliew             #+#    #+#             */
-/*   Updated: 2024/08/12 13:31:12 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/12 15:58:44 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -426,7 +426,11 @@ void		Cluster::handle_write_connection(int client_socket)
 		}
 	}
 	else
+	{
 		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
+		removeClient(client_socket);
+		// Error, so we need to remove client??
+	}
 }
 
 /*

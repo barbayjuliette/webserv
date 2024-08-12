@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/05 21:18:39 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/12 14:29:25 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/12 15:53:47 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,20 +71,44 @@ void	CGIPost::process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Reques
 {
 		close(pipe_fd[1]);
 		close(pipe_data[0]);
+		int	bytes;
 
 		std::vector<unsigned char> body = request.getBody();
 
-		write(pipe_data[1], reinterpret_cast<const char *>(body.data()), body.size());
+		bytes = write(pipe_data[1], reinterpret_cast<const char *>(body.data()), body.size());
+		if (bytes <= 0)
+		{
+			std::cerr << "Error write(): " << strerror(errno) << std::endl;
+			setError(500);
+			close(pipe_fd[0]);
+			close(pipe_data[1]);
+			return ;
+		}
 		close(pipe_data[1]);
         waitpid(pid, NULL, 0);
 
-		char buffer[4096];
-		ssize_t bytesRead;
-
-		while ((bytesRead = read(pipe_fd[0], buffer, sizeof(buffer) - 1)) > 0) 
+		char buffer[500];
+		memset(buffer, 0, sizeof(buffer));
+		ssize_t bytesRead = read(pipe_fd[0], buffer, 500);
+		
+		if (bytesRead == 0)
 		{
-			buffer[bytesRead] = '\0';
-			setResult(getResult() += buffer);
+			std::cerr << "Error: No result CGI" << std::endl;
+			setError(500);
+			close(pipe_fd[0]);
+			return ;
+		}
+		while (bytesRead > 0)
+		{
+			bytesRead = read(pipe_fd[0], buffer, 500);
+			if (bytesRead < 0)
+			{
+				std::cerr << strerror(errno) << std::endl;
+				setError(500);
+				close(pipe_fd[0]);
+				return ;
+			}
+			setResult(getResult() + buffer);
 		}
 		close(pipe_fd[0]);
 		setContentType();
