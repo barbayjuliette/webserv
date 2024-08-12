@@ -98,13 +98,22 @@ void Request::parsePort(std::string header)
 				this->_port = std::atoi(host.substr(colon + 1).c_str());
 			}
 			else
+			{
 				_error = INVALID_PORT;
+				print_error("error: port is invalid");
+			}
 		}
 		else
+		{
 			_error = NO_HOST;
+			print_error("error: host is invalid");
+		}
 	}
 	else
+	{
 		_error = NO_HOST;
+		print_error("error: host is invalid");
+	}
 }
 
 /* Static method to extract host/port before the Request instance is created
@@ -151,11 +160,13 @@ void Request::checkMethod()
 	{
 		_req_complete = true;
 		this->_error = NOT_SUPPORTED;
+		print_error("error: method not supported by webserv");
 	}
 	else
 	{
 		_req_complete = true;
 		this->_error = INVALID_METHOD;
+		print_error("error: method is invalid");
 	}
 }
 
@@ -172,6 +183,7 @@ int Request::parseRequest(std::string header)
 	if (methodEnd == std::string::npos)
 	{
 		this->_error = INVALID;
+		print_error("error: method not found in request");
 		return -1;
 	}
 	this->_method = header.substr(0, methodEnd);
@@ -183,6 +195,7 @@ int Request::parseRequest(std::string header)
 	if (pathEnd == std::string::npos)
 	{
 		this->_error = INVALID;
+		print_error("error: invalid path in request");
 		return -1;
 	}
 	this->_path = header.substr(methodEnd + 1, pathEnd - (methodEnd + 1));
@@ -194,6 +207,7 @@ int Request::parseRequest(std::string header)
 	if (versionEnd == std::string::npos)
 	{
 		this->_error = INVALID;
+		print_error("error: invalid http version in request");
 		return -1;
 	}
 	this->_http_version = header.substr(pathEnd + 1, versionEnd - (pathEnd + 1));
@@ -209,6 +223,7 @@ size_t Request::convert_sizet(std::string str)
 	if (ss.fail())
 	{
 		_error = INVALID_SIZE;
+		print_error("error: invalid length");
 	}
 	return num;
 }
@@ -273,6 +288,11 @@ bool	Request::handle_chunk(char *buffer, int bytes_read)
     if (_content_type == "multipart/form-data") 
     {
         _body.insert(_body.end(), buffer, buffer + bytes_read);
+        if (VERBOSE)
+    	{
+    		std::cout << RED << "inserting body" <<RESET << std::endl;
+    		print_vector(_body);
+    	}
     	boundary_found();
     }
     else
@@ -335,7 +355,10 @@ void Request::initRequest()
 	{
 		// If chunked -> invalid
 		if (_is_chunked == true)
+		{
 			_error = CHUNK_AND_LENGTH;
+			print_error("error: transfer-encoding is chunked and content-length provided");
+		}
 		else
 		{
 			_content_length = convert_sizet(_headers["content-length"]);
@@ -400,7 +423,10 @@ void Request::initBody()
 			else
 			{
 	            if (body_start == _raw.end() && _method == "POST")
+	            {
 	            	_error = POST_MISSING_BODY;
+	            	print_error("error: body missing in POST method");
+	            }
                 _body.assign(body_start, _raw.end());
 			}
 		}
@@ -438,6 +464,7 @@ void 	Request::checkBodyLength()
 		_body.size() > static_cast<unsigned long>(_body_max_length))
 	{
 		_error = BODY_TOO_LONG;
+		print_error("error: body exceeds content_length or body_max_length");
 	}
 }
 
@@ -486,6 +513,11 @@ void Request::copyRawRequest(char *buf, int bytes_read)
 	_raw.insert(_raw.end(), buf, buf + bytes_read);
 }
 
+void Request::print_error(std::string msg)
+{
+	std::cerr << msg << std::endl;
+}
+
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
@@ -502,7 +534,10 @@ Request::Request(char *full_request, int bytes_read) :
 {
 	copyRawRequest(full_request, bytes_read);
 	if (this->_raw.size() == 0)
+	{
 		_error = INVALID_EMPTY_REQ;
+		print_error("error: request is empty");
+	}
 	this->initRequest();
 	if (_header_length != -1)
 	{

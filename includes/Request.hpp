@@ -91,6 +91,7 @@ class Request
 		void		copyRawRequest(char *buf, int bytes_read);
 		bool 		findSequence(const std::vector <unsigned char> &vec, \
 			const std::vector<unsigned char>& seq);
+		void 			print_error(std::string msg);
 
 		// Error handling
 		void 			printError(std::string error_msg);
