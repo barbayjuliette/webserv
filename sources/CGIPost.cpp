@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/05 21:18:39 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/12 14:29:25 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/13 17:56:02 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,9 +112,13 @@ void	CGIPost::execute_cgi(int pipe_fd[], int pipe_data[], Request const & reques
 	std::string	content_length = "CONTENT_LENGTH=" + intToString(request.getBody().size());
 	std::string	request_method = "REQUEST_METHOD=" + request.getMethod();
 	std::string	content_type = "CONTENT_TYPE=" + request.getHeaders()["content-type"];
+	std::string	gateway_interface = "GATEWAY_INTERFACE=CGI/1.1";
+	std::string	path_info = "PATH_INFO=" + getFullPath();
+	std::string	script_name = "SCRIPT_NAME=" + getFullPath();
+	std::string	server_protocol = "SERVER_PROTOCOL=HTTP/1.1";
+	std::string	server_software = "SERVER_SOFTWARE=42webserv";
+	
 	// TO DO Choose which headers to put based on tester
-	// std::string	gateway_interface = "GATEWAY_INTERFACE=CGI/1.1";
-	// std::string	path_info = "PATH_INFO=" + path;
 	// std::string	path_translated = "PATH_TRANSLATED";
 	// std::string	query_string = "QUERY_STRING";
 	// std::string	remote_addr = "REMOTE_ADDR";
@@ -122,18 +126,21 @@ void	CGIPost::execute_cgi(int pipe_fd[], int pipe_data[], Request const & reques
 	// std::string	remote_ident = "REMOTE_IDENT";
 	// std::string	remote_user = "REMOTE_USER";
 	// std::string	auth_type = "AUTH_TYPE=null";
-	// std::string	script_name = "SCRIPT_NAME";
 	// std::string	server_name = "SERVER_NAME";
 	// std::string	server_port = "SERVER_PORT";
-	// std::string	server_protocol = "SERVER_PROTOCOL";
-	// std::string	server_software = "SERVER_SOFTWARE";
 
 	const char* env[] = {
 		content_length.c_str(),
 		request_method.c_str(),
 		content_type.c_str(),
+		gateway_interface.c_str(),
+		path_info.c_str(),
+		script_name.c_str(),
+		server_protocol.c_str(),
+		server_software.c_str(),
 		NULL
 	};
+	
 	close(pipe_fd[1]);
 	close(pipe_data[0]);
 	execve(this->_cgi_exec.c_str(), argv, const_cast<char* const*>(env));
