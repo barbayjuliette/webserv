@@ -80,6 +80,53 @@ void	Webserver::create_response(Request *request, Client *client)
 	Response	*_response = new Response(*request, this->_config);
 	client->setResponse(_response);
 	client->deleteRequest();
+
+	if (_response->getCGIFlag() != NO_CGI)
+	{
+		setReadPipes();
+		if (cgi_flag == CGI_POST_WRITE)
+			setWritePipes();
+	}
+}
+
+void	Webserver::setReadPipes(void)
+{
+	int	pipefd[2];
+
+	if (pipe(pipefd) == -1)
+	{
+		std::cerr << "Read pipe(): " << strerror(errno) << std::endl;
+		exit(1);
+	}
+
+	std::vector<int>::iterator it;
+	for (it = _read_pipes.begin(); it != _read_pipes.end(); it++)
+	{
+		close(_read_pipes[i]);
+		_read_pipes.erase(it);
+	}
+	_read_pipes.push_back(pipefd[0]);
+	_read_pipes.push_back(pipefd[1]);
+}
+
+void	Webserver::setWritePipes(void)
+{
+	int	pipefd[2];
+
+	if (pipe(pipefd) == -1)
+	{
+		std::cerr << "Write pipe(): " << strerror(errno) << std::endl;
+		exit(1);
+	}
+
+	std::vector<int>::iterator it;
+	for (it = _write_pipes.begin(); it != _write_pipes.end(); it++)
+	{
+		close(_write_pipes[i]);
+		_write_pipes.erase(it);
+	}
+	_write_pipes.push_back(pipefd[0]);
+	_write_pipes.push_back(pipefd[1]);
 }
 
 void	Webserver::check(int num)
@@ -120,32 +167,6 @@ void	Webserver::printServerNames(void)
 		else
 			std::cout << '\n';
 	}
-}
-
-void	Webserver::setReadPipes(void)
-{
-	int	pipefd[2];
-
-	if (pipe(pipefd) == -1)
-	{
-		std::cerr << "Read pipe(): " << strerror(errno) << std::endl;
-		exit(1);
-	}
-	_read_pipes.push_back(pipefd[0]);
-	_read_pipes.push_back(pipefd[1]);
-}
-
-void	Webserver::setWritePipes(void)
-{
-	int	pipefd[2];
-
-	if (pipe(pipefd) == -1)
-	{
-		std::cerr << "Write pipe(): " << strerror(errno) << std::endl;
-		exit(1);
-	}
-	_write_pipes.push_back(pipefd[0]);
-	_write_pipes.push_back(pipefd[1]);
 }
 
 /*

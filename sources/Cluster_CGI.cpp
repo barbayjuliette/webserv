@@ -102,25 +102,6 @@ Cluster::~Cluster()
 ** ------------------------------- INIT SOCKETS -------------------------------
 */
 
-void	Cluster::setNonBlocking(int fd)
-{
-	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-	{
-		std::cerr << RED << "fcntl(): " << strerror(errno) << std::endl << RESET;
-		exit(1);
-	}
-}
-
-void	Cluster::setReuseAddr(int socket_fd)
-{
-	int	yes = 1;
-	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0)
-	{
-		std::cerr << RED << "setsockopt(): " << strerror(errno) << std::endl << RESET;
-		exit(1);
-	}
-}
-
 /* Check if a socket has been created for a specific host:port combination
 - Return iterator to the _server_sockets element if it exists */
 t_mmap::iterator	Cluster::findHostPort(const std::string& host, int port)
@@ -148,13 +129,13 @@ void	Cluster::initServerSocket(std::string& host, int port, struct addrinfo *add
 	for (tmp = addr; tmp != NULL; tmp = tmp->ai_next)
 	{
 		socket_fd = socket(tmp->ai_family, tmp->ai_socktype, tmp->ai_protocol);
-		if (socket_fd < 0)
-		{
-			std::cerr << RED << "socket(): " << strerror(errno) << std::endl << RESET;
-			exit(1);
-		}
-		setNonBlocking(socket_fd);
-		setReuseAddr(socket_fd);
+		check(socket_fd);
+
+		check(fcntl(socket_fd, F_SETFL, O_NONBLOCK));
+
+		int	yes = 1;
+		check(setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)));
+
 		if (bind(socket_fd, tmp->ai_addr, tmp->ai_addrlen) < 0)
 			close(socket_fd);
 		else
@@ -281,14 +262,6 @@ void	Cluster::runServers(void)
 
 			if (is_server_socket(event_fd) && (event_type & EPOLLIN))
 				accept_new_connections(event_fd);
-			else if (is_cgi_fd(event_fd))
-			{
-				int	cgi_flag = _cgi_pipes[event_fd]->getResponse()->getCGIFlag();
-				if (event_type & EPOLLIN && (cgi_flag == CGI_GET || cgi_flag == CGI_POST_READ))
-					read_cgi();
-				else if (event_type & EPOLLOUT && cgi_flag == CGI_POST_WRITE)
-					write_cgi();
-			}
 			else
 			{
 				if (event_type & EPOLLIN)
@@ -309,6 +282,61 @@ void	Cluster::runServers(void)
 			}
 		}
 	}
+}
+
+/*
+** ------------------------------------- CGI -----------------------------------
+*/
+
+void	Cluster::add_cgi_fds(int cgi_flag)
+{
+	// int	pipe_read[2];
+	// int	pipe_write[2];
+
+	// if (pipe(pipe_read) == -1 || pipe(pipe_write) == -1)
+	// {
+	// 	std::cerr << "pipe(): " << strerror(errno) << std::endl;
+	// 	exit(1);
+	// }
+
+	// _cgi_fd.push_back(pipe_read[0]);
+	// _cgi_fd.push_back(pipe_read[1]);
+	// _cgi_fd.push_back(pipe_write[0]);
+	// _cgi_fd.push_back(pipe_write[1]);
+
+	// std::vector<int>::iterator	it;
+	// for (it = _cgi_fd.begin(); it != _cgi_fd.end(); it++)
+	// {
+	// 	check(fcntl(*it, F_SETFL, O_NONBLOCK));
+	// 	addToEpoll(*it);
+	// }
+}
+
+void	Cluster::read_cgi(const Request& request, LocationConfig* location)
+{
+	std::string req_path = request.getPath();
+	std::string ext = req_path.substr(req_path.rfind('.'), std::string::npos);
+
+	this->_cgi_exec = location->getCGIExec(ext);
+	setFullPath(get_cgi_location(location->getPrefix(), request.getPath()));
+
+	if (access(getFullPath().c_str(), F_OK) != 0)
+	{
+		setError(404);
+		return ;
+	}
+
+	int	pid = fork();
+	if (pid == -1)
+	{
+		std::cerr << "Error fork(): " << strerror(errno) << std::endl;
+		setError(500);
+		return ;
+	}
+	if (pid == 0)
+		execute_cgi(pipe_fd, request);
+	else
+		process_result_cgi(pid, pipe_fd);
 }
 
 /*
@@ -334,8 +362,8 @@ void	Cluster::accept_new_connections(int server_socket)
 
 	addToEpoll(client_socket, EPOLLIN | EPOLLOUT);
 
-	_clients[client_socket] = new Client(client_socket, client_addr);
-	if (CTRACE)
+    _clients[client_socket] = new Client(client_socket, client_addr);
+    if (CTRACE)
 		std::cout << GREEN << "\nNew client created: " << client_socket << "\n\n" << RESET;
 }
 
@@ -443,15 +471,10 @@ void	Cluster::handle_read_connection(int client_socket)
 			{
 				request->print_variables();
 			}
-
 			request->getServer()->create_response(request, _clients[client_socket]);
-
-			Response*	response = request->getServer()->getResponse();
-			if (response && response->getCGIFlag() != NO_CGI)
+			if (request->getResponse()->getCGIFlag() != NO_CGI)
 			{
-				add_cgi_fds(_clients[client_socket], server->getReadPipes());
-				if (cgi_flag == CGI_POST_WRITE)
-					add_cgi_fds(_clients[client_socket], server->getWritePipes());
+				add_cgi_fds(request->getResponse()->getCGIFlag());
 			}
 		}
 	}
@@ -493,58 +516,6 @@ void		Cluster::handle_write_connection(int client_socket)
 		removeClient(client_socket);
 		// Error, so we need to remove client??
 	}
-}
-
-/*
-** ------------------------------------- CGI -----------------------------------
-*/
-
-void	Cluster::add_cgi_fds(Client *client, std::vector<int> pipefd)
-{
-	if (pipefd.size() != 2)
-		return ;
-
-	for (size_t i = 0; i < pipefd.size(); i++)
-	{
-		setNonBlocking(pipefd[i]);
-		_cgi_pipes[pipefd[i]] = client;
-	}
-	addToEpoll(pipefd[0], EPOLLIN);
-	addToEpoll(pipefd[1], EPOLLOUT);
-}
-
-bool	Cluster::is_cgi_fd(const int fd)
-{
-	if (_cgi_pipes.find(fd) != _cgi_pipes.end())
-		return (true);
-	return (false);
-}
-
-void	Cluster::read_cgi(const Request& request, LocationConfig* location)
-{
-	std::string req_path = request.getPath();
-	std::string ext = req_path.substr(req_path.rfind('.'), std::string::npos);
-
-	this->_cgi_exec = location->getCGIExec(ext);
-	setFullPath(get_cgi_location(location->getPrefix(), request.getPath()));
-
-	if (access(getFullPath().c_str(), F_OK) != 0)
-	{
-		setError(404);
-		return ;
-	}
-
-	int	pid = fork();
-	if (pid == -1)
-	{
-		std::cerr << "Error fork(): " << strerror(errno) << std::endl;
-		setError(500);
-		return ;
-	}
-	if (pid == 0)
-		execute_cgi(pipe_fd, request);
-	else
-		process_result_cgi(pid, pipe_fd);
 }
 
 /*
@@ -593,6 +564,13 @@ bool	Cluster::is_server_socket(const int fd)
 		if (fd == it->second.fd)
 			return (true);
 	}
+	return (false);
+}
+
+bool	Cluster::is_cgi_fd(const int fd)
+{
+	if (std::find(_cgi_fd.begin(), _cgi_fd.end(), fd) != _cgi_fd.end())
+		return (true);
 	return (false);
 }
 

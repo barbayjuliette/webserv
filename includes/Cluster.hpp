@@ -62,9 +62,11 @@ class Cluster
 		void			initEpoll(void);
 		static void		addToEpoll(int fd, uint32_t events);
 		static void		removeFromEpoll(int fd);
-		void			add_cgi_fds(int cgi_flag);
+		void			add_cgi_fds(Client *client, std::vector<int> pipefd);
 
 		/* Server socket methods */
+		void				setNonBlocking(int fd);
+		void				setReuseAddr(int socket_fd);
 		t_mmap::iterator	findHostPort(const std::string& host, int port);
 		Webserver*			getServerByPort(const std::string& name, const std::string& host, int port);
 		Webserver*			getServerByName(std::vector<Webserver*>& servers, const std::string& name);
