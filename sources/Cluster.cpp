@@ -186,44 +186,18 @@ void	Cluster::initEpoll(void)
 	t_mmap::iterator	it;
 	for (it = _server_sockets.begin(); it != _server_sockets.end(); it++)
 	{
-		addToEpoll(it->second.fd);
-	}
-
-	add_cgi_fds();
-}
-
-void	Cluster::add_cgi_fds(void)
-{
-	int	pipe_read[2];
-	int	pipe_write[2];
-
-	if (pipe(pipe_read) == -1 || pipe(pipe_write) == -1)
-	{
-		std::cerr << "pipe(): " << strerror(errno) << std::endl;
-		exit(1);
-	}
-
-	_cgi_fd.push_back(pipe_read[0]);
-	_cgi_fd.push_back(pipe_read[1]);
-	_cgi_fd.push_back(pipe_write[0]);
-	_cgi_fd.push_back(pipe_write[1]);
-
-	std::vector<int>::iterator	it;
-	for (it = _cgi_fd.begin(); it != _cgi_fd.end(); it++)
-	{
-		check(fcntl(*it, F_SETFL, O_NONBLOCK));
-		addToEpoll(*it);
+		addToEpoll(it->second.fd, EPOLLIN | EPOLLOUT);
 	}
 }
 
 /* int epoll_ctl(int epfd, int op, int fd, struct epoll_event *_Nullable event);
 	- op: EPOLL_CTL_ADD, EPOLL_CTL_MOD, EPOLL_CTL_DEL */
-void	Cluster::addToEpoll(int fd)
+void	Cluster::addToEpoll(int fd, uint32_t events)
 {
 	struct epoll_event	ep_event;
 
 	ep_event.data.fd = fd;
-	ep_event.events = EPOLLIN | EPOLLOUT;
+	ep_event.events = events;
 
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &ep_event) < 0)
 	{
@@ -303,15 +277,6 @@ void	Cluster::runServers(void)
 				}
 				if (event_type & EPOLLOUT)
 				{
-					Client*	client = _clients[event_fd];
-
-					int	is_cgi = _client->getResponse()->isCGI();
-					if (is_cgi == CGI_GET)
-					{
-						CGIHandler*	cgi = new CGIGet(client->getRequest(), client->getResponse()->getLocation());
-						// process_cgi_response(cgi);
-						delete (cgi);
-					}
 					handle_write_connection(event_fd);
 				}
 			}
@@ -322,6 +287,30 @@ void	Cluster::runServers(void)
 /*
 ** ------------------------------------- CGI -----------------------------------
 */
+
+void	Cluster::add_cgi_fds(int cgi_flag)
+{
+	// int	pipe_read[2];
+	// int	pipe_write[2];
+
+	// if (pipe(pipe_read) == -1 || pipe(pipe_write) == -1)
+	// {
+	// 	std::cerr << "pipe(): " << strerror(errno) << std::endl;
+	// 	exit(1);
+	// }
+
+	// _cgi_fd.push_back(pipe_read[0]);
+	// _cgi_fd.push_back(pipe_read[1]);
+	// _cgi_fd.push_back(pipe_write[0]);
+	// _cgi_fd.push_back(pipe_write[1]);
+
+	// std::vector<int>::iterator	it;
+	// for (it = _cgi_fd.begin(); it != _cgi_fd.end(); it++)
+	// {
+	// 	check(fcntl(*it, F_SETFL, O_NONBLOCK));
+	// 	addToEpoll(*it);
+	// }
+}
 
 void	Cluster::read_cgi(const Request& request, LocationConfig* location)
 {
@@ -371,11 +360,7 @@ void	Cluster::accept_new_connections(int server_socket)
 		close(client_socket);
 	}
 
-	// struct epoll_event	ep_event;
-
-	// ep_event.data.fd = client_socket;
-	// ep_event.events = EPOLLIN | EPOLLOUT;
-	addToEpoll(client_socket);
+	addToEpoll(client_socket, EPOLLIN | EPOLLOUT);
 
     _clients[client_socket] = new Client(client_socket, client_addr);
     if (CTRACE)
@@ -487,6 +472,10 @@ void	Cluster::handle_read_connection(int client_socket)
 				request->print_variables();
 			}
 			request->getServer()->create_response(request, _clients[client_socket]);
+			if (request->getResponse()->getCGIFlag() != NO_CGI)
+			{
+				add_cgi_fds(request->getResponse()->getCGIFlag());
+			}
 		}
 	}
 }

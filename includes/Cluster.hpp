@@ -44,7 +44,7 @@ class Cluster
 		static int										_epoll_fd;
 		std::multimap<int /*port*/, struct SocketInfo>	_server_sockets;
 		std::map<int /*socket fd*/, Client*>			_clients;
-		static std::vector<int>							_cgi_fd;
+		std::map<int /*cgi pipefd*/, Client*>			_cgi_pipes;
 
 	public:
 		/* Constructors */
@@ -60,9 +60,9 @@ class Cluster
 
 		/* Epoll methods */
 		void			initEpoll(void);
-		static void		addToEpoll(int fd);
+		static void		addToEpoll(int fd, uint32_t events);
 		static void		removeFromEpoll(int fd);
-		void			add_cgi_fds(void);
+		void			add_cgi_fds(int cgi_flag);
 
 		/* Server socket methods */
 		t_mmap::iterator	findHostPort(const std::string& host, int port);

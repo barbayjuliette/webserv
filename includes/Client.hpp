@@ -27,6 +27,7 @@ class Client
 		Webserver 			*_server;
 		Request				*_request;
 		Response			*_response;
+
 		Client();
 
 	public:
@@ -34,18 +35,20 @@ class Client
 		Client( Client const & src );
 		~Client();
 
-		Client &		operator=( Client const & rhs );
+		Client &			operator=( Client const & rhs );
 
-		Request*		getRequest();
-		Response*		getResponse();
-		Webserver*		getServer();
-		int				getSocket();
-		unsigned short	getPort();
-		unsigned long	getIPAddress();
+		/* Setters */
+		void				reset();
+		void				setRequest(Request* request);
+		void				setResponse(Response* response);
+		void				deleteRequest(void);
+		void				setServer(Webserver* server);
 
-		void			reset();
-		void			setRequest(Request* request);
-		void			setResponse(Response* response);
-		void			deleteRequest(void);
-		void			setServer(Webserver* server);
+		/* Accessors */
+		Request*			getRequest();
+		Response*			getResponse();
+		Webserver*			getServer();
+		int					getSocket();
+		unsigned short		getPort();
+		unsigned long		getIPAddress();
 };

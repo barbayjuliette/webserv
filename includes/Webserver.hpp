@@ -29,7 +29,9 @@ class Webserver
 		std::vector<std::string>	_server_name;
 		struct sockaddr_in*			_address;
 		ServerConfig*				_config;
-		std::map<int, Client*>		_clients;
+		// std::map<int, Client*>		_clients;
+		std::vector<int>			_write_pipes; // POST
+		std::vector<int>			_read_pipes; // GET, POST
 
 		Webserver(); //should not be constructed without server config
 
@@ -52,15 +54,21 @@ class Webserver
 		void			printServerNames(void);
 		void			printConfig(void);
 
+		/* Setters */
+		void			setReadPipes(void);
+		void			setWritePipes(void);
+
 		// Accessors
 		int							getServerSocket();
 		int							getPort();
 		std::string					getHost();
 		std::vector<std::string>	getServerName();
 		struct sockaddr_in*			getAddress();
-		std::map<int, Client*>		getClients();
-		Client*						getClient(int socket);
+		// std::map<int, Client*>		getClients();
+		// Client*						getClient(int socket);
 		ServerConfig*				getConfig();
 		int							getBodyMaxLength(void);
+		std::vector<int>			getWritePipes(void);
+		std::vector<int>			getReadPipes(void);
 };
 

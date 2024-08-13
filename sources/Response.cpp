@@ -24,7 +24,8 @@ std::map<int, std::string>	Response::_status_lookup;
 
 Response::Response() {}
 
-Response::Response(Request &request, ServerConfig *conf) : _body(""), _config(conf)
+Response::Response(Request &request, ServerConfig *conf) :
+_cgi_flag(NO_CGI), _body(""), _config(conf)
 {
 	if (this->_status_lookup.empty())
 		init_status_lookup();
@@ -207,7 +208,7 @@ void	Response::respond_get_request(const Request &request)
 
 	if (_location->getCGIExec(req_ext).size() > 0)
 	{
-		_is_cgi = CGI_GET;
+		_cgi_flag = CGI_GET;
 		_headers["Content-Length"] = intToString(this->_body.size());
 		// CGIHandler*	cgi = new CGIGet(request, _location, req_ext);
 		// process_cgi_response(cgi);
@@ -234,18 +235,15 @@ void	Response::respond_get_request(const Request &request)
 
 void	Response::respond_post_request(const Request &request)
 {
-	// std::ifstream				page(this->_path.c_str());
 	std::string	req_ext = extract_cgi_extension(request.getPath());
 
 	if (_location->getCGIExec(req_ext).size() > 0) // Check if finishes with CGI extension.
 	{
-		_is_cgi = CGI_POST;
+		_cgi_flag = CGI_POST_WRITE;
 		// CGIHandler*	cgi = new CGIPost(request, _location, req_ext);
 		// process_cgi_response(cgi);
 		// delete cgi;
 	}
-	// else if (!page.good())// Path does not exist : 404
-	// 	set_error(404);
 	else // Page exists but cgi is not enabled
 	{
 		std::cerr << RED << "POST only allowed with CGI\n" << RESET;
@@ -452,6 +450,11 @@ void	Response::set_allow_methods(bool post)
 		std::cerr << RED << "ALLOWED METHODS: " << methods << std::endl << RESET;
 }
 
+void	Response::setCGIFlag(int flag)
+{
+	this->_cgi_flag = flag;
+}
+
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */
@@ -503,9 +506,9 @@ void		Response::getDate()
 	_headers["Date"] = formatted_date;
 }
 
-int	Response::isCGI() const
+int	Response::getCGIFlag() const
 {
-	return (this->_is_cgi);
+	return (this->_cgi_flag);
 }
 
 LocationConfig*	Response::getLocation() const

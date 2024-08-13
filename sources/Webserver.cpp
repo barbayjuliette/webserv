@@ -122,6 +122,32 @@ void	Webserver::printServerNames(void)
 	}
 }
 
+void	Webserver::setReadPipes(void)
+{
+	int	pipefd[2];
+
+	if (pipe(pipefd) == -1)
+	{
+		std::cerr << "Read pipe(): " << strerror(errno) << std::endl;
+		exit(1);
+	}
+	_read_pipes.push_back(pipefd[0]);
+	_read_pipes.push_back(pipefd[1]);
+}
+
+void	Webserver::setWritePipes(void)
+{
+	int	pipefd[2];
+
+	if (pipe(pipefd) == -1)
+	{
+		std::cerr << "Write pipe(): " << strerror(errno) << std::endl;
+		exit(1);
+	}
+	_write_pipes.push_back(pipefd[0]);
+	_write_pipes.push_back(pipefd[1]);
+}
+
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
 */
