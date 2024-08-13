@@ -130,8 +130,14 @@ void	CGIGet::execute_cgi(int pipe_fd[], Request const & request)
 		content_length.c_str(),
 		request_method.c_str(),
 		content_type.c_str(),
+		gateway_interface.c_str(),
+		path_info.c_str(),
+		script_name.c_str(),
+		server_protocol.c_str(),
+		server_software.c_str(),
 		NULL
 	};
+	
 	close(pipe_fd[1]);
 	execve(this->_cgi_exec.c_str(), argv, const_cast<char* const*>(env));
 	std::cerr << "Error execve: " << strerror(errno) << std::endl;
