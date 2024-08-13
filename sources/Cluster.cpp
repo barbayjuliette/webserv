@@ -459,7 +459,11 @@ void		Cluster::handle_write_connection(int client_socket)
 		}
 	}
 	else
+	{
 		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
+		removeClient(client_socket);
+		// Error, so we need to remove client??
+	}
 }
 
 /*

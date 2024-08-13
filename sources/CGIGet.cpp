@@ -72,13 +72,28 @@ void	CGIGet::process_result_cgi(int pid, int pipe_fd[])
 		close(pipe_fd[1]);
         waitpid(pid, NULL, 0);
 
-		char buffer[4096];
-		ssize_t bytesRead;
-
-		while ((bytesRead = read(pipe_fd[0], buffer, sizeof(buffer) - 1)) > 0) 
+		char buffer[500];
+		memset(buffer, 0, sizeof(buffer));
+		ssize_t bytesRead = read(pipe_fd[0], buffer, 500);
+		
+		if (bytesRead == 0)
 		{
-			buffer[bytesRead] = '\0';
-			setResult(getResult() += buffer);
+			std::cerr << "Error: No result CGI" << std::endl;
+			setError(500);
+			close(pipe_fd[0]);
+			return ;
+		}
+		while (bytesRead > 0)
+		{
+			bytesRead = read(pipe_fd[0], buffer, 500);
+			if (bytesRead < 0)
+			{
+				std::cerr << strerror(errno) << std::endl;
+				setError(500);
+				close(pipe_fd[0]);
+				return ;
+			}
+			setResult(getResult() + buffer);
 		}
 		close(pipe_fd[0]);
 		setContentType();
