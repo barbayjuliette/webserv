@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/13 17:42:24 by yliew             #+#    #+#             */
-/*   Updated: 2024/08/12 14:37:38 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/13 10:57:35 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -171,7 +171,7 @@ bool	LocationConfig::compareExtension(const std::string& str)
 
 	if (getCGIExec(req_ext).size() > 0)
 	{
-		std::cout << RED << req_ext << " is a CGI extension; returning CGI block\n" << RESET;
+		// std::cout << RED << req_ext << " is a CGI extension; returning CGI block\n" << RESET;
 		return (true);
 	}
 	return (false);
