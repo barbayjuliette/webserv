@@ -14,6 +14,8 @@
 
 # include "CGIHandler.hpp"
 
+class CGIHandler;
+
 class CGIPost : public CGIHandler
 {
 	private:

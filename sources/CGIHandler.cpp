@@ -64,6 +64,15 @@ std::string		CGIHandler::get_cgi_location(std::string prefix, std::string req_pa
 	return ("." + prefix + req_path);
 }
 
+void	CGIHandler::check(int num)
+{
+	if (num < 0)
+	{
+		std::cerr << strerror(errno) << std::endl;
+		exit(1);
+	}
+}
+
 // ---------------------------------------- ACCESSORS ----------------------------------------
 
 std::string	CGIHandler::getResult()

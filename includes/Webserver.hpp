@@ -15,9 +15,10 @@
 # include "webserv.hpp"
 # include "Client.hpp"
 # include "ConfigFile.hpp"
-# include "Cluster.hpp"
 
 # define BUFFER_SIZE 50000
+
+class Client;
 
 class Webserver
 {

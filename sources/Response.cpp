@@ -207,9 +207,11 @@ void	Response::respond_get_request(const Request &request)
 
 	if (_location->getCGIExec(req_ext).size() > 0)
 	{
-		CGIHandler*	cgi = new CGIGet(request, _location, req_ext);
-		process_cgi_response(cgi);
-		delete (cgi);
+		_is_cgi = CGI_GET;
+		_headers["Content-Length"] = intToString(this->_body.size());
+		// CGIHandler*	cgi = new CGIGet(request, _location, req_ext);
+		// process_cgi_response(cgi);
+		// delete (cgi);
 		return ;
 	}
 
@@ -237,9 +239,10 @@ void	Response::respond_post_request(const Request &request)
 
 	if (_location->getCGIExec(req_ext).size() > 0) // Check if finishes with CGI extension.
 	{
-		CGIHandler*	cgi = new CGIPost(request, _location, req_ext);
-		process_cgi_response(cgi);
-		delete cgi;
+		_is_cgi = CGI_POST;
+		// CGIHandler*	cgi = new CGIPost(request, _location, req_ext);
+		// process_cgi_response(cgi);
+		// delete cgi;
 	}
 	// else if (!page.good())// Path does not exist : 404
 	// 	set_error(404);
@@ -498,6 +501,16 @@ void		Response::getDate()
 	char formatted_date[30];
 	std::strftime(formatted_date, sizeof(formatted_date), "%a, %d %b %Y %H:%M:%S GMT", gmt);
 	_headers["Date"] = formatted_date;
+}
+
+int	Response::isCGI() const
+{
+	return (this->_is_cgi);
+}
+
+LocationConfig*	Response::getLocation() const
+{
+	return (this->_location);
 }
 
 /* ************************************************************************** */

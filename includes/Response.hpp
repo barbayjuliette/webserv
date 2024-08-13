@@ -27,9 +27,17 @@
 # include <iostream>
 # include <dirent.h>
 # include "ConfigFile.hpp"
+# include "CGIHandler.hpp"
 # include "CGIGet.hpp"
 # include "CGIPost.hpp"
 # include "Print.hpp"
+
+enum cgi_type
+{
+	NO_CGI,
+	CGI_GET,
+	CGI_POST
+};
 
 class CGIHandler;
 class CGIGet;
@@ -41,6 +49,7 @@ class Response
 		static std::map<int, std::string>	_status_lookup;
 		int									_status_code;
 		std::string							_status_text;
+		int									_is_cgi;
 		std::string							_http_version;
 		std::string							_body;
 		std::string							_full_response;
@@ -94,4 +103,6 @@ class Response
 		std::string							getPath() const;
 		std::string							getFullResponse() const;
 		void								getDate();
+		int									isCGI() const;
+		LocationConfig*						getLocation() const;
 };

@@ -33,9 +33,11 @@ CGIGet &		CGIGet::operator=( CGIGet const & rhs )
 	return(*this);
 }
 
-CGIGet::CGIGet(Request const & request, LocationConfig* location, std::string ext) : CGIHandler()
+CGIGet::CGIGet(Request const & request, LocationConfig* location) : CGIHandler()
 {
-	int	pipe_fd[2];
+	// int	pipe_fd[2];
+	std::string req_path = request.getPath();
+	std::string ext = req_path.substr(req_path.rfind('.'), std::string::npos);
 
 	this->_cgi_exec = location->getCGIExec(ext);
 	setFullPath(get_cgi_location(location->getPrefix(), request.getPath()));
