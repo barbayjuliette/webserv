@@ -55,6 +55,15 @@ std::string	CGIHandler::intToString(int num)
 	return (stream.str());
 }
 
+std::string		CGIHandler::get_cgi_location(std::string prefix, std::string req_path)
+{
+	if (!req_path.compare(0, prefix.size(), prefix))
+		return ("." + req_path);
+	if (prefix[prefix.size() - 1] == '/')
+		return ("." + prefix.substr(0, prefix.size() - 1) + req_path);
+	return ("." + prefix + req_path);
+}
+
 // ---------------------------------------- ACCESSORS ----------------------------------------
 
 std::string	CGIHandler::getResult()
