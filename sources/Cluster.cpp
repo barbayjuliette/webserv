@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/17 19:18:04 by yliew             #+#    #+#             */
-/*   Updated: 2024/08/12 13:31:12 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/13 10:56:25 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -377,6 +377,9 @@ void	Cluster::handle_read_connection(int client_socket)
 			-> If incomplete, handle header
 				-> Check again if header complete */
 		Request*	request = _clients[client_socket]->getRequest();
+
+		std::cout << CYAN << "[PORT " << request->getPort() << "]: " << RESET << request->getMethod() << " request received for " << request->getServer()->getServerName()[0] << std::endl;
+		// std::cout << request->getServer()->getServerName()[0] << " received a " << request->getMethod() << " request, on PORT "  << std::endl;
 		if (request->getHeaderLength() == -1)
 		{
 			request->handle_incomplete_header(bytes_read, buffer);

@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/12 14:28:10 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/13 10:58:07 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ Response::Response(Request &request, ServerConfig *conf) : _body(""), _config(co
 	else
 	{
 		_path = _location->getRoot() + request.getPath().substr(1, std::string::npos);
-		std::cout << CYAN << "RESPONSE - PATH: " << RESET << _path << '\n';
+		std::cout << CYAN << "RESPONSE - PATH: " << RESET << _path << "\n\n";
 	}
 
 	setContentType(_path);
