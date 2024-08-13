@@ -48,7 +48,7 @@ CGIGet::CGIGet(Request const & request, LocationConfig* location, std::string ex
 
 	if (pipe(pipe_fd) == -1)
 	{
-		std::cout << "Error: " << strerror(errno) << std::endl;
+		std::cerr << "Error pipe(): " << strerror(errno) << std::endl;
 		setError(500);
 		return ;
 	}
@@ -56,7 +56,7 @@ CGIGet::CGIGet(Request const & request, LocationConfig* location, std::string ex
 	int	pid = fork();
 	if (pid == -1)
 	{
-		std::cout << "Error: " << strerror(errno) << std::endl;
+		std::cerr << "Error fork(): " << strerror(errno) << std::endl;
 		setError(500);
 		return ;
 	}
@@ -78,11 +78,9 @@ void	CGIGet::process_result_cgi(int pid, int pipe_fd[])
 		while ((bytesRead = read(pipe_fd[0], buffer, sizeof(buffer) - 1)) > 0) 
 		{
 			buffer[bytesRead] = '\0';
-			// _result += buffer;
 			setResult(getResult() += buffer);
 		}
 		close(pipe_fd[0]);
-		// std::cout << RED << "Result CGI: " << _result << RESET << std::endl;
 		setContentType();
 		setHtml();
 }
@@ -127,6 +125,6 @@ void	CGIGet::execute_cgi(int pipe_fd[], Request const & request)
 	};
 	close(pipe_fd[1]);
 	execve(this->_cgi_exec.c_str(), argv, const_cast<char* const*>(env));
-	std::cerr << "Execve failed\n";
+	std::cerr << "Error execve: " << strerror(errno) << std::endl;
 	setError(500);
 }

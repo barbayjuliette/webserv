@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/05 21:18:39 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 19:36:24 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/12 14:29:25 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ CGIPost::CGIPost(Request const & request, LocationConfig* location, std::string 
 
 	if (pipe(pipe_fd) == -1 || pipe(pipe_data) == -1)
 	{
-		std::cout << "Error: " << strerror(errno) << std::endl;
+		std::cerr << "Error pipe(): " << strerror(errno) << std::endl;
 		setError(500);
 		return ;
 	}
@@ -57,7 +57,7 @@ CGIPost::CGIPost(Request const & request, LocationConfig* location, std::string 
 	int	pid = fork();
 	if (pid == -1)
 	{
-		std::cout << "Error: " << strerror(errno) << std::endl;
+		std::cerr << "Error fork(): " << strerror(errno) << std::endl;
 		setError(500);
 		return ;
 	}
@@ -138,7 +138,7 @@ void	CGIPost::execute_cgi(int pipe_fd[], int pipe_data[], Request const & reques
 	close(pipe_fd[1]);
 	close(pipe_data[0]);
 	execve(this->_cgi_exec.c_str(), argv, const_cast<char* const*>(env));
-	std::cout << "Execve failed\n";
+	std::cerr << "Error execve: " << strerror(errno) << std::endl;
 	setError(500);
 }
 
