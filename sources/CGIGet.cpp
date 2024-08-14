@@ -68,7 +68,7 @@ CGIGet::CGIGet(Request const & request, LocationConfig* location) : CGIHandler()
 		process_result_cgi(pid, pipe_fd);
 }
 
-// PARENT: Writes the form data to the pipe, then waits for the child to send the result from cgi.
+// PARENT: Waits for the child to send the result from cgi, then reads.
 void	CGIGet::process_result_cgi(int pid, int pipe_fd[])
 {
 		close(pipe_fd[1]);
@@ -102,7 +102,7 @@ void	CGIGet::process_result_cgi(int pid, int pipe_fd[])
 		setHtml();
 }
 
-// CHILD: Read form data from pipe then send result from cgi via pipe.
+// CHILD: Send result from cgi via pipe.
 void	CGIGet::execute_cgi(int pipe_fd[], Request const & request)
 {
 	close(pipe_fd[0]);

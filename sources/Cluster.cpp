@@ -102,25 +102,6 @@ Cluster::~Cluster()
 ** ------------------------------- INIT SOCKETS -------------------------------
 */
 
-void	Cluster::setNonBlocking(int fd)
-{
-	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-	{
-		std::cerr << RED << "fcntl(): " << strerror(errno) << std::endl << RESET;
-		exit(1);
-	}
-}
-
-void	Cluster::setReuseAddr(int socket_fd)
-{
-	int	yes = 1;
-	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0)
-	{
-		std::cerr << RED << "setsockopt(): " << strerror(errno) << std::endl << RESET;
-		exit(1);
-	}
-}
-
 /* Check if a socket has been created for a specific host:port combination
 - Return iterator to the _server_sockets element if it exists */
 t_mmap::iterator	Cluster::findHostPort(const std::string& host, int port)
@@ -177,18 +158,39 @@ void	Cluster::addServerSocket(std::string& host, int port, int socket_fd)
 	socket.fd = socket_fd;
 	socket.host = host;
 	_server_sockets.insert(std::make_pair(port, socket));
-
-	// if (CTRACE)
-	// 	std::cout << GREEN << "created socket for port: " << port << ", socket_fd: " << findHostPort(host, port)->second.fd << '\n' << RESET;
 }
 
 void	Cluster::addServer(std::string& host, int port, Webserver *new_server)
 {
 	t_mmap::iterator	it = findHostPort(host, port);
 	it->second.servers.push_back(new_server);
+}
 
-	// if (CTRACE)
-	// 	std::cout << GREEN << "there are now " << countServers(it) << " servers listening to " << host << ':' << port << ".\n" << RESET;
+void	Cluster::setNonBlocking(int fd)
+{
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+	{
+		std::cerr << RED << "fcntl(): " << strerror(errno) << std::endl << RESET;
+		exit(1);
+	}
+}
+
+void	Cluster::setNonBlocking(std::vector<int> fds)
+{
+	for (size_t i = 0; i < fds.size(); i++)
+	{
+		setNonBlocking(fds[i]);
+	}
+}
+
+void	Cluster::setReuseAddr(int socket_fd)
+{
+	int	yes = 1;
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0)
+	{
+		std::cerr << RED << "setsockopt(): " << strerror(errno) << std::endl << RESET;
+		exit(1);
+	}
 }
 
 /*
@@ -276,35 +278,29 @@ void	Cluster::runServers(void)
 			checkTimeout();
 		for (int i = 0; i < num_of_events; i++)
 		{
-			int	event_fd = ep_events[i].data.fd;
+			int	fd = ep_events[i].data.fd;
 			int	event_type = ep_events[i].events;
 
-			if (is_server_socket(event_fd) && (event_type & EPOLLIN))
-				accept_new_connections(event_fd);
-			else if (is_cgi_fd(event_fd))
-			{
-				int	cgi_flag = _cgi_pipes[event_fd]->getResponse()->getCGIFlag();
-				if (event_type & EPOLLIN && (cgi_flag == CGI_GET || cgi_flag == CGI_POST_READ))
-					read_cgi();
-				else if (event_type & EPOLLOUT && cgi_flag == CGI_POST_WRITE)
-					write_cgi();
-			}
+			if (is_server_socket(fd) && (event_type & EPOLLIN))
+				accept_new_connections(fd);
+			else if (is_cgi_fd(fd))
+				handle_cgi(_cgi_pipes[fd], event_type);
 			else
 			{
 				if (event_type & EPOLLIN)
 				{
 					try
 					{
-						handle_read_connection(event_fd);
+						handle_read_connection(fd);
 					}
 					catch (std::exception& e)
 					{
-						std::cerr << RED << e.what() << ".\n" << RESET;
+						std::cerr << RED << "handle_read_connection(): " << e.what() << ".\n" << RESET;
 					}
 				}
 				if (event_type & EPOLLOUT)
 				{
-					handle_write_connection(event_fd);
+					handle_write_connection(fd);
 				}
 			}
 		}
@@ -446,12 +442,21 @@ void	Cluster::handle_read_connection(int client_socket)
 
 			request->getServer()->create_response(request, _clients[client_socket]);
 
-			Response*	response = request->getServer()->getResponse();
-			if (response && response->getCGIFlag() != NO_CGI)
+			int	cgi_status = _clients[client_socket]->getResponse()->getCGIStatus();
+			CGIHandler*	cgi = _clients[client_socket]->getResponse()->getCGIHandler();
+			if (cgi_status == CGI_GET)
 			{
-				add_cgi_fds(_clients[client_socket], server->getReadPipes());
-				if (cgi_flag == CGI_POST_WRITE)
-					add_cgi_fds(_clients[client_socket], server->getWritePipes());
+				std::vector<int>	response_pipe = cgi->get_response_pipes();
+				setNonBlocking(response_pipe);
+				add_cgi_fds(_clients[client_socket], response_pipe[0], response_pipe[1]);
+			}
+			if (cgi_status == CGI_POST_WRITE)
+			{
+				std::vector<int>	response_pipe = cgi->get_response_pipes();
+				std::vector<int>	request_pipe = cgi->get_request_pipes();
+				setNonBlocking(response_pipe);
+				setNonBlocking(request_pipe);
+				add_cgi_fds(_clients[client_socket], response_pipe[0], request_pipe[1]);
 			}
 		}
 	}
@@ -463,9 +468,12 @@ void		Cluster::handle_write_connection(int client_socket)
 	if (!client)
 		return ;
 	Response		*response = client->getResponse();
-	unsigned int	bytes_sent;
 	if (!response)
 		return ;
+	if (response->getCGIStatus() != NO_CGI && response->getCGIStatus() != CGI_DONE)
+		return ;
+
+	unsigned int	bytes_sent;
 
 	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
 	if (bytes_sent == response->getFullResponse().size())
@@ -495,22 +503,49 @@ void		Cluster::handle_write_connection(int client_socket)
 	}
 }
 
+void	Cluster::handle_cgi(Client *client, uint32_t event_type)
+{
+	Request		*request = client->getRequest();
+	Response	*response = client->getResponse();
+	Webserver	*server = client->getServer();
+	if (!request || !response || !server)
+		return ;
+
+	int	cgi_status = response->getCGIStatus();
+	if (event_type & EPOLLIN && (cgi_status == CGI_GET || cgi_status == CGI_POST_READ))
+	{
+		try
+		{
+			server->read_cgi(*request, response, cgi_status);
+		}
+		catch (std::exception& e)
+		{
+			std::cerr << RED << "read_cgi(): " << e.what() << ".\n" << RESET;
+		}
+	}
+	if (event_type & EPOLLOUT && cgi_status == CGI_POST_WRITE)
+	{
+		try
+		{
+			server->write_cgi(*request, response);
+		}
+		catch (std::exception& e)
+		{
+			std::cerr << RED << "write_cgi(): " << e.what() << ".\n" << RESET;
+		}
+	}
+}
+
 /*
 ** ------------------------------------- CGI -----------------------------------
 */
 
-void	Cluster::add_cgi_fds(Client *client, std::vector<int> pipefd)
+void	Cluster::add_cgi_fds(Client *client, int read_fd, int write_fd)
 {
-	if (pipefd.size() != 2)
-		return ;
-
-	for (size_t i = 0; i < pipefd.size(); i++)
-	{
-		setNonBlocking(pipefd[i]);
-		_cgi_pipes[pipefd[i]] = client;
-	}
-	addToEpoll(pipefd[0], EPOLLIN);
-	addToEpoll(pipefd[1], EPOLLOUT);
+	_cgi_pipes[read_fd] = client;
+	addToEpoll(read_fd, EPOLLIN);
+	_cgi_pipes[write_fd] = client;
+	addToEpoll(write_fd, EPOLLOUT);
 }
 
 bool	Cluster::is_cgi_fd(const int fd)
@@ -518,33 +553,6 @@ bool	Cluster::is_cgi_fd(const int fd)
 	if (_cgi_pipes.find(fd) != _cgi_pipes.end())
 		return (true);
 	return (false);
-}
-
-void	Cluster::read_cgi(const Request& request, LocationConfig* location)
-{
-	std::string req_path = request.getPath();
-	std::string ext = req_path.substr(req_path.rfind('.'), std::string::npos);
-
-	this->_cgi_exec = location->getCGIExec(ext);
-	setFullPath(get_cgi_location(location->getPrefix(), request.getPath()));
-
-	if (access(getFullPath().c_str(), F_OK) != 0)
-	{
-		setError(404);
-		return ;
-	}
-
-	int	pid = fork();
-	if (pid == -1)
-	{
-		std::cerr << "Error fork(): " << strerror(errno) << std::endl;
-		setError(500);
-		return ;
-	}
-	if (pid == 0)
-		execute_cgi(pipe_fd, request);
-	else
-		process_result_cgi(pid, pipe_fd);
 }
 
 /*

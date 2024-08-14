@@ -32,7 +32,7 @@
 # include "CGIPost.hpp"
 # include "Print.hpp"
 
-enum cgi_flag
+enum cgi_status
 {
 	NO_CGI,
 	CGI_GET,
@@ -51,7 +51,7 @@ class Response
 		static std::map<int, std::string>	_status_lookup;
 		int									_status_code;
 		std::string							_status_text;
-		int									_cgi_flag;
+		int									_cgi_status;
 		std::string							_http_version;
 		std::string							_body;
 		std::string							_full_response;
@@ -59,6 +59,8 @@ class Response
 		std::map<std::string, std::string>	_headers;
 		ServerConfig*						_config;
 		LocationConfig*						_location;
+		CGIHandler*							_cgi_handler;
+
 		Response();
 
 	public:
@@ -95,7 +97,7 @@ class Response
 		void		setContentType(std::string path);
 		void		set_allow_methods(bool flag);
 		void		setHeaders(const Request &request);
-		void		setCGIFlag(int flag);
+		void		setCGIStatus(int flag);
 
 		/* Accessors */
 		int									getStatusCode() const;
@@ -106,6 +108,6 @@ class Response
 		std::string							getPath() const;
 		std::string							getFullResponse() const;
 		void								getDate();
-		int									getCGIFlag() const;
+		int									getCGIStatus() const;
 		LocationConfig*						getLocation() const;
 };

@@ -24,29 +24,48 @@
 # include <iostream>
 # include "webserv.hpp"
 # include "Request.hpp"
+# include "Response.hpp"
 # include "LocationConfig.hpp"
 
 class Request;
+class Response;
 class LocationConfig;
 
 class CGIHandler
 {
 	private:
-		std::string		_result;
-		std::string		_content_type;
-		std::string		_html;
-		std::string		_headers;
-		std::string		_full_path;
-		int				_error;
+		const Request&		_request;
+		Response&			_response;
+		LocationConfig*		_location;
+		std::vector<int>	_request_pipes; // POST
+		std::vector<int>	_response_pipes; // GET, POST
+		std::string			_cgi_ext;
+		std::string			_cgi_exec;
+		std::string			_result;
+		std::string			_content_type;
+		std::string			_html;
+		std::string			_headers;
+		std::string			_full_path;
+		int					_error;
+
+		CGIHandler();
 
 	public:
-		CGIHandler();
+		CGIHandler(const Request& request, Response& response, std::string cgi_ext);
 		CGIHandler(CGIHandler const & src);
-		virtual ~CGIHandler();
+		~CGIHandler();
 		CGIHandler &		operator=( CGIHandler const & rhs );
-		std::string			intToString(int num);
-		std::string			get_cgi_location(std::string prefix, std::string req_path);
-		void				check(int num);
+
+		/* Transfer data to/from CGI */
+		void		create_response_pipes(void);
+		void		create_request_pipes(void);
+		void		read_cgi(const Request &request, Response *response, int cgi_status);
+		void		write_cgi(const Request &request, Response *response);
+
+		/* Utils */
+		std::string	intToString(int num);
+		std::string	get_cgi_location(std::string prefix, std::string req_path);
+		void		check(int num);
 
 		std::string	getResult();
 		std::string	getHtml();
@@ -59,4 +78,6 @@ class CGIHandler
 		void		setFullPath(std::string path);
 		int			getError();
 		void		setError(int error);
+		std::vector<int>	get_response_pipes(void);
+		std::vector<int>	get_request_pipes(void);
 };

@@ -30,8 +30,6 @@ class Webserver
 		struct sockaddr_in*			_address;
 		ServerConfig*				_config;
 		// std::map<int, Client*>		_clients;
-		std::vector<int>			_write_pipes; // POST
-		std::vector<int>			_read_pipes; // GET, POST
 
 		Webserver(); //should not be constructed without server config
 
@@ -44,19 +42,15 @@ class Webserver
 		~Webserver();
 
 		/* Operator overload */
-		Webserver &		operator=( Webserver const & rhs );
+		Webserver&	operator=( Webserver const & rhs );
 
 		/* Connections */
-		void			create_response(Request *request, Client *client);
+		void		create_response(Request *request, Client *client);
 
 		/* Utils */
-		void			check(int num);
-		void			printServerNames(void);
-		void			printConfig(void);
-
-		/* Setters */
-		void			setReadPipes(void);
-		void			setWritePipes(void);
+		void		check(int num);
+		void		printServerNames(void);
+		void		printConfig(void);
 
 		// Accessors
 		int							getServerSocket();
@@ -68,7 +62,5 @@ class Webserver
 		// Client*						getClient(int socket);
 		ServerConfig*				getConfig();
 		int							getBodyMaxLength(void);
-		std::vector<int>			getWritePipes(void);
-		std::vector<int>			getReadPipes(void);
 };
 

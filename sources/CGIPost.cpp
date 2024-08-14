@@ -117,7 +117,7 @@ void	CGIPost::process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Reques
 }
 
 
-// CHILD: Read form data from pipe then send result from cgi via pipe.
+// CHILD: Read form data from pipe, then send result from cgi via pipe.
 void	CGIPost::execute_cgi(int pipe_fd[], int pipe_data[], Request const & request)
 {
 	close(pipe_fd[0]);
