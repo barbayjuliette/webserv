@@ -37,8 +37,8 @@ class CGIHandler
 		const Request&		_request;
 		Response&			_response;
 		LocationConfig*		_location;
-		std::vector<int>	_request_pipes; // POST
-		std::vector<int>	_response_pipes; // GET, POST
+		std::vector<int>	_request_pipe; // POST
+		std::vector<int>	_response_pipe; // GET, POST
 		std::string			_cgi_ext;
 		std::string			_cgi_exec;
 		std::string			_result;
@@ -53,20 +53,24 @@ class CGIHandler
 	public:
 		CGIHandler(const Request& request, Response& response, std::string cgi_ext);
 		CGIHandler(CGIHandler const & src);
-		~CGIHandler();
+		virtual ~CGIHandler();
 		CGIHandler &		operator=( CGIHandler const & rhs );
 
 		/* Transfer data to/from CGI */
-		void		create_response_pipes(void);
-		void		create_request_pipes(void);
-		void		read_cgi(const Request &request, Response *response, int cgi_status);
-		void		write_cgi(const Request &request, Response *response);
+		void		create_response_pipe(void);
+		void		create_request_pipe(void);
+		void		read_cgi_result(int cgi_status);
+		void		execute_cgi(int cgi_status);
+		virtual void	write_cgi(int cgi_status);
+		// void			execute_cgi(int pipe_fd[], Request const & request);
+		// void			process_result_cgi(int pid, int pipe_fd[]);
 
 		/* Utils */
 		std::string	intToString(int num);
 		std::string	get_cgi_location(std::string prefix, std::string req_path);
 		void		check(int num);
 
+		/* Accessors */
 		std::string	getResult();
 		std::string	getHtml();
 		std::string	getContentType();
@@ -78,6 +82,6 @@ class CGIHandler
 		void		setFullPath(std::string path);
 		int			getError();
 		void		setError(int error);
-		std::vector<int>	get_response_pipes(void);
-		std::vector<int>	get_request_pipes(void);
+		std::vector<int>	get_response_pipe(void);
+		std::vector<int>	get_request_pipe(void);
 };

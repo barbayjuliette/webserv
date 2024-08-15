@@ -62,7 +62,7 @@ class Cluster
 		void			initEpoll(void);
 		static void		addToEpoll(int fd, uint32_t events);
 		static void		removeFromEpoll(int fd);
-		void			add_cgi_fds(Client *client, int read_fd, int write_fd);
+		void			add_cgi_pipes(Client *client, Response *response, int cgi_status);
 
 		/* Server socket methods */
 		void				setNonBlocking(int fd);
@@ -85,7 +85,7 @@ class Cluster
 
 		/* Utils */
 		bool			is_server_socket(const int fd);
-		bool			is_cgi_fd(const int fd);
+		bool			is_cgi_pipe(const int fd);
 		bool			isIPAddress(const std::string& str);
 		std::string		getClientIPAddress(const int socket_fd);
 		int				getExistingClient(struct sockaddr_in *addr);

@@ -32,8 +32,7 @@ _host(src._host),
 _port(src._port),
 _server_name(src._server_name),
 _address(src._address),
-_config(src._config),
-_clients(src._clients)
+_config(src._config)
 {}
 
 /*
@@ -50,7 +49,6 @@ Webserver&	Webserver::operator=( Webserver const & rhs )
 		this->_server_name = rhs._server_name;
 		this->_address = rhs._address;
 		this->_config = rhs._config;
-		this->_clients = rhs._clients;
 	}
 	return (*this);
 }
@@ -145,17 +143,17 @@ struct sockaddr_in*	Webserver::getAddress()
 	return (_address);
 }
 
-std::map<int, Client*>		Webserver::getClients()
-{
-	return (_clients);
-}
+// std::map<int, Client*>		Webserver::getClients()
+// {
+// 	return (_clients);
+// }
 
-Client*		Webserver::getClient(int socket)
-{
-	if (_clients.find(socket) == _clients.end())
-		return (NULL);
-	return (_clients[socket]);
-}
+// Client*		Webserver::getClient(int socket)
+// {
+// 	if (_clients.find(socket) == _clients.end())
+// 		return (NULL);
+// 	return (_clients[socket]);
+// }
 
 ServerConfig*	Webserver::getConfig()
 {

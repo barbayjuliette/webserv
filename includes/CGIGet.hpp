@@ -24,11 +24,12 @@ class CGIGet : public CGIHandler
 		CGIGet();
 
 	public:
-		CGIGet(Request const & request, LocationConfig* location);
+		CGIGet(const Request& request, Response& response, std::string cgi_ext);
 		CGIGet( CGIGet const & src );
 		~CGIGet();
 		CGIGet &		operator=( CGIGet const & rhs );
 
-		void			execute_cgi(int pipe_fd[], Request const & request);
-		void			process_result_cgi(int pid, int pipe_fd[]);
+		void		write_cgi(int cgi_status);
+		// void			execute_cgi(int pipe_fd[], Request const & request);
+		// void			process_result_cgi(int pid, int pipe_fd[]);
 };

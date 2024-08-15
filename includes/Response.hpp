@@ -88,7 +88,7 @@ class Response
 		std::string	intToString(int num);
 
 		/* CGI utils */
-		void		process_cgi_response(CGIHandler* cgi);
+		void		process_cgi_response(void);
 		std::string	extract_cgi_extension(const std::string& req_path);
 
 		/* Setters */
@@ -108,6 +108,7 @@ class Response
 		std::string							getPath() const;
 		std::string							getFullResponse() const;
 		void								getDate();
-		int									getCGIStatus() const;
 		LocationConfig*						getLocation() const;
+		int									getCGIStatus() const;
+		CGIHandler*							getCGIHandler() const;
 };

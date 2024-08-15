@@ -19,7 +19,6 @@
 Cluster*	Cluster::_instance = NULL;
 ConfigFile*	Cluster::_config_file = NULL;
 int			Cluster::_epoll_fd = -1;
-std::vector<int>	Cluster::_cgi_fd;
 
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
@@ -283,7 +282,7 @@ void	Cluster::runServers(void)
 
 			if (is_server_socket(fd) && (event_type & EPOLLIN))
 				accept_new_connections(fd);
-			else if (is_cgi_fd(fd))
+			else if (is_cgi_pipe(fd))
 				handle_cgi(_cgi_pipes[fd], event_type);
 			else
 			{
@@ -443,26 +442,13 @@ void	Cluster::handle_read_connection(int client_socket)
 			request->getServer()->create_response(request, _clients[client_socket]);
 
 			int	cgi_status = _clients[client_socket]->getResponse()->getCGIStatus();
-			CGIHandler*	cgi = _clients[client_socket]->getResponse()->getCGIHandler();
-			if (cgi_status == CGI_GET)
-			{
-				std::vector<int>	response_pipe = cgi->get_response_pipes();
-				setNonBlocking(response_pipe);
-				add_cgi_fds(_clients[client_socket], response_pipe[0], response_pipe[1]);
-			}
-			if (cgi_status == CGI_POST_WRITE)
-			{
-				std::vector<int>	response_pipe = cgi->get_response_pipes();
-				std::vector<int>	request_pipe = cgi->get_request_pipes();
-				setNonBlocking(response_pipe);
-				setNonBlocking(request_pipe);
-				add_cgi_fds(_clients[client_socket], response_pipe[0], request_pipe[1]);
-			}
+			if (cgi_status != NO_CGI)
+				add_cgi_pipes(_clients[client_socket], _clients[client_socket]->getResponse(), cgi_status);
 		}
 	}
 }
 
-void		Cluster::handle_write_connection(int client_socket)
+void	Cluster::handle_write_connection(int client_socket)
 {
 	Client			*client = getClient(client_socket);
 	if (!client)
@@ -503,12 +489,15 @@ void		Cluster::handle_write_connection(int client_socket)
 	}
 }
 
+/*
+** ------------------------------------- CGI -----------------------------------
+*/
+
 void	Cluster::handle_cgi(Client *client, uint32_t event_type)
 {
 	Request		*request = client->getRequest();
 	Response	*response = client->getResponse();
-	Webserver	*server = client->getServer();
-	if (!request || !response || !server)
+	if (!request || !response)
 		return ;
 
 	int	cgi_status = response->getCGIStatus();
@@ -516,7 +505,7 @@ void	Cluster::handle_cgi(Client *client, uint32_t event_type)
 	{
 		try
 		{
-			server->read_cgi(*request, response, cgi_status);
+			response->getCGIHandler()->read_cgi_result(cgi_status);
 		}
 		catch (std::exception& e)
 		{
@@ -527,7 +516,7 @@ void	Cluster::handle_cgi(Client *client, uint32_t event_type)
 	{
 		try
 		{
-			server->write_cgi(*request, response);
+			response->getCGIHandler()->write_cgi(cgi_status);
 		}
 		catch (std::exception& e)
 		{
@@ -536,19 +525,33 @@ void	Cluster::handle_cgi(Client *client, uint32_t event_type)
 	}
 }
 
-/*
-** ------------------------------------- CGI -----------------------------------
-*/
-
-void	Cluster::add_cgi_fds(Client *client, int read_fd, int write_fd)
+void	Cluster::add_cgi_pipes(Client *client, Response *response, int cgi_status)
 {
-	_cgi_pipes[read_fd] = client;
-	addToEpoll(read_fd, EPOLLIN);
-	_cgi_pipes[write_fd] = client;
-	addToEpoll(write_fd, EPOLLOUT);
+	if (cgi_status == CGI_GET)
+	{
+		std::vector<int>	response_pipe = response->getCGIHandler()->get_response_pipe();
+		setNonBlocking(response_pipe);
+
+		_cgi_pipes[response_pipe[0]] = client;
+		addToEpoll(response_pipe[0], EPOLLIN);
+		_cgi_pipes[response_pipe[1]] = client;
+		addToEpoll(response_pipe[1], EPOLLOUT);
+	}
+	else if (cgi_status == CGI_POST_WRITE)
+	{
+		std::vector<int>	response_pipe = response->getCGIHandler()->get_response_pipe();
+		std::vector<int>	request_pipe = response->getCGIHandler()->get_request_pipe();
+		setNonBlocking(response_pipe);
+		setNonBlocking(request_pipe);
+
+		_cgi_pipes[response_pipe[0]] = client;
+		addToEpoll(response_pipe[0], EPOLLIN);
+		_cgi_pipes[request_pipe[1]] = client;
+		addToEpoll(request_pipe[1], EPOLLOUT);
+	}
 }
 
-bool	Cluster::is_cgi_fd(const int fd)
+bool	Cluster::is_cgi_pipe(const int fd)
 {
 	if (_cgi_pipes.find(fd) != _cgi_pipes.end())
 		return (true);

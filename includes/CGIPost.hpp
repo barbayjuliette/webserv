@@ -24,11 +24,12 @@ class CGIPost : public CGIHandler
 		CGIPost();
 
 	public:
-		CGIPost(Request const & request, LocationConfig* location, std::string ext);
+		CGIPost(const Request& request, Response& response, std::string cgi_ext);
 		CGIPost(CGIPost const & src);
 		~CGIPost();
 		CGIPost &		operator=( CGIPost const & rhs );
 
-		void			execute_cgi(int pipe_fd[], int pipe_data[], Request const & request);
-		void			process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Request const & request);
+		void		write_cgi(int cgi_status);
+		// void			execute_cgi(int pipe_fd[], int pipe_data[], Request const & request);
+		// void			process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Request const & request);
 };
