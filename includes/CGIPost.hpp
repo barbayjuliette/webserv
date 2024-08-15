@@ -14,8 +14,6 @@
 
 # include "CGIHandler.hpp"
 
-class CGIHandler;
-
 class CGIPost : public CGIHandler
 {
 	private:
@@ -24,7 +22,7 @@ class CGIPost : public CGIHandler
 		CGIPost();
 
 	public:
-		CGIPost(const Request& request, Response& response, std::string cgi_ext);
+		CGIPost(const Request& request, LocationConfig *location, std::string cgi_ext);
 		CGIPost(CGIPost const & src);
 		~CGIPost();
 		CGIPost &		operator=( CGIPost const & rhs );

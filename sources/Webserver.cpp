@@ -67,7 +67,7 @@ void	Webserver::create_response(Request *request, Client *client)
 {
 	Response	*_response = new Response(*request, this->_config);
 	client->setResponse(_response);
-	client->deleteRequest();
+	// client->deleteRequest();
 }
 
 void	Webserver::check(int num)

@@ -16,10 +16,8 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-CGIGet::CGIGet() : CGIHandler() {}
-
-CGIGet::CGIGet(const Request& request, Response& response, std::string cgi_ext) :
-CGIHandler(request, response, cgi_ext)
+CGIGet::CGIGet(const Request& request, LocationConfig *location, std::string cgi_ext) :
+CGIHandler(request, location, cgi_ext)
 {
 	create_response_pipe();
 }
@@ -58,6 +56,7 @@ void	CGIGet::write_cgi(int cgi_status)
 	if (cgi_status != CGI_GET)
 		return ;
 
+	std::cout << "INSIDE CGIGET WRITE_CGI: " << cgi_status << '\n';
 	int	pid = fork();
 	if (pid == -1)
 	{
@@ -77,7 +76,7 @@ void	CGIGet::write_cgi(int cgi_status)
 	else
 	{
 		/* PARENT: close response_pipe[1] → wait */
-		close(response_pipe[1]);
+		close(_response_pipe[1]);
 		waitpid(pid, NULL, 0);
 	}
 }

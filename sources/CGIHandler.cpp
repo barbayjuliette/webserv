@@ -16,26 +16,26 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-CGIHandler::CGIHandler() {}
-
-CGIHandler::CGIHandler(const Request& request, Response& response, std::string cgi_ext) :
+CGIHandler::CGIHandler(const Request& request, LocationConfig *location, std::string cgi_ext) :
 _request(request),
-_response(response),
+_location(location),
 _cgi_ext(cgi_ext),
 _error(0)
 {
-	_location = response.getLocation();
 	_cgi_exec = _location->getCGIExec(_cgi_ext);
 	_full_path = get_cgi_location(_location->getPrefix(), _request.getPath());
 
 	if (access(_full_path.c_str(), F_OK) != 0)
-	{
 		setError(404);
-		return ;
-	}
 }
 
 CGIHandler::CGIHandler(CGIHandler const & src) :
+_request(src._request),
+_location(src._location),
+_request_pipe(src._request_pipe),
+_response_pipe(src._response_pipe),
+_cgi_ext(src._cgi_ext),
+_cgi_exec(src._cgi_exec),
 _result(src._result),
 _content_type(src._content_type),
 _html(src._html),
@@ -52,6 +52,11 @@ CGIHandler &		CGIHandler::operator=( CGIHandler const & rhs )
 {
 	if (this != &rhs)
 	{
+		this->_location = rhs._location;
+		this->_request_pipe = rhs._request_pipe;
+		this->_response_pipe = rhs._response_pipe;
+		this->_cgi_ext = rhs._cgi_ext;
+		this->_cgi_exec = rhs._cgi_exec;
 		this->_result = rhs._result;
 		this->_content_type = rhs._content_type;
 		this->_html = rhs._html;
@@ -117,6 +122,7 @@ void	CGIHandler::create_request_pipe(void)
 /* Called by child process; closing of fds to be handled before calling this function */
 void	CGIHandler::execute_cgi(int cgi_status)
 {
+	std::cout << "INSIDE EXECUTE_CGI: " << cgi_status << '\n';
 	char* const argv[] = 
 	{
 		const_cast<char*>(_cgi_exec.c_str()),
@@ -129,7 +135,7 @@ void	CGIHandler::execute_cgi(int cgi_status)
 	std::string	request_method;
 	if (cgi_status == CGI_GET)
 		request_method = "REQUEST_METHOD=GET";
-	else if (cgi_status == CGI_POST_WRITE)
+	else if (cgi_status == CGI_POST)
 		request_method = "REQUEST_METHOD=POST";
 
 	std::string	content_type = "CONTENT_TYPE=" + _request.getHeaders()["content-type"];
@@ -168,14 +174,16 @@ void	CGIHandler::execute_cgi(int cgi_status)
 /*
 4. if event & EPOLLIN:
     1. if cgi status is CGI_GET: read from response_pipe[0]
-    2. if cgi status is CGI_POST_READ: read from response_pipe[0]
+    2. if cgi status is CGI_POST: read from response_pipe[0]
 5. close pipe fds and remove them from the Cluster map / Webserver vectors */
 
 /* Parent: reads result of the cgi script from the pipe */
 void	CGIHandler::read_cgi_result(int cgi_status)
 {
-	if (cgi_status != CGI_GET && cgi_status != CGI_POST_READ)
+	if (cgi_status != CGI_GET && cgi_status != CGI_POST)
 		return ;
+
+	std::cout << "INSIDE read_cgi_result: " << cgi_status << '\n';
 
 	close(_response_pipe[1]);
 
@@ -206,7 +214,6 @@ void	CGIHandler::read_cgi_result(int cgi_status)
 
 	setContentType();
 	setHtml();
-	_response.process_cgi_response();
 }
 
 void		CGIHandler::setHeaders()

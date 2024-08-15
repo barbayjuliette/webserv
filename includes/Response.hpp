@@ -32,15 +32,6 @@
 # include "CGIPost.hpp"
 # include "Print.hpp"
 
-enum cgi_status
-{
-	NO_CGI,
-	CGI_GET,
-	CGI_POST_WRITE,
-	CGI_POST_READ,
-	CGI_DONE
-};
-
 class CGIHandler;
 class CGIGet;
 class CGIPost;

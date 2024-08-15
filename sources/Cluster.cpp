@@ -461,6 +461,8 @@ void	Cluster::handle_write_connection(int client_socket)
 
 	unsigned int	bytes_sent;
 
+	std::cout << "sending response; CGI status: " << response->getCGIStatus() << '\n';
+
 	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
 	if (bytes_sent == response->getFullResponse().size())
 	{
@@ -501,18 +503,8 @@ void	Cluster::handle_cgi(Client *client, uint32_t event_type)
 		return ;
 
 	int	cgi_status = response->getCGIStatus();
-	if (event_type & EPOLLIN && (cgi_status == CGI_GET || cgi_status == CGI_POST_READ))
-	{
-		try
-		{
-			response->getCGIHandler()->read_cgi_result(cgi_status);
-		}
-		catch (std::exception& e)
-		{
-			std::cerr << RED << "read_cgi(): " << e.what() << ".\n" << RESET;
-		}
-	}
-	if (event_type & EPOLLOUT && cgi_status == CGI_POST_WRITE)
+	std::cout << "inside handle_cgi: status:" << cgi_status << '\n';
+	if (event_type & EPOLLOUT && cgi_status == CGI_POST)
 	{
 		try
 		{
@@ -523,10 +515,23 @@ void	Cluster::handle_cgi(Client *client, uint32_t event_type)
 			std::cerr << RED << "write_cgi(): " << e.what() << ".\n" << RESET;
 		}
 	}
+	else if (event_type & EPOLLIN && (cgi_status == CGI_GET || cgi_status == CGI_POST))
+	{
+		try
+		{
+			response->getCGIHandler()->read_cgi_result(cgi_status);
+			response->process_cgi_response();
+		}
+		catch (std::exception& e)
+		{
+			std::cerr << RED << "read_cgi(): " << e.what() << ".\n" << RESET;
+		}
+	}
 }
 
 void	Cluster::add_cgi_pipes(Client *client, Response *response, int cgi_status)
 {
+	std::cout << "registering cgi pipes: " << cgi_status << '\n';
 	if (cgi_status == CGI_GET)
 	{
 		std::vector<int>	response_pipe = response->getCGIHandler()->get_response_pipe();
@@ -536,8 +541,9 @@ void	Cluster::add_cgi_pipes(Client *client, Response *response, int cgi_status)
 		addToEpoll(response_pipe[0], EPOLLIN);
 		_cgi_pipes[response_pipe[1]] = client;
 		addToEpoll(response_pipe[1], EPOLLOUT);
+		std::cout << "[GET] inpipe: " << response_pipe[0] << ", outpipe: " << response_pipe[1] << '\n';
 	}
-	else if (cgi_status == CGI_POST_WRITE)
+	else if (cgi_status == CGI_POST)
 	{
 		std::vector<int>	response_pipe = response->getCGIHandler()->get_response_pipe();
 		std::vector<int>	request_pipe = response->getCGIHandler()->get_request_pipe();
@@ -548,6 +554,7 @@ void	Cluster::add_cgi_pipes(Client *client, Response *response, int cgi_status)
 		addToEpoll(response_pipe[0], EPOLLIN);
 		_cgi_pipes[request_pipe[1]] = client;
 		addToEpoll(request_pipe[1], EPOLLOUT);
+		std::cout << "[POST] inpipe: " << response_pipe[0] << ", outpipe: " << request_pipe[1] << '\n';
 	}
 }
 

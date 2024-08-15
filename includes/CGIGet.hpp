@@ -14,8 +14,6 @@
 
 # include "CGIHandler.hpp"
 
-class CGIHandler;
-
 class CGIGet : public CGIHandler
 {
 	private:
@@ -24,7 +22,7 @@ class CGIGet : public CGIHandler
 		CGIGet();
 
 	public:
-		CGIGet(const Request& request, Response& response, std::string cgi_ext);
+		CGIGet(const Request& request, LocationConfig *location, std::string cgi_ext);
 		CGIGet( CGIGet const & src );
 		~CGIGet();
 		CGIGet &		operator=( CGIGet const & rhs );

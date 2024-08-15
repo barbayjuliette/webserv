@@ -209,7 +209,7 @@ void	Response::respond_get_request(const Request &request)
 	if (_location->getCGIExec(req_ext).size() > 0)
 	{
 		_cgi_status = CGI_GET;
-		_cgi_handler = new CGIGet(request, *this, req_ext);
+		_cgi_handler = new CGIGet(request, _location, req_ext);
 		_headers["Content-Length"] = intToString(this->_body.size());
 		// CGIHandler*	cgi = new CGIGet(request, _location, req_ext);
 		// process_cgi_response(cgi);
@@ -240,8 +240,8 @@ void	Response::respond_post_request(const Request &request)
 
 	if (_location->getCGIExec(req_ext).size() > 0) // Check if finishes with CGI extension.
 	{
-		_cgi_status = CGI_POST_WRITE;
-		_cgi_handler = new CGIPost(request, *this, req_ext);
+		_cgi_status = CGI_POST;
+		_cgi_handler = new CGIPost(request, _location, req_ext);
 		// CGIHandler*	cgi = new CGIPost(request, _location, req_ext);
 		// process_cgi_response(cgi);
 		// delete cgi;

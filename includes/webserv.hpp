@@ -18,7 +18,7 @@
 #endif
 
 #ifndef VERBOSE
-# define VERBOSE 0
+# define VERBOSE 1
 #endif
 
 #ifndef DEBUG
@@ -30,7 +30,7 @@
 #endif
 
 #ifndef CTRACE
-# define CTRACE 0
+# define CTRACE 1
 #endif
 
 /* C++ headers */

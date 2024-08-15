@@ -16,10 +16,8 @@
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
 
-CGIPost::CGIPost() : CGIHandler() {}
-
-CGIPost::CGIPost(const Request& request, Response& response, std::string cgi_ext) :
-CGIHandler(request, response, cgi_ext)
+CGIPost::CGIPost(const Request& request, LocationConfig *location, std::string cgi_ext) :
+CGIHandler(request, location, cgi_ext)
 {
 	create_response_pipe();
 	create_request_pipe();
@@ -52,18 +50,19 @@ CGIPost::~CGIPost() {}
 */
 
 /* if event & EPOLLOUT:
-if cgi status is CGI_POST_WRITE: fork, send request to cgi
+if cgi status is CGI_POST: fork, send request to cgi
 1. PARENT:
 	1. close request_pipe[0] → write to request_pipe[1] → close request_pipe[1] → wait
-	2. after child exits, set cgi status to CGI_POST_READ
 2. CHILD:
 	1. close request_pipe[1] → dup2 request_pipe[0] to stdin → close request_pipe[0]
 	2. close response_pipe[0] → dup2 response_pipe[1] to stdout → close response_pipe[1]
 	3. execve */
 void	CGIPost::write_cgi(int cgi_status)
 {
-	if (cgi_status != CGI_POST_WRITE)
+	if (cgi_status != CGI_POST)
 		return ;
+
+	std::cout << "INSIDE CGIPOST WRITE_CGI: " << cgi_status << '\n';
 
 	int	pid = fork();
 	if (pid == -1)
@@ -90,7 +89,7 @@ void	CGIPost::write_cgi(int cgi_status)
 	{
 		/* PARENT: write form data to request_pipe */
 		close(_request_pipe[0]);
-		std::vector<unsigned char> body = request.getBody();
+		std::vector<unsigned char> body = _request.getBody();
 
 		int bytes = write(_request_pipe[1], reinterpret_cast<const char *>(body.data()), body.size());
 		if (bytes <= 0)
@@ -103,9 +102,6 @@ void	CGIPost::write_cgi(int cgi_status)
 		}
 		close(_request_pipe[1]);
 		waitpid(pid, NULL, 0);
-
-		/* After child exits, set cgi status to CGI_POST_READ */
-		_response.setCGIStatus(CGI_POST_READ);
 	}
 }
 

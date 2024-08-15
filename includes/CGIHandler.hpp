@@ -24,18 +24,23 @@
 # include <iostream>
 # include "webserv.hpp"
 # include "Request.hpp"
-# include "Response.hpp"
 # include "LocationConfig.hpp"
 
+enum cgi_status
+{
+	NO_CGI,
+	CGI_GET,
+	CGI_POST,
+	CGI_DONE
+};
+
 class Request;
-class Response;
 class LocationConfig;
 
 class CGIHandler
 {
-	private:
+	protected:
 		const Request&		_request;
-		Response&			_response;
 		LocationConfig*		_location;
 		std::vector<int>	_request_pipe; // POST
 		std::vector<int>	_response_pipe; // GET, POST
@@ -51,7 +56,7 @@ class CGIHandler
 		CGIHandler();
 
 	public:
-		CGIHandler(const Request& request, Response& response, std::string cgi_ext);
+		CGIHandler(const Request& request, LocationConfig *location, std::string cgi_ext);
 		CGIHandler(CGIHandler const & src);
 		virtual ~CGIHandler();
 		CGIHandler &		operator=( CGIHandler const & rhs );
@@ -61,7 +66,7 @@ class CGIHandler
 		void		create_request_pipe(void);
 		void		read_cgi_result(int cgi_status);
 		void		execute_cgi(int cgi_status);
-		virtual void	write_cgi(int cgi_status);
+		virtual void	write_cgi(int cgi_status) = 0;
 		// void			execute_cgi(int pipe_fd[], Request const & request);
 		// void			process_result_cgi(int pid, int pipe_fd[]);
 
