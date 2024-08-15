@@ -122,7 +122,6 @@ void	CGIHandler::create_request_pipe(void)
 /* Called by child process; closing of fds to be handled before calling this function */
 void	CGIHandler::execute_cgi(int cgi_status)
 {
-	std::cout << "INSIDE EXECUTE_CGI: " << cgi_status << '\n';
 	char* const argv[] = 
 	{
 		const_cast<char*>(_cgi_exec.c_str()),
@@ -182,10 +181,6 @@ void	CGIHandler::read_cgi_result(int cgi_status)
 {
 	if (cgi_status != CGI_GET && cgi_status != CGI_POST)
 		return ;
-
-	std::cout << "INSIDE read_cgi_result: " << cgi_status << '\n';
-
-	close(_response_pipe[1]);
 
 	char buffer[500];
 	memset(buffer, 0, sizeof(buffer));

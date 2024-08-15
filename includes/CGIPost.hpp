@@ -17,8 +17,6 @@
 class CGIPost : public CGIHandler
 {
 	private:
-		std::string		_cgi_exec;
-
 		CGIPost();
 
 	public:

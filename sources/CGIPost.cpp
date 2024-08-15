@@ -62,8 +62,6 @@ void	CGIPost::write_cgi(int cgi_status)
 	if (cgi_status != CGI_POST)
 		return ;
 
-	std::cout << "INSIDE CGIPOST WRITE_CGI: " << cgi_status << '\n';
-
 	int	pid = fork();
 	if (pid == -1)
 	{
@@ -89,6 +87,7 @@ void	CGIPost::write_cgi(int cgi_status)
 	{
 		/* PARENT: write form data to request_pipe */
 		close(_request_pipe[0]);
+		close(_response_pipe[1]);
 		std::vector<unsigned char> body = _request.getBody();
 
 		int bytes = write(_request_pipe[1], reinterpret_cast<const char *>(body.data()), body.size());

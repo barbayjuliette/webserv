@@ -297,6 +297,7 @@ std::string	Response::extract_cgi_extension(const std::string& req_path)
 
 void	Response::process_cgi_response(void)
 {
+	std::cout << CYAN << "process_cgi_response:\n" << RESET;
 	if (_cgi_handler->getError() != 0)
 		set_error(_cgi_handler->getError());
 	else
@@ -304,9 +305,14 @@ void	Response::process_cgi_response(void)
 		_body = _cgi_handler->getHtml();
 		_headers["Content-Type"] = _cgi_handler->getContentType();
 		set_success();
+		std::cout << "cgi error: " << _cgi_handler->getError() << '\n';
+		std::cout << "cgi body: " << _cgi_handler->getHtml() <<'\n';
+		std::cout << "cgi headers: " << _cgi_handler->getContentType() <<'\n';
 	}
 	_headers["Content-Length"] = intToString(this->_body.size());
 	_cgi_status = CGI_DONE;
+	getDate();
+	setFullResponse();
 }
 
 void	Response::setCGIStatus(int flag)

@@ -56,7 +56,6 @@ void	CGIGet::write_cgi(int cgi_status)
 	if (cgi_status != CGI_GET)
 		return ;
 
-	std::cout << "INSIDE CGIGET WRITE_CGI: " << cgi_status << '\n';
 	int	pid = fork();
 	if (pid == -1)
 	{
