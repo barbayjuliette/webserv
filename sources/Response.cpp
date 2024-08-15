@@ -25,7 +25,11 @@ std::map<int, std::string>	Response::_status_lookup;
 Response::Response() {}
 
 Response::Response(Request &request, ServerConfig *conf) :
-_cgi_status(NO_CGI), _body(""), _config(conf)
+_cgi_status(NO_CGI),
+_body(""),
+_config(conf),
+_location(NULL),
+_cgi_handler(NULL)
 {
 	if (this->_status_lookup.empty())
 		init_status_lookup();
@@ -97,7 +101,11 @@ _location(src._location)
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
 
-Response::~Response() {}
+Response::~Response()
+{
+	if (_cgi_handler)
+		delete _cgi_handler;
+}
 
 /*
 ** --------------------------------- OVERLOAD ---------------------------------
@@ -295,8 +303,10 @@ std::string	Response::extract_cgi_extension(const std::string& req_path)
 	return (req_path.substr(i, std::string::npos));
 }
 
-void	Response::process_cgi_response(void)
+void	Response::process_cgi_response(const Request& request)
 {
+	(void)request; //remove if request info not needed?
+
 	std::cout << CYAN << "process_cgi_response:\n" << RESET;
 	if (_cgi_handler->getError() != 0)
 		set_error(_cgi_handler->getError());

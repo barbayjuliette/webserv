@@ -461,9 +461,9 @@ void	Cluster::handle_write_connection(int client_socket)
 
 	unsigned int	bytes_sent;
 
-	std::cout << "sending response; CGI status: " << response->getCGIStatus() << '\n';
-
 	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
+	if (response->getCGIStatus() == CGI_DONE)
+		remove_cgi_pipes(client->getRequest(), response);
 	if (bytes_sent == response->getFullResponse().size())
 	{
 		if (CTRACE)
@@ -519,7 +519,7 @@ void	Cluster::handle_cgi(Client *client, uint32_t event_type)
 		try
 		{
 			response->getCGIHandler()->read_cgi_result(cgi_status);
-			response->process_cgi_response();
+			response->process_cgi_response(*request);
 		}
 		catch (std::exception& e)
 		{
@@ -551,6 +551,25 @@ void	Cluster::add_cgi_pipes(Client *client, Response *response, int cgi_status)
 		addToEpoll(response_pipe[0], EPOLLIN);
 		_cgi_pipes[request_pipe[1]] = client;
 		addToEpoll(request_pipe[1], EPOLLOUT);
+	}
+}
+
+void	Cluster::remove_cgi_pipes(Request *request, Response *response)
+{
+	if (!request || !response || !response->getCGIHandler())
+		return ;
+	(void)request;
+
+	std::vector<int>	response_pipe = response->getCGIHandler()->get_response_pipe();
+	for (size_t i = 0; i < response_pipe.size(); i++)
+	{
+		_cgi_pipes.erase(response_pipe[i]);
+	}
+
+	std::vector<int>	request_pipe = response->getCGIHandler()->get_request_pipe();
+	for (size_t i = 0; i < request_pipe.size(); i++)
+	{
+		_cgi_pipes.erase(request_pipe[i]);
 	}
 }
 

@@ -79,7 +79,7 @@ class Response
 		std::string	intToString(int num);
 
 		/* CGI utils */
-		void		process_cgi_response(void);
+		void		process_cgi_response(const Request& request);
 		std::string	extract_cgi_extension(const std::string& req_path);
 
 		/* Setters */

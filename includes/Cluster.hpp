@@ -63,6 +63,7 @@ class Cluster
 		static void		addToEpoll(int fd, uint32_t events);
 		static void		removeFromEpoll(int fd);
 		void			add_cgi_pipes(Client *client, Response *response, int cgi_status);
+		void			remove_cgi_pipes(Request *request, Response *response);
 
 		/* Server socket methods */
 		void				setNonBlocking(int fd);

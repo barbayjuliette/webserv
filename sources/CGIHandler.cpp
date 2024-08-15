@@ -20,6 +20,10 @@ CGIHandler::CGIHandler(const Request& request, LocationConfig *location, std::st
 _request(request),
 _location(location),
 _cgi_ext(cgi_ext),
+_result(""),
+_content_type(""),
+_html(""),
+_headers(""),
 _error(0)
 {
 	_cgi_exec = _location->getCGIExec(_cgi_ext);
