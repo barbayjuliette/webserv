@@ -315,10 +315,11 @@ void	Response::process_cgi_response(const Request& request)
 		_body = _cgi_handler->getHtml();
 		_headers["Content-Type"] = _cgi_handler->getContentType();
 		set_success();
-		std::cout << "cgi error: " << _cgi_handler->getError() << '\n';
-		std::cout << "cgi body: " << _cgi_handler->getHtml() <<'\n';
-		std::cout << "cgi headers: " << _cgi_handler->getContentType() <<'\n';
 	}
+	std::cout << "cgi error: " << _cgi_handler->getError() << '\n';
+	std::cout << "cgi body: " << _cgi_handler->getHtml() <<'\n';
+	std::cout << "cgi headers: " << _cgi_handler->getContentType() <<'\n';
+
 	_headers["Content-Length"] = intToString(this->_body.size());
 	_cgi_status = CGI_DONE;
 	getDate();

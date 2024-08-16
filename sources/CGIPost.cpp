@@ -49,6 +49,39 @@ CGIPost::~CGIPost() {}
 ** --------------------------------- METHODS ----------------------------------
 */
 
+void	CGIPost::read_cgi_request(int cgi_status)
+{
+	if (cgi_status != CGI_POST_READ)
+		return ;
+
+	if (_pid == 0)
+	{
+		/* CHILD: read form data from request_pipe */
+		close(_request_pipe[1]);
+		dup2(_request_pipe[0], STDIN_FILENO);
+		close(_request_pipe[0]);
+		
+		std::cout << GREEN << "inside read_cgi_request\n" << RESET;
+		std::cerr << GREEN << "\n\nCHILD IS READING: pipe fd: " << _request_pipe[0] << '\n' << RESET;
+		// char buffer[500];
+		// memset(buffer, 0, sizeof(buffer));
+		// ssize_t bytesRead = read(_response_pipe[0], buffer, 500);
+		// if (bytesRead < 0)
+		// {
+		// 	std::cerr << RED << strerror(errno) << '\n' << RESET;
+		// }
+		// else
+		// 	std::cerr << GREEN << buffer << '\n' << RESET;
+
+		/* CHILD: write result to response_pipe */
+		close(_response_pipe[0]);
+		dup2(_response_pipe[1], STDOUT_FILENO);
+		close(_response_pipe[1]);
+
+		execute_cgi(cgi_status);
+	}
+}
+
 /* if event & EPOLLOUT:
 if cgi status is CGI_POST: fork, send request to cgi
 1. PARENT:
@@ -62,26 +95,19 @@ void	CGIPost::write_cgi(int cgi_status)
 	if (cgi_status != CGI_POST)
 		return ;
 
-	int	pid = fork();
-	if (pid == -1)
+	std::cout << GREEN << "inside write_cgi\n" << RESET;
+
+	_pid = fork();
+	if (_pid == -1)
 	{
 		std::cerr << "Error fork(): " << strerror(errno) << std::endl;
 		setError(500);
 		return ;
 	}
-	if (pid == 0)
+	if (_pid == 0)
 	{
-		/* CHILD: read form data from request_pipe */
-		close(_request_pipe[1]);
-		dup2(_request_pipe[0], STDIN_FILENO);
-		close(_request_pipe[0]);
-
-		/* CHILD: write result to response_pipe */
-		close(_response_pipe[0]);
-		dup2(_response_pipe[1], STDOUT_FILENO);
-		close(_response_pipe[1]);
-
-		execute_cgi(cgi_status);
+		std::cout << "child is returning\n";
+		return ;
 	}
 	else
 	{
@@ -91,6 +117,7 @@ void	CGIPost::write_cgi(int cgi_status)
 		std::vector<unsigned char> body = _request.getBody();
 
 		int bytes = write(_request_pipe[1], reinterpret_cast<const char *>(body.data()), body.size());
+		std::cout << GREEN << "\n\nPARENT IS WRITING: "<< reinterpret_cast<const char *>(body.data()) << "\n\n" << RESET;
 		if (bytes <= 0)
 		{
 			std::cerr << "Error write(): " << strerror(errno) << std::endl;
@@ -100,7 +127,7 @@ void	CGIPost::write_cgi(int cgi_status)
 			return ;
 		}
 		close(_request_pipe[1]);
-		waitpid(pid, NULL, 0);
+		waitpid(_pid, NULL, 0);
 	}
 }
 

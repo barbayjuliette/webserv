@@ -26,6 +26,7 @@ class CGIPost : public CGIHandler
 		CGIPost &		operator=( CGIPost const & rhs );
 
 		void		write_cgi(int cgi_status);
+		void		read_cgi_request(int cgi_status);
 		// void			execute_cgi(int pipe_fd[], int pipe_data[], Request const & request);
 		// void			process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Request const & request);
 };

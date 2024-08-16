@@ -56,14 +56,14 @@ void	CGIGet::write_cgi(int cgi_status)
 	if (cgi_status != CGI_GET)
 		return ;
 
-	int	pid = fork();
-	if (pid == -1)
+	_pid = fork();
+	if (_pid == -1)
 	{
 		std::cerr << "Error fork(): " << strerror(errno) << std::endl;
 		setError(500);
 		return ;
 	}
-	if (pid == 0)
+	if (_pid == 0)
 	{
 		/* CHILD: write result to response_pipe */
 		close(_response_pipe[0]);
@@ -76,11 +76,14 @@ void	CGIGet::write_cgi(int cgi_status)
 	{
 		/* PARENT: close response_pipe[1] → wait */
 		close(_response_pipe[1]);
-		waitpid(pid, NULL, 0);
+		waitpid(_pid, NULL, 0);
 	}
 }
 
-
+void	CGIGet::read_cgi_request(int cgi_status)
+{
+	(void)cgi_status;
+}
 
 
 

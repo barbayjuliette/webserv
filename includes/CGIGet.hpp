@@ -26,6 +26,7 @@ class CGIGet : public CGIHandler
 		CGIGet &		operator=( CGIGet const & rhs );
 
 		void		write_cgi(int cgi_status);
+		void		read_cgi_request(int cgi_status);
 		// void			execute_cgi(int pipe_fd[], Request const & request);
 		// void			process_result_cgi(int pid, int pipe_fd[]);
 };

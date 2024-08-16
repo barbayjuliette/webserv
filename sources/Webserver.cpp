@@ -94,9 +94,11 @@ void	Webserver::printConfig(void)
 
 	for (it = locations.begin(); it != locations.end(); it++)
 	{
+		std::cout << it->first << '\n';
+		it->second->printConfig();
 		// if (it != locations.begin())
 		// 	std::cout << "\t";
-		std::cout << it->first << '\n';
+		// std::cout << it->first << '\n';
 	}
 }
 

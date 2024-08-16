@@ -212,15 +212,15 @@ size_t	LocationConfig::comparePath(const std::string& str)
 
 void	LocationConfig::printConfig(void)
 {
-	// Print::printLine("CASE SENSITIVE: ", _case_sensitive ? "on" : "off");
-	// Print::printLine("ROOT: ", _root);
-	// Print::printLine("INDEX: ", _index);
-	// Print::printLine("AUTOINDEX: ", _autoindex ? "on" : "off");
-	// if (_redirect.size() > 0)
-	// 	Print::printLine("REDIRECT: ", _redirect);
-	// Print::printVector("ALLOWED METHODS: ", _allowed_methods);
-	// Print::printMap("CGI PATH: ", _cgi_exec);
-	// Print::printMap("ERROR PAGES: ", _error_page);
+	Print::printLine("CASE SENSITIVE: ", _case_sensitive ? "on" : "off");
+	Print::printLine("ROOT: ", _root);
+	Print::printLine("INDEX: ", _index);
+	Print::printLine("AUTOINDEX: ", _autoindex ? "on" : "off");
+	if (_redirect.size() > 0)
+		Print::printLine("REDIRECT: ", _redirect);
+	Print::printVector("ALLOWED METHODS: ", _allowed_methods);
+	Print::printMap("CGI PATH: ", _cgi_exec);
+	Print::printMap("ERROR PAGES: ", _error_page);
 }
 
 /*

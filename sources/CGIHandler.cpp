@@ -24,7 +24,8 @@ _result(""),
 _content_type(""),
 _html(""),
 _headers(""),
-_error(0)
+_error(0),
+_pid(-1)
 {
 	_cgi_exec = _location->getCGIExec(_cgi_ext);
 	_full_path = get_cgi_location(_location->getPrefix(), _request.getPath());
@@ -138,7 +139,7 @@ void	CGIHandler::execute_cgi(int cgi_status)
 	std::string	request_method;
 	if (cgi_status == CGI_GET)
 		request_method = "REQUEST_METHOD=GET";
-	else if (cgi_status == CGI_POST)
+	else if (cgi_status == CGI_POST_READ)
 		request_method = "REQUEST_METHOD=POST";
 
 	std::string	content_type = "CONTENT_TYPE=" + _request.getHeaders()["content-type"];
@@ -168,10 +169,14 @@ void	CGIHandler::execute_cgi(int cgi_status)
 		NULL
 	};
 
+	for (size_t i = 0; env[i] != NULL; i++)
+		std::cerr << CYAN << "env[" << i << "]: " << env[i] << RESET << '\n';
+
 	execve(_cgi_exec.c_str(), argv, const_cast<char* const*>(env));
 
 	std::cerr << "Error execve: " << strerror(errno) << std::endl;
 	setError(500);
+	exit(1);
 }
 
 /*
@@ -217,6 +222,7 @@ void	CGIHandler::read_cgi_result(int cgi_status)
 
 void		CGIHandler::setHeaders()
 {
+	std::cout << "\n\nresult: " << _result << "\n\n";
 	std::size_t		pos = _result.find("\r\n\r\n", 0);
 
 	if (pos == std::string::npos)
@@ -230,10 +236,12 @@ void	CGIHandler::setContentType()
 	setHeaders();
 
 	std::string	low = _headers;
+	std::cout << "\nsetContentType(): low BEFORE: " << low << "\n";
 	for (size_t i = 0; i < _headers.size() ; i++)
 	{
 		low[i] = (char)tolower(_headers[i]);
 	}
+	std::cout << "\nsetContentType(): low AFTER: " << low << "\n\n";
 
 	std::size_t		pos = low.find("content-type:", 0);
 	if (pos == std::string::npos)
@@ -327,6 +335,11 @@ int			CGIHandler::getError()
 void		CGIHandler::setError(int error)
 {
 	this->_error = error;
+}
+
+int	CGIHandler::get_pid()
+{
+	return (this->_pid);
 }
 
 std::vector<int>	CGIHandler::get_response_pipe(void)

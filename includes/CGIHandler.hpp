@@ -31,6 +31,7 @@ enum cgi_status
 	NO_CGI,
 	CGI_GET,
 	CGI_POST,
+	CGI_POST_READ,
 	CGI_DONE
 };
 
@@ -52,6 +53,7 @@ class CGIHandler
 		std::string			_headers;
 		std::string			_full_path;
 		int					_error;
+		int					_pid;
 
 		CGIHandler();
 
@@ -62,11 +64,12 @@ class CGIHandler
 		CGIHandler &		operator=( CGIHandler const & rhs );
 
 		/* Transfer data to/from CGI */
-		void		create_response_pipe(void);
-		void		create_request_pipe(void);
-		void		read_cgi_result(int cgi_status);
-		void		execute_cgi(int cgi_status);
+		void			create_response_pipe(void);
+		void			create_request_pipe(void);
+		void			read_cgi_result(int cgi_status);
+		void			execute_cgi(int cgi_status);
 		virtual void	write_cgi(int cgi_status) = 0;
+		virtual void	read_cgi_request(int cgi_status) = 0;
 		// void			execute_cgi(int pipe_fd[], Request const & request);
 		// void			process_result_cgi(int pid, int pipe_fd[]);
 
@@ -87,6 +90,7 @@ class CGIHandler
 		void		setFullPath(std::string path);
 		int			getError();
 		void		setError(int error);
+		int			get_pid();
 		std::vector<int>	get_response_pipe(void);
 		std::vector<int>	get_request_pipe(void);
 };
