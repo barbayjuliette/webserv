@@ -55,12 +55,7 @@ void	CGIPost::read_cgi_request(int cgi_status)
 		return ;
 
 	if (_pid == 0)
-	{
-		/* CHILD: read form data from request_pipe */
-		close(_request_pipe[1]);
-		dup2(_request_pipe[0], STDIN_FILENO);
-		close(_request_pipe[0]);
-		
+	{		
 		std::cout << GREEN << "inside read_cgi_request\n" << RESET;
 		std::cerr << GREEN << "\n\nCHILD IS READING: pipe fd: " << _request_pipe[0] << '\n' << RESET;
 		// char buffer[500];
@@ -106,6 +101,11 @@ void	CGIPost::write_cgi(int cgi_status)
 	}
 	if (_pid == 0)
 	{
+		/* CHILD: read form data from request_pipe */
+		close(_request_pipe[1]);
+		dup2(_request_pipe[0], STDIN_FILENO);
+		close(_request_pipe[0]);
+
 		std::cout << "child is returning\n";
 		return ;
 	}
