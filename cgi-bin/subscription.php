@@ -2,8 +2,9 @@
 <body>
 
 <?php
-   print_r($_POST);
-   print_r($_REQUEST);
+	print("Content-type:text/html\r\n\r\n");
+	print_r($_POST);
+	print_r($_REQUEST);
 ?>
 
 Welcome <?php echo $_POST["name"]; ?><br>

@@ -169,6 +169,9 @@ void	CGIHandler::execute_cgi(int cgi_status)
 		NULL
 	};
 
+	for (size_t i = 0; argv[i] != NULL; i++)
+		std::cerr << RED << "argv[" << i << "]: " << argv[i] << RESET << '\n';
+
 	for (size_t i = 0; env[i] != NULL; i++)
 		std::cerr << CYAN << "env[" << i << "]: " << env[i] << RESET << '\n';
 
@@ -193,28 +196,24 @@ void	CGIHandler::read_cgi_result(int cgi_status)
 
 	char buffer[500];
 	memset(buffer, 0, sizeof(buffer));
-	ssize_t bytesRead = read(_response_pipe[0], buffer, 500);
-	
-	if (bytesRead == 0)
+	ssize_t bytes_read = -1;
+
+	while (bytes_read != 0)
 	{
-		std::cerr << "Error: No result CGI" << std::endl;
-		setError(500);
-		close(_response_pipe[0]);
-		return ;
-	}
-	while (bytesRead > 0)
-	{
-		bytesRead = read(_response_pipe[0], buffer, 500);
-		if (bytesRead < 0)
+		bytes_read = read(_response_pipe[0], buffer, 500);
+		std::cerr << "bytes_read: " << bytes_read << '\n' << RESET;
+		if (bytes_read < 0)
 		{
-			std::cerr << strerror(errno) << std::endl;
+			std::cerr << "Error: " << strerror(errno) << std::endl;
 			setError(500);
 			close(_response_pipe[0]);
 			return ;
 		}
-		setResult(getResult() + buffer);
+		else if (bytes_read > 0)
+			setResult(getResult() + buffer);
 	}
 	close(_response_pipe[0]);
+	std::cerr << GREEN << "GET FINAL RESULT:\n" << getResult() << "\n" << RESET;
 
 	setContentType();
 	setHtml();
@@ -222,7 +221,7 @@ void	CGIHandler::read_cgi_result(int cgi_status)
 
 void		CGIHandler::setHeaders()
 {
-	std::cout << "\n\nresult: " << _result << "\n\n";
+	// std::cout << "\n\nresult: " << _result << "\n\n";
 	std::size_t		pos = _result.find("\r\n\r\n", 0);
 
 	if (pos == std::string::npos)
@@ -264,6 +263,9 @@ void	CGIHandler::setHtml()
 		_html = _result;
 	else
 		_html = _result.substr(pos + delim.size() + 1, _result.size());
+	std::cout << "pos: " << pos << "\n";
+	std::cout << "SUBSTR: (" << _result[pos] << ")" << _result.substr(pos + delim.size() + 1, _result.size()) << "\n\n";
+	std::cout << "_html: " << _html << "\n";
 }
 
 /*

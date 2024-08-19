@@ -284,7 +284,7 @@ void	Cluster::runServers(void)
 				accept_new_connections(fd);
 			else if (is_cgi_pipe(fd))
 			{
-				std::cout << "\nevent on pipe fd: " << fd <<
+				std::cerr << "\nevent on pipe fd: " << fd <<
 					"; pid: " << _cgi_pipes[fd]->getResponse()->getCGIHandler()->get_pid() << "\n\n";
 				handle_cgi(_cgi_pipes[fd], event_type);
 			}
@@ -507,16 +507,19 @@ void	Cluster::handle_cgi(Client *client, uint32_t event_type)
 		return ;
 
 	int	cgi_status = response->getCGIStatus();
+	std::cerr << "\n\n----------------------------------------\n\n";
+	std::cerr << "handle_cgi: pid: " << response->getCGIHandler()->get_pid() << "\n\n";
 	if (event_type & EPOLLOUT && (cgi_status == CGI_GET || cgi_status == CGI_POST))
 	{
 		try
 		{
-			std::cout << CYAN << "inside handle_cgi EPOLLOUT: pid: " << response->getCGIHandler()->get_pid() << "\n" << RESET;
+			std::cerr << CYAN << "inside handle_cgi EPOLLOUT: pid: " << response->getCGIHandler()->get_pid() << "\n" << RESET;
 			response->getCGIHandler()->write_cgi(cgi_status);
 			if (cgi_status == CGI_POST && response->getCGIHandler()->get_pid() == 0)
 			{
 				response->setCGIStatus(CGI_POST_READ);
-				std::cout << "cgi status set to: " << response->getCGIStatus() << '\n';
+				std::cerr << "cgi status set to: " << response->getCGIStatus() << '\n';
+				return ;
 			}
 			else
 				std::cout << "cgi status: " << response->getCGIStatus() << '\n';
@@ -531,7 +534,7 @@ void	Cluster::handle_cgi(Client *client, uint32_t event_type)
 	{
 		try
 		{
-			std::cout << CYAN << "inside handle_cgi EPOLLIN: pid: " << response->getCGIHandler()->get_pid() << "\n" << RESET;
+			std::cerr << CYAN << "inside handle_cgi EPOLLIN: pid: " << response->getCGIHandler()->get_pid() << "\n" << RESET;
 
 			if (cgi_status == CGI_POST_READ)
 			{

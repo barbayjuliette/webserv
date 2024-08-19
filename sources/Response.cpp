@@ -316,9 +316,9 @@ void	Response::process_cgi_response(const Request& request)
 		_headers["Content-Type"] = _cgi_handler->getContentType();
 		set_success();
 	}
-	std::cout << "cgi error: " << _cgi_handler->getError() << '\n';
-	std::cout << "cgi body: " << _cgi_handler->getHtml() <<'\n';
-	std::cout << "cgi headers: " << _cgi_handler->getContentType() <<'\n';
+	std::cout << CYAN << "cgi error: " << RESET << _cgi_handler->getError() << '\n';
+	std::cout << CYAN << "cgi body: " << RESET << _cgi_handler->getHtml() <<'\n';
+	std::cout << CYAN << "cgi headers: " << RESET << _cgi_handler->getContentType() <<'\n';
 
 	_headers["Content-Length"] = intToString(this->_body.size());
 	_cgi_status = CGI_DONE;

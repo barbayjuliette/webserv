@@ -56,22 +56,25 @@ void	CGIPost::read_cgi_request(int cgi_status)
 
 	if (_pid == 0)
 	{		
-		std::cout << GREEN << "inside read_cgi_request\n" << RESET;
+		std::cerr << GREEN << "inside read_cgi_request\n" << RESET;
 		std::cerr << GREEN << "\n\nCHILD IS READING: pipe fd: " << _request_pipe[0] << '\n' << RESET;
 		// char buffer[500];
 		// memset(buffer, 0, sizeof(buffer));
 		// ssize_t bytesRead = read(_response_pipe[0], buffer, 500);
+		// std::string buf(buffer);
 		// if (bytesRead < 0)
 		// {
 		// 	std::cerr << RED << strerror(errno) << '\n' << RESET;
 		// }
+		// else if (bytesRead == 0)
+		// 	std::cerr << RED << "EOF\n" << RESET;
 		// else
-		// 	std::cerr << GREEN << buffer << '\n' << RESET;
+		// {
+		// 	std::cerr << GREEN << "bytesread > 0; " << buf.size() << buf << '\n' << RESET;
+		// }
 
 		/* CHILD: write result to response_pipe */
 		close(_response_pipe[0]);
-		dup2(_response_pipe[1], STDOUT_FILENO);
-		close(_response_pipe[1]);
 
 		execute_cgi(cgi_status);
 	}
@@ -107,6 +110,8 @@ void	CGIPost::write_cgi(int cgi_status)
 		close(_request_pipe[0]);
 
 		std::cout << "child is returning\n";
+		dup2(_response_pipe[1], STDOUT_FILENO);
+		close(_response_pipe[1]);
 		return ;
 	}
 	else
@@ -117,7 +122,7 @@ void	CGIPost::write_cgi(int cgi_status)
 		std::vector<unsigned char> body = _request.getBody();
 
 		int bytes = write(_request_pipe[1], reinterpret_cast<const char *>(body.data()), body.size());
-		std::cout << GREEN << "\n\nPARENT IS WRITING: "<< reinterpret_cast<const char *>(body.data()) << "\n\n" << RESET;
+		std::cout << GREEN << "\n\nPARENT IS WRITING to pipefd " << _request_pipe[1] << ":\n"<< RESET << reinterpret_cast<const char *>(body.data()) << "\n\n";
 		if (bytes <= 0)
 		{
 			std::cerr << "Error write(): " << strerror(errno) << std::endl;
