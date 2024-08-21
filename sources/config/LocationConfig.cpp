@@ -84,6 +84,7 @@ void	LocationConfig::parseCGIPath(t_strvec& exts, t_strvec& paths)
 	{
 		_cgi_exec[exts[i]] = paths[i];
 	}
+	_server->setCGIPath(_cgi_exec);
 }
 
 /* Syntax: location [modifier] [URI prefix] (+ inline open brace '{' if applicable) */
@@ -210,18 +211,35 @@ size_t	LocationConfig::comparePath(const std::string& str)
 ** ---------------------------------- PRINT -----------------------------------
 */
 
-void	LocationConfig::printConfig(void)
-{
-	Print::printLine("CASE SENSITIVE: ", _case_sensitive ? "on" : "off");
-	Print::printLine("ROOT: ", _root);
-	Print::printLine("INDEX: ", _index);
-	Print::printLine("AUTOINDEX: ", _autoindex ? "on" : "off");
-	if (_redirect.size() > 0)
-		Print::printLine("REDIRECT: ", _redirect);
-	Print::printVector("ALLOWED METHODS: ", _allowed_methods);
-	Print::printMap("CGI PATH: ", _cgi_exec);
-	Print::printMap("ERROR PAGES: ", _error_page);
-}
+// void	LocationConfig::printConfig(void)
+// {
+// 	Print::printLine("CASE SENSITIVE: ", _case_sensitive ? "on" : "off");
+// 	Print::printLine("ROOT: ", _root);
+// 	Print::printLine("INDEX: ", _index);
+// 	Print::printLine("AUTOINDEX: ", _autoindex ? "on" : "off");
+// 	if (_redirect.size() > 0)
+// 		Print::printLine("REDIRECT: ", _redirect);
+// 	Print::printVector("ALLOWED METHODS: ", _allowed_methods);
+// 	Print::printMap("CGI PATH: ", _cgi_exec);
+// 	Print::printMap("ERROR PAGES: ", _error_page);
+// }
+
+// void	printSym(bool isTrue)
+// {
+// 	if (isTrue)
+// 		std::cout << std::setw(13) << "✓";
+// 	else
+// 		std::cout << std::setw(13) << "—";
+// }
+
+// void	LocationConfig::printConfig(void)
+// {
+// 	std::cout << std::setw(12) << std::left << Print::trunc(_prefix);
+// 	printSym(_autoindex);
+// 	printSym(_case_sensitive);
+// 	printSym(!_redirect.empty());
+// 	std::cout << std::endl;
+// }
 
 /*
 ** -------------------------------- ACCESSORS ---------------------------------

@@ -467,7 +467,7 @@ void	Cluster::handle_write_connection(int client_socket)
 		remove_cgi_pipes(client->getRequest(), response);
 	if (bytes_sent == response->getFullResponse().size())
 	{
-		if (CTRACE)
+		if (TRACE)
 			std::cout << CYAN << "\ninside handle_write_connection: fd " << client_socket << "\n\n" << RESET;
 		if (DEBUG)
 		{
@@ -746,7 +746,6 @@ void	Cluster::printServerSockets(void)
 		std::cout << CYAN << "HOST: " << it->second.host << "; PORT: " << it->first << '\n' << RESET;
 		std::cout << "- Socket fd: " << it->second.fd << '\n';
 		std::cout << "- No. of servers listening: " << countServers(it) << "\n";
-		std::cout << "\n-------------------------------------------------------\n\n";
 		printServers(it->second.servers);
 		std::cout << "\n-------------------------------------------------------\n";
 	}
