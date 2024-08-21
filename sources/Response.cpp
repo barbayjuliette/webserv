@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/13 10:58:07 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/16 15:04:40 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,8 @@ std::map<int, std::string>	Response::_status_lookup;
 Response::Response() {}
 
 Response::Response(Request &request, ServerConfig *conf) :
+_status_code(0),
+_status_text(""),
 _cgi_status(NO_CGI),
 _body(""),
 _config(conf),
