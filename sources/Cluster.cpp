@@ -369,7 +369,8 @@ Client*		Cluster::getClient(int socket)
 
 void	Cluster::assignServer(int client_socket)
 {
-	Request*	request = _clients[client_socket]->getRequest();
+	Client*		client = _clients[client_socket];
+	Request*	request = client->getRequest();
 
 	std::string name = request->getHost();
 	std::string host = request->getHost();
@@ -377,18 +378,18 @@ void	Cluster::assignServer(int client_socket)
 	{
 		host = getClientIPAddress(client_socket);
 	}
-	_clients[client_socket]->setServer((getServerByPort(name, host, request->getPort())));
-	if (!_clients[client_socket]->getServer())
+	client->setServer((getServerByPort(name, host, request->getPort())));
+	if (!client->getServer())
 		throw std::runtime_error("No server matched the request");
 	// If server is valid -> set server for request
-	_clients[client_socket]->getRequest()->setServer(_clients[client_socket]->getServer());
+	client->getRequest()->setServer(client->getServer());
 	if (CTRACE)
 	{
 		std::cout << GREEN << "found server match\n" << RESET;
-		_clients[client_socket]->getServer()->printServerNames();
+		client->getServer()->printServerNames();
 	}
 	// Set request's body max length to server config's body max len
-	request->setBodyMaxLength(_clients[client_socket]->getServer()->getConfig()->getBodyMaxLength());
+	request->setBodyMaxLength(client->getServer()->getConfig()->getBodyMaxLength());
 }
 
 /* Preliminary request parsing: extract host and port to determine which server to route to */
@@ -423,8 +424,6 @@ void	Cluster::handle_read_connection(int client_socket)
 				-> Check again if header complete */
 		Request*	request = _clients[client_socket]->getRequest();
 
-		std::cout << CYAN << "[PORT " << request->getPort() << "]: " << RESET << request->getMethod() << " request received for " << request->getServer()->getServerName()[0] << std::endl;
-		// std::cout << request->getServer()->getServerName()[0] << " received a " << request->getMethod() << " request, on PORT "  << std::endl;
 		if (request->getHeaderLength() == -1)
 		{
 			request->handle_incomplete_header(bytes_read, buffer);
@@ -438,6 +437,8 @@ void	Cluster::handle_read_connection(int client_socket)
 			if (!_clients[client_socket]->getServer())
 				assignServer(client_socket);
 			request->checkBodyLength();
+			std::cout << CYAN << "[PORT " << request->getPort() << "]: " << RESET << request->getMethod() << " request received for " << request->getServer()->getServerName()[0] << std::endl;
+		// std::cout << request->getServer()->getServerName()[0] << " received a " << request->getMethod() << " request, on PORT "  << std::endl;
 			if (TIMEOUT_DEBUG)
 			{
 				request->print_variables();
