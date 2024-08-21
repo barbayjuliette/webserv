@@ -272,7 +272,45 @@ void	Request::boundary_found()
     {
     	if (VERBOSE)
     		std::cout << GREEN "set req complete 5" << RESET << std::endl;
-    	_req_complete = true;
+    	if (!_encoding_chunked)
+    		_req_complete = true;
+    }
+}
+
+void	Request::appendChunkedBody(char *buffer, int bytes_read)
+{
+	int i = 0;
+    while (i < bytes_read) 
+    {
+        // Find the chunk size in hexadecimal format
+        char *chunk_size_start = buffer + i;
+        char *chunk_size_end = std::strstr(chunk_size_start, "\r\n");
+        if (!chunk_size_end)
+            break;
+
+        // Convert chunk size from hexadecimal to integer
+        *chunk_size_end = '\0';
+        int chunk_size = std::strtol(chunk_size_start, NULL, 16);
+        if (chunk_size == 0) 
+        {
+            // Last chunk received
+            std::cout << GREEN << "set req complete 4" << RESET << std::endl;
+            _req_complete = true;
+            return ;
+        }
+
+        // Move the pointer past the chunk size and \r\n
+        i += (chunk_size_end - chunk_size_start) + 2;
+
+        // Ensure there are enough bytes in the buffer for the chunk data and \r\n
+        if (i + chunk_size + 2 > bytes_read) 
+            break;
+
+        // Append the chunk data to the body
+        _body.insert(_body.end(), buffer + i, buffer + i + chunk_size);
+
+        // Move the pointer past the chunk data and \r\n
+        i += chunk_size + 2;
     }
 }
 
@@ -284,8 +322,7 @@ bool	Request::handle_chunk(char *buffer, int bytes_read)
     }
  	// Parse the new chunked data
     _raw.insert(_raw.end(), buffer, buffer + bytes_read);
-    int i = 0;
-    if (_content_type == "multipart/form-data") 
+    if (_content_type == "multipart/form-data" && !_encoding_chunked) 
     {
         _body.insert(_body.end(), buffer, buffer + bytes_read);
         if (VERBOSE)
@@ -297,38 +334,7 @@ bool	Request::handle_chunk(char *buffer, int bytes_read)
     }
     else
     {
-	    while (i < bytes_read) 
-	    {
-	        // Find the chunk size in hexadecimal format
-	        char *chunk_size_start = buffer + i;
-	        char *chunk_size_end = std::strstr(chunk_size_start, "\r\n");
-	        if (!chunk_size_end)
-	            break;
-
-	        // Convert chunk size from hexadecimal to integer
-	        *chunk_size_end = '\0';
-	        int chunk_size = std::strtol(chunk_size_start, NULL, 16);
-	        if (chunk_size == 0) 
-	        {
-	            // Last chunk received
-	            std::cout << GREEN << "set req complete 4" << RESET << std::endl;
-	            _req_complete = true;
-	            return true;
-	        }
-
-	        // Move the pointer past the chunk size and \r\n
-	        i += (chunk_size_end - chunk_size_start) + 2;
-
-	        // Ensure there are enough bytes in the buffer for the chunk data and \r\n
-	        if (i + chunk_size + 2 > bytes_read) 
-	            break;
-
-	        // Append the chunk data to the body
-	        _body.insert(_body.end(), buffer + i, buffer + i + chunk_size);
-
-	        // Move the pointer past the chunk data and \r\n
-	        i += chunk_size + 2;
-	    }
+    	appendChunkedBody(buffer, bytes_read);
 	}
 	return _req_complete;
 }
@@ -348,7 +354,10 @@ void Request::initRequest()
 	if (this->_headers.find("transfer-encoding") != this->_headers.end())
 	{
 		if (_headers["transfer-encoding"] == "chunked")
+		{
 			_is_chunked = true;
+			_encoding_chunked = true;
+		}
 	}
 	// If content length key found
 	if (this->_headers.find("content-length") != this->_headers.end())
@@ -387,6 +396,50 @@ void Request::initRequest()
 	}
 }
 
+void Request::getInitialChunk(std::vector<unsigned char>::iterator body_start)
+{
+	// skip past first \r\n and append
+	while (body_start != _raw.end())
+	{
+		std::vector<unsigned char> chunk_size_delimiter;
+        chunk_size_delimiter.push_back('\r');
+        chunk_size_delimiter.push_back('\n');
+
+		// get chunk size
+		std::vector<unsigned char>::iterator chunk_size_it = \
+			std::search(
+				body_start, 
+				_raw.end(), 
+				chunk_size_delimiter.begin(), 
+				chunk_size_delimiter.end()
+			);
+
+	    if (chunk_size_it == _raw.end())
+	    	break;
+
+	    // convert chunk size from hex to decimal
+	    std::string chunk_size_str(body_start, chunk_size_it);
+	    std::istringstream iss(chunk_size_str);
+	    std::size_t chunk_size;
+	    iss >> std::hex >> chunk_size;
+
+	    if (chunk_size == 0)
+	    {
+	    	_req_complete = true;
+	    	break;
+	    }
+
+	    // check if there is valid data in raw to assign to body
+	    body_start = chunk_size_it + 2;
+		if (body_start + chunk_size > _raw.end())
+			break;
+
+		// assign data from raw to body
+		_body.insert(_body.end(), body_start, body_start + chunk_size);
+		body_start += chunk_size + 2;
+	}
+}
+
 void Request::initBody()
 {
 	// If chunked -> copy body to _body -> continue appending from subsequent chunked reqs
@@ -412,7 +465,10 @@ void Request::initBody()
 			body_start += 4;
 			if (_is_chunked)
 			{
-				_body.assign(body_start, _raw.end());
+				if (_encoding_chunked == true)
+					getInitialChunk(body_start);
+				else
+					_body.assign(body_start, _raw.end());
 				boundary_found();
 				if (VERBOSE) 
 				{
@@ -530,8 +586,10 @@ Request::Request(char *full_request, int bytes_read) :
 	_body_max_length(DEFAULT_BODY_MAX),
 	_content_length(-1),
 	_is_chunked(false),
+	_encoding_chunked(false),
 	_error(NO_ERR)
 {
+	_timeout = time(NULL);
 	copyRawRequest(full_request, bytes_read);
 	if (this->_raw.size() == 0)
 	{
@@ -676,6 +734,11 @@ error_type	Request::getError() const
 Webserver *Request::getServer()
 {
 	return (this->_server);
+}
+
+time_t	Request::getTimeout()
+{
+	return (this->_timeout);
 }
 
 void Request::setBodyMaxLength(size_t len)

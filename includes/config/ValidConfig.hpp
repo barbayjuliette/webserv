@@ -48,7 +48,7 @@ class ValidConfig
 		t_strvec		_server_name;
 		t_strvec		_allowed_methods;
 		t_strvec		_cgi_ext; //cgi file extensions
-		t_strvec		_cgi_exec; //paths to cgi executable
+		std::map<std::string, std::string>	_cgi_exec; //[ext] = path executable
 
 		std::map<int, std::string>			_error_page;
 		std::map<std::string, t_directive>	_validKeys;
@@ -86,8 +86,6 @@ class ValidConfig
 		int				strToSizet(const std::string& str);
 		std::string		intToStr(const int nb);
 		bool			isStatusCode(const std::string& str);
-		int				isDirectory(const std::string& str);
-		static int		isRegularFile(const std::string& str);
 		bool			isValidMethod(const std::string& str);
 
 		/* Accessors */

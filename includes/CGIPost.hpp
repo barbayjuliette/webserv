@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/05 21:15:42 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 19:35:30 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/12 15:37:17 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,19 +14,19 @@
 
 # include "CGIHandler.hpp"
 
-class CGIPost : public CGIHandler 
+class CGIPost : public CGIHandler
 {
 	private:
-		std::string		_cgi_exec;
-
 		CGIPost();
 
 	public:
-		CGIPost(Request const & request, LocationConfig* location, std::string ext);
+		CGIPost(const Request& request, LocationConfig *location, std::string cgi_ext);
 		CGIPost(CGIPost const & src);
 		~CGIPost();
 		CGIPost &		operator=( CGIPost const & rhs );
 
-		void			execute_cgi(int pipe_fd[], int pipe_data[], Request const & request);
-		void			process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Request const & request);
+		void		write_cgi(int cgi_status);
+		void		read_cgi_request(int cgi_status);
+		// void			execute_cgi(int pipe_fd[], int pipe_data[], Request const & request);
+		// void			process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Request const & request);
 };

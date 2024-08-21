@@ -69,14 +69,23 @@ Client &				Client::operator=( Client const & rhs )
 /*
 ** --------------------------------- METHODS ----------------------------------
 */
+
 void	Client::reset(void)
 {
-	// delete (_request);
-	// _request = NULL;
 	if (_response)
 		delete (_response);
+	if (_request)
+		delete (_request);
 	_response = NULL;
-	delete (_request);
+	_request = NULL;
+	_server = NULL;
+}
+
+void	Client::deleteRequest(void)
+{
+	if (_request)
+		delete _request;
+	_request = NULL;
 }
 
 void	Client::setRequest(Request* request)
@@ -92,13 +101,6 @@ void	Client::setResponse(Response* response)
 void	Client::setServer(Webserver* server)
 {
 	_server = server;
-}
-
-void	Client::deleteRequest(void)
-{
-	if (_request)
-		delete _request;
-	_request = NULL;
 }
 
 /*

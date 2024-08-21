@@ -19,7 +19,8 @@
 # include "ConfigFile.hpp"
 
 # define MAX_EVENTS 10
-# define TIMEOUT 1000
+# define TIMEOUT 3
+# define REQ_TIMEOUT 3
 
 class ConfigFile;
 class ServerConfig;
@@ -43,6 +44,7 @@ class Cluster
 		static int										_epoll_fd;
 		std::multimap<int /*port*/, struct SocketInfo>	_server_sockets;
 		std::map<int /*socket fd*/, Client*>			_clients;
+		std::map<int /*cgi pipefd*/, Client*>			_cgi_pipes;
 
 	public:
 		/* Constructors */
@@ -58,10 +60,15 @@ class Cluster
 
 		/* Epoll methods */
 		void			initEpoll(void);
-		static void		addToEpoll(int socket_fd, struct epoll_event *ep_event);
-		static void		removeFromEpoll(int socket_fd);
+		static void		addToEpoll(int fd, uint32_t events);
+		static void		removeFromEpoll(int fd);
+		void			add_cgi_pipes(Client *client, Response *response, int cgi_status);
+		void			remove_cgi_pipes(Request *request, Response *response);
 
 		/* Server socket methods */
+		void				setNonBlocking(int fd);
+		void				setNonBlocking(std::vector<int> fds);
+		void				setReuseAddr(int socket_fd);
 		t_mmap::iterator	findHostPort(const std::string& host, int port);
 		Webserver*			getServerByPort(const std::string& name, const std::string& host, int port);
 		Webserver*			getServerByName(std::vector<Webserver*>& servers, const std::string& name);
@@ -71,14 +78,15 @@ class Cluster
 
 		/* Methods */
 		void			runServers(void);
-		int				accept_new_connections(int server_socket);
+		void			accept_new_connections(int server_socket);
 		void			handle_read_connection(int client_socket);
 		void			handle_write_connection(int client_socket);
-		void			handle_client_events(int client_socket, uint32_t event_type);
+		void			handle_cgi(Client* client, uint32_t event_type);
 		void			removeClient(int client_socket);
 
 		/* Utils */
 		bool			is_server_socket(const int fd);
+		bool			is_cgi_pipe(const int fd);
 		bool			isIPAddress(const std::string& str);
 		std::string		getClientIPAddress(const int socket_fd);
 		int				getExistingClient(struct sockaddr_in *addr);
@@ -86,6 +94,7 @@ class Cluster
 		static void		signal_handler(int signum);
 		int				countServers(std::string& host, int port);
 		int				countServers(t_mmap::iterator res);
+		void 			checkTimeout(void);
 
 		/* Print */
 		void			printServerSockets(void);

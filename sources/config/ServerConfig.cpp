@@ -135,6 +135,7 @@ LocationConfig*	ServerConfig::matchLocation(const std::string& path)
 
 void	ServerConfig::printConfig(void)
 {
+	std::cout << std::left;
 	Print::printVector("SERVER NAMES: ", _server_name);
 	Print::printLine("ROOT: ", _root);
 	Print::printLine("INDEX: ", _index);
@@ -144,6 +145,32 @@ void	ServerConfig::printConfig(void)
 	if (_redirect.size() > 0)
 		Print::printLine("REDIRECT: ", _redirect);
 	Print::printMap("ERROR PAGES: ", _error_page);
+	if (_cgi_exec.size() > 0)
+		Print::printMap("CGI: ", _cgi_exec);
+
+	/* Print config for all locations on this server */
+	// std::cout << '\n' << GREEN << std::setw(5) << std::left << " ";
+	// std::cout << std::setw(20) << "LOCATION";
+	// std::cout << '\n' << RESET;
+
+	// std::map<std::string, LocationConfig*>::iterator	it;
+	// int	i = 0;
+	// for (it = _locations.begin(); it != _locations.end(); it++)
+	// {
+	// 	std::stringstream	stream;
+	// 	stream << "[" << i++ << "]";
+	// 	std::cout << std::setw(5) << stream.str();
+	// 	std::cout << std::setw(20) << it->first << '\n';
+	// }
+}
+
+/*
+** --------------------------------- SETTER -----------------------------------
+*/
+
+void	ServerConfig::setCGIPath(std::map<std::string, std::string> cgi_map)
+{
+	this->_cgi_exec = cgi_map;
 }
 
 /*

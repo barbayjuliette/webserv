@@ -31,7 +31,6 @@ class LocationConfig : public ValidConfig
 	private:
 		ServerConfig*						_server;
 		std::string							_prefix;
-		std::map<std::string, std::string>	_cgi_exec; //[ext] = exec path
 		bool								_match_exact;
 		bool								_case_sensitive;
 

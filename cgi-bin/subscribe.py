@@ -13,7 +13,7 @@ print ('<body>')
 
 email = form.getvalue('email')
 
-if email is None or email == "":
+if email == None or email == "":
 	print ('<p>No data received from form, please try again</p>')
 else:
 	now = datetime.today().strftime('%Y-%m-%d %H:%M:%S')

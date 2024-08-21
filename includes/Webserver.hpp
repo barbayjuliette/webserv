@@ -15,9 +15,10 @@
 # include "webserv.hpp"
 # include "Client.hpp"
 # include "ConfigFile.hpp"
-# include "Cluster.hpp"
 
 # define BUFFER_SIZE 50000
+
+class Client;
 
 class Webserver
 {
@@ -28,7 +29,7 @@ class Webserver
 		std::vector<std::string>	_server_name;
 		struct sockaddr_in*			_address;
 		ServerConfig*				_config;
-		std::map<int, Client*>		_clients;
+		// std::map<int, Client*>		_clients;
 
 		Webserver(); //should not be constructed without server config
 
@@ -41,15 +42,15 @@ class Webserver
 		~Webserver();
 
 		/* Operator overload */
-		Webserver &		operator=( Webserver const & rhs );
+		Webserver&	operator=( Webserver const & rhs );
 
 		/* Connections */
-		void			create_response(Request *request, Client *client);
+		void		create_response(Request *request, Client *client);
 
 		/* Utils */
-		void			check(int num);
-		void			printServerNames(void);
-		void			printConfig(void);
+		void		check(int num);
+		void		printServerNames(void);
+		void		printConfig(void);
 
 		// Accessors
 		int							getServerSocket();
@@ -57,8 +58,8 @@ class Webserver
 		std::string					getHost();
 		std::vector<std::string>	getServerName();
 		struct sockaddr_in*			getAddress();
-		std::map<int, Client*>		getClients();
-		Client*						getClient(int socket);
+		// std::map<int, Client*>		getClients();
+		// Client*						getClient(int socket);
 		ServerConfig*				getConfig();
 		int							getBodyMaxLength(void);
 };

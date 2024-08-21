@@ -65,7 +65,7 @@ void	ConfigFile::openFile(const char *file)
 	{
 		throw ConfigReadError("Failed to open " + std::string(file));
 	}
-	if (!ValidConfig::isRegularFile(file))
+	if (!isRegularFile(file))
 	{
 		throw ConfigReadError(std::string(file) + " is not a regular file");
 	}
@@ -170,7 +170,9 @@ void	ConfigFile::addKeyValues(t_strvec& tokens, t_strmap& map)
 
 void	ConfigFile::validateConfig(void)
 {
-	for (std::vector<ServerConfig*>::iterator it = this->_servers.begin(); it != this->_servers.end(); it++)
+	std::vector<ServerConfig*>::iterator	it;
+
+	for (it = this->_servers.begin(); it != this->_servers.end(); it++)
 	{
 		// if (TRACE)
 		// 	std::cout << CYAN << "\nCHECKING SERVER DIRECTIVES:\n" << RESET;
@@ -186,6 +188,46 @@ void	ConfigFile::validateConfig(void)
 			loc->second->validateKeys();
 		}
 	}
+	checkDuplicateServers();
+}
+
+void	ConfigFile::checkDuplicateServers(void)
+{
+	for (size_t i = 0; i < _servers.size() - 1; i++)
+	{
+		for (size_t j = i + 1; j < _servers.size(); j++)
+		{
+			if (_servers[i]->getPort() == _servers[j]->getPort()
+				&& _servers[i]->getHost() == _servers[j]->getHost())
+			{
+				t_strvec	names_1 = _servers[i]->getServerName();
+				t_strvec	names_2 = _servers[j]->getServerName();
+
+				if (names_1.empty() || names_2.empty())
+				{
+					warnDuplicateServers(_servers[i]->getHost(), _servers[i]->getPort(), "No unique server name");
+					return ;
+				}
+
+				for (size_t k = 0; k < names_1.size(); k++)
+				{
+					if (std::find(names_2.begin(), names_2.end(), names_1[k]) != names_2.end())
+					{
+						warnDuplicateServers(_servers[i]->getHost(), _servers[i]->getPort(), names_1[k]);
+						return ;
+					}
+				}
+			}
+		}
+	}
+}
+
+void	ConfigFile::warnDuplicateServers(std::string host, int port, std::string name)
+{
+	std::cerr << RED << "Warning: Duplicate server detected in config file.\n"
+		<< "Host: " << host
+		<< "; Port: " << port
+		<< "; Server name: " << name << '\n' << RESET;
 }
 
 /*
@@ -264,6 +306,15 @@ int	ConfigFile::checkContext(std::string& context)
 			return (i);
 	}
 	return (-1);
+}
+
+int	ConfigFile::isRegularFile(const std::string& str)
+{
+	struct stat	buffer;
+	const char	*path = str.c_str();
+
+	stat(path, &buffer);
+	return (S_ISREG(buffer.st_mode));
 }
 
 /*

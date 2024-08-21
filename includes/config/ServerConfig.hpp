@@ -42,6 +42,8 @@ class ServerConfig : public ValidConfig
 		void			validateKeys(void); //overload
 		void			setLocation(const std::string& path, LocationConfig* location);
 		LocationConfig*	matchLocation(const std::string& path);
+		void			setCGIPath(std::map<std::string, std::string> cgi_map);
+
 
 		/* Print */
 		void			printConfig(void);

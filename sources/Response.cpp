@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/13 10:58:07 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/16 15:04:40 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,14 @@ std::map<int, std::string>	Response::_status_lookup;
 
 Response::Response() {}
 
-Response::Response(Request &request, ServerConfig *conf) : _body(""), _config(conf)
+Response::Response(Request &request, ServerConfig *conf) :
+_status_code(0),
+_status_text(""),
+_cgi_status(NO_CGI),
+_body(""),
+_config(conf),
+_location(NULL),
+_cgi_handler(NULL)
 {
 	if (this->_status_lookup.empty())
 		init_status_lookup();
@@ -32,14 +39,7 @@ Response::Response(Request &request, ServerConfig *conf) : _body(""), _config(co
 	_location = _config->matchLocation(request.getPath());
 	if (_location->getRedirect().size() > 0)
 	{
-		_path = _location->getRoot() + _location->getRedirect();
-		std::cout << CYAN << "RESPONSE - REDIRECT: " << RESET << _path << '\n';
-		this->_status_code = 301;
-		this->_status_text = "Moved Permanently";
-		_headers["Location"] = "/database/";
-		setHeaders(request);
-		// std::cout << "FULL REDIRECT RESPONSE: \n";
-		// std::cout << getFullResponse() << std::endl;
+		respond_redirect(request);
 		return ;
 	}
 	else
@@ -48,6 +48,7 @@ Response::Response(Request &request, ServerConfig *conf) : _body(""), _config(co
 		std::cout << CYAN << "RESPONSE - PATH: " << RESET << _path << "\n\n";
 	}
 
+	_path = _location->getRoot() + request.getPath().substr(1, std::string::npos);
 	setContentType(_path);
 
 	if (request.getError() != NO_ERR && request.getError() != NOT_SUPPORTED)
@@ -70,7 +71,7 @@ Response::Response(Request &request, ServerConfig *conf) : _body(""), _config(co
 	setHeaders(request);
 }
 
-void	Response::setHeaders(Request &request)
+void	Response::setHeaders(const Request &request)
 {
 	_headers["Cache-Control"] = "no-cache, private";
 	this->_http_version = request.getHttpVersion();
@@ -102,7 +103,11 @@ _location(src._location)
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
 
-Response::~Response() {}
+Response::~Response()
+{
+	if (_cgi_handler)
+		delete _cgi_handler;
+}
 
 /*
 ** --------------------------------- OVERLOAD ---------------------------------
@@ -213,9 +218,9 @@ void	Response::respond_get_request(const Request &request)
 
 	if (_location->getCGIExec(req_ext).size() > 0)
 	{
-		CGIHandler*	cgi = new CGIGet(request, _location, req_ext);
-		process_cgi_response(cgi);
-		delete (cgi);
+		_cgi_status = CGI_GET;
+		_cgi_handler = new CGIGet(request, _location, req_ext);
+		_headers["Content-Length"] = intToString(this->_body.size());
 		return ;
 	}
 
@@ -238,19 +243,18 @@ void	Response::respond_get_request(const Request &request)
 
 void	Response::respond_post_request(const Request &request)
 {
-	std::ifstream				page(this->_path.c_str());
 	std::string	req_ext = extract_cgi_extension(request.getPath());
 
 	if (_location->getCGIExec(req_ext).size() > 0) // Check if finishes with CGI extension.
 	{
-		CGIHandler*	cgi = new CGIPost(request, _location, req_ext);
-		process_cgi_response(cgi);
-		delete cgi;
+		_cgi_status = CGI_POST;
+		_cgi_handler = new CGIPost(request, _location, req_ext);
 	}
-	else if (!page.good())// Path does not exist : 404
-		set_error(404);
 	else // Page exists but cgi is not enabled
+	{
+		std::cerr << RED << "POST only allowed with CGI\n" << RESET;
 		set_allow_methods(true);
+	}
 	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
@@ -274,6 +278,15 @@ void	Response::respond_delete_request()
 	_headers["Content-Length"] = intToString(this->_body.size());
 }
 
+void	Response::respond_redirect(const Request &request)
+{
+	_path = _location->getRoot() + _location->getRedirect().substr(1, std::string::npos);
+	this->_status_code = 301;
+	this->_status_text = _status_lookup[_status_code];
+	_headers["Location"] = _location->getRedirect();
+	setHeaders(request);
+}
+
 /*
 ** -------------------------------- CGI UTILS ---------------------------------
 */
@@ -286,17 +299,41 @@ std::string	Response::extract_cgi_extension(const std::string& req_path)
 	return (req_path.substr(i, std::string::npos));
 }
 
-void	Response::process_cgi_response(CGIHandler* cgi)
+void	Response::process_cgi_response(const Request& request)
 {
-	if (cgi->getError() != 0)
-		set_error(cgi->getError());
+	(void)request; //remove if request info not needed?
+
+	if (_cgi_handler->getError() != 0)
+		set_error(_cgi_handler->getError());
 	else
 	{
-		_body = cgi->getHtml();
-		_headers["Content-Type"] = cgi->getContentType();
+		_body = _cgi_handler->getHtml();
+		_headers["Content-Type"] = _cgi_handler->getContentType();
 		set_success();
 	}
+	// std::cout << CYAN << "cgi error: " << RESET << _cgi_handler->getError() << '\n';
+	// std::cout << CYAN << "cgi body: " << RESET << _cgi_handler->getHtml() <<'\n';
+	// std::cout << CYAN << "cgi headers: " << RESET << _cgi_handler->getContentType() <<'\n';
+
 	_headers["Content-Length"] = intToString(this->_body.size());
+	_cgi_status = CGI_DONE;
+	getDate();
+	setFullResponse();
+}
+
+void	Response::setCGIStatus(int flag)
+{
+	this->_cgi_status = flag;
+}
+
+int	Response::getCGIStatus() const
+{
+	return (this->_cgi_status);
+}
+
+CGIHandler*	Response::getCGIHandler() const
+{
+	return (this->_cgi_handler);
 }
 
 /*
@@ -439,7 +476,8 @@ void	Response::set_allow_methods(bool post)
 	_headers["Allow"] = methods;
 	set_error(405);
 	_headers["Content-Length"] = intToString(this->_body.size());
-	std::cout << "ALLOWED METHODS: " << methods << std::endl;
+	if (!post)
+		std::cerr << RED << "ALLOWED METHODS: " << methods << std::endl << RESET;
 }
 
 /*
@@ -491,6 +529,11 @@ void		Response::getDate()
 	char formatted_date[30];
 	std::strftime(formatted_date, sizeof(formatted_date), "%a, %d %b %Y %H:%M:%S GMT", gmt);
 	_headers["Date"] = formatted_date;
+}
+
+LocationConfig*	Response::getLocation() const
+{
+	return (this->_location);
 }
 
 /* ************************************************************************** */

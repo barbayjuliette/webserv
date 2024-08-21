@@ -48,9 +48,24 @@ class Print
 			typename std::map<T, V>::iterator	it;
 			for (it = map.begin(); it != map.end(); it++)
 			{
-				std::cout << GREEN << std::setw(21) << "[" << it->first << "] = " << RESET;
+				std::cout << GREEN << std::right << std::setw(21) << "[" << it->first << "] = " << RESET;
 				printValue("", it->second);
-				std::cout << '\n';
+				std::cout << '\n' << std::left;
+			}
+		}
+
+		template <typename T, typename V>
+		static void	printMultimap(std::multimap<T, V>& mmap)
+		{
+			if (mmap.empty())
+				return ;
+
+			typename std::multimap<T, V>::iterator	it;
+			for (it = mmap.begin(); it != mmap.end(); it++)
+			{
+				std::cout << GREEN << std::right << std::setw(21) << "[" << it->first << "] = " << RESET;
+				printValue("", it->second);
+				std::cout << '\n' << std::left;
 			}
 		}
 
@@ -71,6 +86,16 @@ class Print
 				else
 					std::cout << '\n';
 			}
+		}
+
+		static std::string	trunc(std::string var)
+		{
+			if (var.size() > 10)
+			{
+				var.resize(9);
+				return (var.append("."));
+			}
+			return (var);
 		}
 };
 

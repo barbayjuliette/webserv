@@ -32,8 +32,7 @@ _host(src._host),
 _port(src._port),
 _server_name(src._server_name),
 _address(src._address),
-_config(src._config),
-_clients(src._clients)
+_config(src._config)
 {}
 
 /*
@@ -50,7 +49,6 @@ Webserver&	Webserver::operator=( Webserver const & rhs )
 		this->_server_name = rhs._server_name;
 		this->_address = rhs._address;
 		this->_config = rhs._config;
-		this->_clients = rhs._clients;
 	}
 	return (*this);
 }
@@ -59,17 +57,7 @@ Webserver&	Webserver::operator=( Webserver const & rhs )
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
 
-Webserver::~Webserver()
-{
-	// close(_server_socket);
-
-	// std::map<int, Client*>::iterator	it;
-	// for (it = _clients.begin() ; it != _clients.end(); it++)
-	// {
-	// 	delete (it->second);
-	// }
-	// _clients.clear();
-}
+Webserver::~Webserver() {}
 
 /*
 ** --------------------------------- METHODS ----------------------------------
@@ -79,7 +67,7 @@ void	Webserver::create_response(Request *request, Client *client)
 {
 	Response	*_response = new Response(*request, this->_config);
 	client->setResponse(_response);
-	client->deleteRequest();
+	// client->deleteRequest();
 }
 
 void	Webserver::check(int num)
@@ -91,18 +79,13 @@ void	Webserver::check(int num)
 	}
 }
 
+/*
+** ---------------------------------- PRINT -----------------------------------
+*/
+
 void	Webserver::printConfig(void)
 {
 	_config->printConfig();
-
-	std::map<std::string, LocationConfig*>	locations = _config->getLocations();
-	std::map<std::string, LocationConfig*>::iterator	it;
-
-	for (it = locations.begin(); it != locations.end(); it++)
-	{
-		std::cout << GREEN << "\n--> LOCATION: " << it->second->getPrefix() << '\n' << RESET;
-		it->second->printConfig();
-	}
 }
 
 void	Webserver::printServerNames(void)
@@ -148,17 +131,17 @@ struct sockaddr_in*	Webserver::getAddress()
 	return (_address);
 }
 
-std::map<int, Client*>		Webserver::getClients()
-{
-	return (_clients);
-}
+// std::map<int, Client*>		Webserver::getClients()
+// {
+// 	return (_clients);
+// }
 
-Client*		Webserver::getClient(int socket)
-{
-	if (_clients.find(socket) == _clients.end())
-		return (NULL);
-	return (_clients[socket]);
-}
+// Client*		Webserver::getClient(int socket)
+// {
+// 	if (_clients.find(socket) == _clients.end())
+// 		return (NULL);
+// 	return (_clients[socket]);
+// }
 
 ServerConfig*	Webserver::getConfig()
 {

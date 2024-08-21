@@ -59,6 +59,8 @@ class ConfigFile
 		void	readLocationContext(LocationConfig* location);
 		void	addKeyValues(t_strvec& tokens, t_strmap& map);
 		void	validateConfig(void);
+		void	checkDuplicateServers(void);
+		void	warnDuplicateServers(std::string host, int port, std::string name);
 
 		/* Utils */
 		void	printContexts(std::vector<ServerConfig*>& vec);
@@ -68,6 +70,7 @@ class ConfigFile
 		void	trimSemicolon(t_strvec& tokens);
 		void	checkBraces(t_strvec& tokens);
 		int		checkContext(std::string& context);
+		int		isRegularFile(const std::string& str);
 
 		/* Accessors */
 		std::vector<ServerConfig*>	getServers(void);

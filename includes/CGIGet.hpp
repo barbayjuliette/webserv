@@ -17,17 +17,16 @@
 class CGIGet : public CGIHandler
 {
 	private:
-		std::string		_cgi_exec;
-
 		CGIGet();
 
 	public:
-		CGIGet(Request const & request, LocationConfig* location, std::string ext);
+		CGIGet(const Request& request, LocationConfig *location, std::string cgi_ext);
 		CGIGet( CGIGet const & src );
 		~CGIGet();
 		CGIGet &		operator=( CGIGet const & rhs );
 
-		void			execute_cgi(int pipe_fd[], Request const & request);
-		void			process_result_cgi(int pid, int pipe_fd[]);
-		std::string		get_cgi_location(std::string prefix, std::string req_path);
+		void		write_cgi(int cgi_status);
+		void		read_cgi_request(int cgi_status);
+		// void			execute_cgi(int pipe_fd[], Request const & request);
+		// void			process_result_cgi(int pid, int pipe_fd[]);
 };

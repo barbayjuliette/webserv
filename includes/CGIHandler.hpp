@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 14:56:13 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 19:27:02 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/12 15:38:00 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,26 +26,59 @@
 # include "Request.hpp"
 # include "LocationConfig.hpp"
 
+enum cgi_status
+{
+	NO_CGI,
+	CGI_GET,
+	CGI_POST,
+	CGI_POST_READ,
+	CGI_DONE
+};
+
 class Request;
 class LocationConfig;
 
 class CGIHandler
 {
-	private:
-		std::string		_result;
-		std::string		_content_type;
-		std::string		_html;
-		std::string		_headers;
-		std::string		_full_path;
-		int				_error;
+	protected:
+		const Request&		_request;
+		LocationConfig*		_location;
+		std::vector<int>	_request_pipe; // POST
+		std::vector<int>	_response_pipe; // GET, POST
+		std::string			_cgi_ext;
+		std::string			_cgi_exec;
+		std::string			_result;
+		std::string			_content_type;
+		std::string			_html;
+		std::string			_headers;
+		std::string			_full_path;
+		int					_error;
+		int					_pid;
+
+		CGIHandler();
 
 	public:
-		CGIHandler();
+		CGIHandler(const Request& request, LocationConfig *location, std::string cgi_ext);
 		CGIHandler(CGIHandler const & src);
 		virtual ~CGIHandler();
 		CGIHandler &		operator=( CGIHandler const & rhs );
-		std::string			intToString(int num);
 
+		/* Transfer data to/from CGI */
+		void			create_response_pipe(void);
+		void			create_request_pipe(void);
+		void			read_cgi_result(int cgi_status);
+		void			execute_cgi(int cgi_status);
+		virtual void	write_cgi(int cgi_status) = 0;
+		virtual void	read_cgi_request(int cgi_status) = 0;
+		// void			execute_cgi(int pipe_fd[], Request const & request);
+		// void			process_result_cgi(int pid, int pipe_fd[]);
+
+		/* Utils */
+		std::string	intToString(int num);
+		std::string	get_cgi_location(std::string prefix, std::string req_path);
+		void		check(int num);
+
+		/* Accessors */
 		std::string	getResult();
 		std::string	getHtml();
 		std::string	getContentType();
@@ -57,4 +90,7 @@ class CGIHandler
 		void		setFullPath(std::string path);
 		int			getError();
 		void		setError(int error);
+		int			get_pid();
+		std::vector<int>	get_response_pipe(void);
+		std::vector<int>	get_request_pipe(void);
 };

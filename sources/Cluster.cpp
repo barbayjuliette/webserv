@@ -38,7 +38,7 @@ Cluster::Cluster(ConfigFile* config_file)
 	_instance = this;
 	_config_file = config_file;
 	signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
+	signal(SIGTERM, signal_handler);
 
 	std::vector<ServerConfig*>	configs = _config_file->getServers();
 
@@ -128,13 +128,13 @@ void	Cluster::initServerSocket(std::string& host, int port, struct addrinfo *add
 	for (tmp = addr; tmp != NULL; tmp = tmp->ai_next)
 	{
 		socket_fd = socket(tmp->ai_family, tmp->ai_socktype, tmp->ai_protocol);
-		check(socket_fd);
-
-		check(fcntl(socket_fd, F_SETFL, O_NONBLOCK));
-
-		int	yes = 1;
-		check(setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)));
-
+		if (socket_fd < 0)
+		{
+			std::cerr << RED << "socket(): " << strerror(errno) << std::endl << RESET;
+			exit(1);
+		}
+		setNonBlocking(socket_fd);
+		setReuseAddr(socket_fd);
 		if (bind(socket_fd, tmp->ai_addr, tmp->ai_addrlen) < 0)
 			close(socket_fd);
 		else
@@ -157,18 +157,39 @@ void	Cluster::addServerSocket(std::string& host, int port, int socket_fd)
 	socket.fd = socket_fd;
 	socket.host = host;
 	_server_sockets.insert(std::make_pair(port, socket));
-
-	// if (CTRACE)
-	// 	std::cout << GREEN << "created socket for port: " << port << ", socket_fd: " << findHostPort(host, port)->second.fd << '\n' << RESET;
 }
 
 void	Cluster::addServer(std::string& host, int port, Webserver *new_server)
 {
 	t_mmap::iterator	it = findHostPort(host, port);
 	it->second.servers.push_back(new_server);
+}
 
-	// if (CTRACE)
-	// 	std::cout << GREEN << "there are now " << countServers(it) << " servers listening to " << host << ':' << port << ".\n" << RESET;
+void	Cluster::setNonBlocking(int fd)
+{
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+	{
+		std::cerr << RED << "fcntl(): " << strerror(errno) << std::endl << RESET;
+		exit(1);
+	}
+}
+
+void	Cluster::setNonBlocking(std::vector<int> fds)
+{
+	for (size_t i = 0; i < fds.size(); i++)
+	{
+		setNonBlocking(fds[i]);
+	}
+}
+
+void	Cluster::setReuseAddr(int socket_fd)
+{
+	int	yes = 1;
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0)
+	{
+		std::cerr << RED << "setsockopt(): " << strerror(errno) << std::endl << RESET;
+		exit(1);
+	}
 }
 
 /*
@@ -185,32 +206,58 @@ void	Cluster::initEpoll(void)
 	t_mmap::iterator	it;
 	for (it = _server_sockets.begin(); it != _server_sockets.end(); it++)
 	{
-		struct epoll_event	ep_event;
-		int					socket_fd = it->second.fd;
-
-		ep_event.data.fd = socket_fd;
-		ep_event.events = EPOLLIN | EPOLLOUT;
-		addToEpoll(socket_fd, &ep_event);
+		addToEpoll(it->second.fd, EPOLLIN | EPOLLOUT);
 	}
 }
 
 /* int epoll_ctl(int epfd, int op, int fd, struct epoll_event *_Nullable event);
 	- op: EPOLL_CTL_ADD, EPOLL_CTL_MOD, EPOLL_CTL_DEL */
-void	Cluster::addToEpoll(int socket_fd, struct epoll_event *ep_event)
+void	Cluster::addToEpoll(int fd, uint32_t events)
 {
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, socket_fd, ep_event) < 0)
+	struct epoll_event	ep_event;
+
+	ep_event.data.fd = fd;
+	ep_event.events = events;
+
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &ep_event) < 0)
 	{
 		std::cerr << "addToEpoll: " << strerror(errno) << std::endl;
 		exit(1);
 	}
 }
 
-void	Cluster::removeFromEpoll(int socket_fd)
+void	Cluster::removeFromEpoll(int fd)
 {
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, socket_fd, NULL) < 0)
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL) < 0)
 	{
 		std::cerr << "removeFromEpoll: " << strerror(errno) << std::endl;
 		exit(1);
+	}
+}
+
+void Cluster::checkTimeout(void)
+{
+	std::map<int /*socket fd*/, Client*>::iterator it;
+	time_t now = time(NULL);
+
+	// if (TIMEOUT_DEBUG)
+	// {
+	// 	std::cout << "checking timeout 1" << std::endl;
+	// }
+	for (it = _clients.begin(); it != _clients.end(); it++)
+	{
+		if (TIMEOUT_DEBUG)
+		{
+			std::cout << "checking timeout" << std::endl;
+		}
+		if (now - it->second->getRequest()->getTimeout() > REQ_TIMEOUT)
+		{
+			if (TIMEOUT_DEBUG)
+			{
+				std::cout << "Closing connection due to timeout" << std::endl;
+			}
+			removeClient(it->first);
+		}
 	}
 }
 
@@ -226,32 +273,34 @@ void	Cluster::runServers(void)
 	{
 		int	num_of_events = epoll_wait(_epoll_fd, ep_events, MAX_EVENTS, TIMEOUT);
 		check(num_of_events);
-
+		if (num_of_events == 0)
+			checkTimeout();
 		for (int i = 0; i < num_of_events; i++)
 		{
-			int	event_fd = ep_events[i].data.fd;
+			int	fd = ep_events[i].data.fd;
 			int	event_type = ep_events[i].events;
-			int	client_socket;
 
-			if (is_server_socket(event_fd) && (event_type & EPOLLIN))
-				client_socket = accept_new_connections(event_fd);
+			if (is_server_socket(fd) && (event_type & EPOLLIN))
+				accept_new_connections(fd);
+			else if (is_cgi_pipe(fd))
+				handle_cgi(_cgi_pipes[fd], event_type);
 			else
 			{
-				client_socket = event_fd;
 				if (event_type & EPOLLIN)
 				{
 					try
 					{
-						handle_read_connection(client_socket);
+						handle_read_connection(fd);
 					}
 					catch (std::exception& e)
 					{
-						std::cerr << RED << e.what() << ".\n" << RESET;
+						std::cerr << RED << "handle_read_connection(): " << e.what() << ".\n" << RESET;
 					}
 				}
-				// TODO
 				if (event_type & EPOLLOUT)
-					handle_write_connection(client_socket);
+				{
+					handle_write_connection(fd);
+				}
 			}
 		}
 	}
@@ -263,7 +312,7 @@ void	Cluster::runServers(void)
 
 /* Add new client to the clients map
 - Create epoll_event struct for the new client socket and register it to be monitored */
-int	Cluster::accept_new_connections(int server_socket)
+void	Cluster::accept_new_connections(int server_socket)
 {
 	struct sockaddr_in	client_addr;
 	socklen_t			client_len = sizeof(client_addr);
@@ -272,25 +321,17 @@ int	Cluster::accept_new_connections(int server_socket)
 	check(client_socket);
 	check(fcntl(server_socket, F_SETFL, O_NONBLOCK));
 
-	int	existing_client = getExistingClient(&client_addr);
-	if (existing_client != -1)
+	if (getExistingClient(&client_addr) != -1)
 	{
 		std::cout << RED << "\nIs existing client. Closing duplicate socket.\n\n" << RESET;
 		close(client_socket);
-		return (existing_client);
 	}
 
-	struct epoll_event	ep_event;
+	addToEpoll(client_socket, EPOLLIN | EPOLLOUT);
 
-	ep_event.data.fd = client_socket;
-	ep_event.events = EPOLLIN | EPOLLOUT;
-	addToEpoll(client_socket, &ep_event);
-
-    _clients[client_socket] = new Client(client_socket, client_addr);
-    if (CTRACE)
+	_clients[client_socket] = new Client(client_socket, client_addr);
+	if (CTRACE)
 		std::cout << GREEN << "\nNew client created: " << client_socket << "\n\n" << RESET;
-
-    return (client_socket);
 }
 
 int	Cluster::getExistingClient(struct sockaddr_in *addr)
@@ -324,7 +365,8 @@ Client*		Cluster::getClient(int socket)
 
 void	Cluster::assignServer(int client_socket)
 {
-	Request*	request = _clients[client_socket]->getRequest();
+	Client*		client = _clients[client_socket];
+	Request*	request = client->getRequest();
 
 	std::string name = request->getHost();
 	std::string host = request->getHost();
@@ -332,18 +374,18 @@ void	Cluster::assignServer(int client_socket)
 	{
 		host = getClientIPAddress(client_socket);
 	}
-	_clients[client_socket]->setServer((getServerByPort(name, host, request->getPort())));
-	if (!_clients[client_socket]->getServer())
+	client->setServer((getServerByPort(name, host, request->getPort())));
+	if (!client->getServer())
 		throw std::runtime_error("No server matched the request");
 	// If server is valid -> set server for request
-	_clients[client_socket]->getRequest()->setServer(_clients[client_socket]->getServer());
+	client->getRequest()->setServer(client->getServer());
 	if (CTRACE)
 	{
 		std::cout << GREEN << "found server match\n" << RESET;
-		_clients[client_socket]->getServer()->printServerNames();
+		client->getServer()->printServerNames();
 	}
 	// Set request's body max length to server config's body max len
-	request->setBodyMaxLength(_clients[client_socket]->getServer()->getConfig()->getBodyMaxLength());
+	request->setBodyMaxLength(client->getServer()->getBodyMaxLength());
 }
 
 /* Preliminary request parsing: extract host and port to determine which server to route to */
@@ -378,8 +420,6 @@ void	Cluster::handle_read_connection(int client_socket)
 				-> Check again if header complete */
 		Request*	request = _clients[client_socket]->getRequest();
 
-		std::cout << CYAN << "[PORT " << request->getPort() << "]: " << RESET << request->getMethod() << " request received for " << request->getServer()->getServerName()[0] << std::endl;
-		// std::cout << request->getServer()->getServerName()[0] << " received a " << request->getMethod() << " request, on PORT "  << std::endl;
 		if (request->getHeaderLength() == -1)
 		{
 			request->handle_incomplete_header(bytes_read, buffer);
@@ -393,25 +433,41 @@ void	Cluster::handle_read_connection(int client_socket)
 			if (!_clients[client_socket]->getServer())
 				assignServer(client_socket);
 			request->checkBodyLength();
+			std::cout << CYAN << "[PORT " << request->getPort() << "]: " << RESET << request->getMethod() << " request received for " << request->getServer()->getServerName()[0] << std::endl;
+		// std::cout << request->getServer()->getServerName()[0] << " received a " << request->getMethod() << " request, on PORT "  << std::endl;
+			if (TIMEOUT_DEBUG)
+			{
+				request->print_variables();
+			}
+
 			request->getServer()->create_response(request, _clients[client_socket]);
+
+			int	cgi_status = _clients[client_socket]->getResponse()->getCGIStatus();
+			if (cgi_status != NO_CGI)
+				add_cgi_pipes(_clients[client_socket], _clients[client_socket]->getResponse(), cgi_status);
 		}
 	}
 }
 
-void		Cluster::handle_write_connection(int client_socket)
+void	Cluster::handle_write_connection(int client_socket)
 {
 	Client			*client = getClient(client_socket);
 	if (!client)
 		return ;
 	Response		*response = client->getResponse();
-	unsigned int	bytes_sent;
 	if (!response)
 		return ;
+	if (response->getCGIStatus() != NO_CGI && response->getCGIStatus() != CGI_DONE)
+		return ;
+
+	unsigned int	bytes_sent;
 
 	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
+	if (response->getCGIStatus() == CGI_DONE)
+		remove_cgi_pipes(client->getRequest(), response);
 	if (bytes_sent == response->getFullResponse().size())
 	{
-		if (CTRACE)
+		if (TRACE)
 			std::cout << CYAN << "\ninside handle_write_connection: fd " << client_socket << "\n\n" << RESET;
 		if (DEBUG)
 		{
@@ -429,7 +485,118 @@ void		Cluster::handle_write_connection(int client_socket)
 		}
 	}
 	else
+	{
 		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
+		removeClient(client_socket);
+		// Error, so we need to remove client??
+	}
+}
+
+/*
+** ------------------------------------- CGI -----------------------------------
+*/
+
+void	Cluster::handle_cgi(Client *client, uint32_t event_type)
+{
+	Request		*request = client->getRequest();
+	Response	*response = client->getResponse();
+	if (!request || !response)
+		return ;
+
+	int	cgi_status = response->getCGIStatus();
+	if (event_type & EPOLLOUT && (cgi_status == CGI_GET || cgi_status == CGI_POST))
+	{
+		try
+		{
+			response->getCGIHandler()->write_cgi(cgi_status);
+			if (cgi_status == CGI_POST && response->getCGIHandler()->get_pid() == 0)
+			{
+				response->setCGIStatus(CGI_POST_READ);
+				return ;
+			}
+		}
+		catch (std::exception& e)
+		{
+			std::cerr << RED << "write_cgi(): " << e.what() << ".\n" << RESET;
+		}
+	}
+	else if (event_type & EPOLLIN && (cgi_status == CGI_GET
+		|| cgi_status == CGI_POST || cgi_status == CGI_POST_READ))
+	{
+		try
+		{
+			if (cgi_status == CGI_POST_READ)
+			{
+				response->getCGIHandler()->read_cgi_request(cgi_status);
+			}
+			else
+			{
+				response->getCGIHandler()->read_cgi_result(cgi_status);
+				response->process_cgi_response(*request);
+			}
+		}
+		catch (std::exception& e)
+		{
+			std::cerr << RED << "read_cgi(): " << e.what() << ".\n" << RESET;
+		}
+	}
+}
+
+void	Cluster::add_cgi_pipes(Client *client, Response *response, int cgi_status)
+{
+	if (cgi_status == CGI_GET)
+	{
+		std::vector<int>	response_pipe = response->getCGIHandler()->get_response_pipe();
+		setNonBlocking(response_pipe);
+
+		_cgi_pipes[response_pipe[0]] = client;
+		addToEpoll(response_pipe[0], EPOLLIN);
+
+		_cgi_pipes[response_pipe[1]] = client;
+		addToEpoll(response_pipe[1], EPOLLOUT);
+	}
+	else if (cgi_status == CGI_POST)
+	{
+		std::vector<int>	response_pipe = response->getCGIHandler()->get_response_pipe();
+		std::vector<int>	request_pipe = response->getCGIHandler()->get_request_pipe();
+		setNonBlocking(response_pipe);
+		setNonBlocking(request_pipe);
+
+		_cgi_pipes[response_pipe[0]] = client;
+		addToEpoll(response_pipe[0], EPOLLIN);
+
+		_cgi_pipes[request_pipe[0]] = client;
+		addToEpoll(request_pipe[0], EPOLLIN);
+
+		_cgi_pipes[request_pipe[1]] = client;
+		addToEpoll(request_pipe[1], EPOLLOUT);
+	}
+}
+
+void	Cluster::remove_cgi_pipes(Request *request, Response *response)
+{
+	if (!request || !response || !response->getCGIHandler())
+		return ;
+	(void)request;
+
+	std::vector<int>	response_pipe = response->getCGIHandler()->get_response_pipe();
+	for (size_t i = 0; i < response_pipe.size(); i++)
+	{
+		_cgi_pipes.erase(response_pipe[i]);
+	}
+
+	std::vector<int>	request_pipe = response->getCGIHandler()->get_request_pipe();
+	for (size_t i = 0; i < request_pipe.size(); i++)
+	{
+		_cgi_pipes.erase(request_pipe[i]);
+	}
+}
+
+bool	Cluster::is_cgi_pipe(const int fd)
+{
+	if (_cgi_pipes.find(fd) != _cgi_pipes.end())
+		return (true);
+	return (false);
 }
 
 /*
@@ -579,7 +746,6 @@ void	Cluster::printServerSockets(void)
 		std::cout << CYAN << "HOST: " << it->second.host << "; PORT: " << it->first << '\n' << RESET;
 		std::cout << "- Socket fd: " << it->second.fd << '\n';
 		std::cout << "- No. of servers listening: " << countServers(it) << "\n";
-		std::cout << "\n-------------------------------------------------------\n\n";
 		printServers(it->second.servers);
 		std::cout << "\n-------------------------------------------------------\n";
 	}

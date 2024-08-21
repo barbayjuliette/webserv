@@ -27,6 +27,7 @@
 # include <iostream>
 # include <dirent.h>
 # include "ConfigFile.hpp"
+# include "CGIHandler.hpp"
 # include "CGIGet.hpp"
 # include "CGIPost.hpp"
 # include "Print.hpp"
@@ -41,6 +42,7 @@ class Response
 		static std::map<int, std::string>	_status_lookup;
 		int									_status_code;
 		std::string							_status_text;
+		int									_cgi_status;
 		std::string							_http_version;
 		std::string							_body;
 		std::string							_full_response;
@@ -48,6 +50,8 @@ class Response
 		std::map<std::string, std::string>	_headers;
 		ServerConfig*						_config;
 		LocationConfig*						_location;
+		CGIHandler*							_cgi_handler;
+
 		Response();
 
 	public:
@@ -67,6 +71,7 @@ class Response
 		void		respond_get_request(const Request &request);
 		void		respond_post_request(const Request &request);
 		void		respond_delete_request(void);
+		void		respond_redirect(const Request &request);
 		int			is_directory(std::string req_path);
 		void		create_directory_listing(std::string path, std::string req_path);
 		std::string	create_html(std::string source, std::string path);
@@ -74,7 +79,7 @@ class Response
 		std::string	intToString(int num);
 
 		/* CGI utils */
-		void		process_cgi_response(CGIHandler* cgi);
+		void		process_cgi_response(const Request& request);
 		std::string	extract_cgi_extension(const std::string& req_path);
 
 		/* Setters */
@@ -82,7 +87,8 @@ class Response
 		void		setPath(std::string new_path);
 		void		setContentType(std::string path);
 		void		set_allow_methods(bool flag);
-		void		setHeaders(Request &request);
+		void		setHeaders(const Request &request);
+		void		setCGIStatus(int flag);
 
 		/* Accessors */
 		int									getStatusCode() const;
@@ -93,4 +99,7 @@ class Response
 		std::string							getPath() const;
 		std::string							getFullResponse() const;
 		void								getDate();
+		LocationConfig*						getLocation() const;
+		int									getCGIStatus() const;
+		CGIHandler*							getCGIHandler() const;
 };
