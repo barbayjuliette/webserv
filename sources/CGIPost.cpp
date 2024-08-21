@@ -55,26 +55,11 @@ void	CGIPost::read_cgi_request(int cgi_status)
 		return ;
 
 	if (_pid == 0)
-	{		
-		std::cerr << GREEN << "inside read_cgi_request\n" << RESET;
-		std::cerr << GREEN << "\n\nCHILD IS READING: pipe fd: " << _request_pipe[0] << '\n' << RESET;
-		// char buffer[500];
-		// memset(buffer, 0, sizeof(buffer));
-		// ssize_t bytesRead = read(_response_pipe[0], buffer, 500);
-		// std::string buf(buffer);
-		// if (bytesRead < 0)
-		// {
-		// 	std::cerr << RED << strerror(errno) << '\n' << RESET;
-		// }
-		// else if (bytesRead == 0)
-		// 	std::cerr << RED << "EOF\n" << RESET;
-		// else
-		// {
-		// 	std::cerr << GREEN << "bytesread > 0; " << buf.size() << buf << '\n' << RESET;
-		// }
-
+	{
 		/* CHILD: write result to response_pipe */
 		close(_response_pipe[0]);
+		dup2(_response_pipe[1], STDOUT_FILENO);
+		close(_response_pipe[1]);
 
 		execute_cgi(cgi_status);
 	}
@@ -93,8 +78,6 @@ void	CGIPost::write_cgi(int cgi_status)
 	if (cgi_status != CGI_POST)
 		return ;
 
-	std::cout << GREEN << "inside write_cgi\n" << RESET;
-
 	_pid = fork();
 	if (_pid == -1)
 	{
@@ -108,10 +91,6 @@ void	CGIPost::write_cgi(int cgi_status)
 		close(_request_pipe[1]);
 		dup2(_request_pipe[0], STDIN_FILENO);
 		close(_request_pipe[0]);
-
-		std::cout << "child is returning\n";
-		dup2(_response_pipe[1], STDOUT_FILENO);
-		close(_response_pipe[1]);
 		return ;
 	}
 	else
@@ -122,7 +101,6 @@ void	CGIPost::write_cgi(int cgi_status)
 		std::vector<unsigned char> body = _request.getBody();
 
 		int bytes = write(_request_pipe[1], reinterpret_cast<const char *>(body.data()), body.size());
-		std::cout << GREEN << "\n\nPARENT IS WRITING to pipefd " << _request_pipe[1] << ":\n"<< RESET << reinterpret_cast<const char *>(body.data()) << "\n\n";
 		if (bytes <= 0)
 		{
 			std::cerr << "Error write(): " << strerror(errno) << std::endl;
@@ -135,141 +113,3 @@ void	CGIPost::write_cgi(int cgi_status)
 		waitpid(_pid, NULL, 0);
 	}
 }
-
-
-
-
-
-// CGIPost::CGIPost(Request const & request, LocationConfig* location, std::string ext) : CGIHandler()
-// {
-// 	int	pipe_fd[2];
-// 	int	pipe_data[2];
-
-// 	this->_cgi_exec = location->getCGIExec(ext);
-// 	setFullPath(get_cgi_location(location->getPrefix(), request.getPath()));
-// 	std::cout << "set full path: " << getFullPath() << '\n';
-// 	if (access(getFullPath().c_str(), F_OK) != 0)
-// 	{
-// 		setError(404);
-// 		return ;
-// 	}
-
-// 	if (pipe(pipe_fd) == -1 || pipe(pipe_data) == -1)
-// 	{
-// 		std::cerr << "Error pipe(): " << strerror(errno) << std::endl;
-// 		setError(500);
-// 		return ;
-// 	}
-
-// 	int	pid = fork();
-// 	if (pid == -1)
-// 	{
-// 		std::cerr << "Error fork(): " << strerror(errno) << std::endl;
-// 		setError(500);
-// 		return ;
-// 	}
-// 	if (pid == 0)
-// 		execute_cgi(pipe_fd, pipe_data, request);
-// 	else
-// 		process_result_cgi(pid, pipe_fd, pipe_data, request);
-// }
-
-// // PARENT: Writes the form data to the pipe, then waits for the child to send the result from cgi.
-// void	CGIPost::process_result_cgi(int pid, int pipe_fd[], int pipe_data[], Request const & request)
-// {
-// 		close(pipe_fd[1]); //response pipe
-// 		close(pipe_data[0]); //request pipe
-// 		int	bytes;
-
-// 		std::vector<unsigned char> body = request.getBody();
-
-// 		bytes = write(pipe_data[1], reinterpret_cast<const char *>(body.data()), body.size());
-// 		if (bytes <= 0)
-// 		{
-// 			std::cerr << "Error write(): " << strerror(errno) << std::endl;
-// 			setError(500);
-// 			close(pipe_fd[0]); //response pipe
-// 			close(pipe_data[1]); //request pipe
-// 			return ;
-// 		}
-// 		close(pipe_data[1]);
-//         waitpid(pid, NULL, 0);
-
-// 		char buffer[500];
-// 		memset(buffer, 0, sizeof(buffer));
-// 		ssize_t bytesRead = read(pipe_fd[0], buffer, 500);
-		
-// 		if (bytesRead == 0)
-// 		{
-// 			std::cerr << "Error: No result CGI" << std::endl;
-// 			setError(500);
-// 			close(pipe_fd[0]);
-// 			return ;
-// 		}
-// 		while (bytesRead > 0)
-// 		{
-// 			bytesRead = read(pipe_fd[0], buffer, 500);
-// 			if (bytesRead < 0)
-// 			{
-// 				std::cerr << strerror(errno) << std::endl;
-// 				setError(500);
-// 				close(pipe_fd[0]);
-// 				return ;
-// 			}
-// 			setResult(getResult() + buffer);
-// 		}
-// 		close(pipe_fd[0]);
-// 		setContentType();
-// 		setHtml();
-// }
-
-
-// // CHILD: Read form data from pipe, then send result from cgi via pipe.
-// void	CGIPost::execute_cgi(int pipe_fd[], int pipe_data[], Request const & request)
-// {
-// 	close(pipe_fd[0]);
-// 	close(pipe_data[1]);
-
-// 	dup2(pipe_data[0], STDIN_FILENO); // Read form data from the pipe
-// 	dup2(pipe_fd[1], STDOUT_FILENO); // Write result of script to pipe
-// 	std::string	path = getFullPath();
-
-// 	char* const argv[] = 
-// 	{
-// 		const_cast<char*>(this->_cgi_exec.c_str()),
-// 		const_cast<char*>(path.c_str()),
-// 		NULL
-// 	};
-
-// 	std::string	content_length = "CONTENT_LENGTH=" + intToString(request.getBody().size());
-// 	std::string	request_method = "REQUEST_METHOD=" + request.getMethod();
-// 	std::string	content_type = "CONTENT_TYPE=" + request.getHeaders()["content-type"];
-// 	// TO DO Choose which headers to put based on tester
-// 	// std::string	gateway_interface = "GATEWAY_INTERFACE=CGI/1.1";
-// 	// std::string	path_info = "PATH_INFO=" + path;
-// 	// std::string	path_translated = "PATH_TRANSLATED";
-// 	// std::string	query_string = "QUERY_STRING";
-// 	// std::string	remote_addr = "REMOTE_ADDR";
-// 	// std::string	remote_host = "REMOTE_HOST";
-// 	// std::string	remote_ident = "REMOTE_IDENT";
-// 	// std::string	remote_user = "REMOTE_USER";
-// 	// std::string	auth_type = "AUTH_TYPE=null";
-// 	// std::string	script_name = "SCRIPT_NAME";
-// 	// std::string	server_name = "SERVER_NAME";
-// 	// std::string	server_port = "SERVER_PORT";
-// 	// std::string	server_protocol = "SERVER_PROTOCOL";
-// 	// std::string	server_software = "SERVER_SOFTWARE";
-
-// 	const char* env[] = {
-// 		content_length.c_str(),
-// 		request_method.c_str(),
-// 		content_type.c_str(),
-// 		NULL
-// 	};
-// 	close(pipe_fd[1]);
-// 	close(pipe_data[0]);
-// 	execve(this->_cgi_exec.c_str(), argv, const_cast<char* const*>(env));
-// 	std::cerr << "Error execve: " << strerror(errno) << std::endl;
-// 	setError(500);
-// }
-

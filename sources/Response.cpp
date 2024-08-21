@@ -219,9 +219,6 @@ void	Response::respond_get_request(const Request &request)
 		_cgi_status = CGI_GET;
 		_cgi_handler = new CGIGet(request, _location, req_ext);
 		_headers["Content-Length"] = intToString(this->_body.size());
-		// CGIHandler*	cgi = new CGIGet(request, _location, req_ext);
-		// process_cgi_response(cgi);
-		// delete (cgi);
 		return ;
 	}
 
@@ -250,9 +247,6 @@ void	Response::respond_post_request(const Request &request)
 	{
 		_cgi_status = CGI_POST;
 		_cgi_handler = new CGIPost(request, _location, req_ext);
-		// CGIHandler*	cgi = new CGIPost(request, _location, req_ext);
-		// process_cgi_response(cgi);
-		// delete cgi;
 	}
 	else // Page exists but cgi is not enabled
 	{
@@ -307,7 +301,6 @@ void	Response::process_cgi_response(const Request& request)
 {
 	(void)request; //remove if request info not needed?
 
-	std::cout << CYAN << "process_cgi_response:\n" << RESET;
 	if (_cgi_handler->getError() != 0)
 		set_error(_cgi_handler->getError());
 	else
@@ -316,9 +309,9 @@ void	Response::process_cgi_response(const Request& request)
 		_headers["Content-Type"] = _cgi_handler->getContentType();
 		set_success();
 	}
-	std::cout << CYAN << "cgi error: " << RESET << _cgi_handler->getError() << '\n';
-	std::cout << CYAN << "cgi body: " << RESET << _cgi_handler->getHtml() <<'\n';
-	std::cout << CYAN << "cgi headers: " << RESET << _cgi_handler->getContentType() <<'\n';
+	// std::cout << CYAN << "cgi error: " << RESET << _cgi_handler->getError() << '\n';
+	// std::cout << CYAN << "cgi body: " << RESET << _cgi_handler->getHtml() <<'\n';
+	// std::cout << CYAN << "cgi headers: " << RESET << _cgi_handler->getContentType() <<'\n';
 
 	_headers["Content-Length"] = intToString(this->_body.size());
 	_cgi_status = CGI_DONE;

@@ -84,14 +84,11 @@ void Request::parsePort(std::string header)
 	size_t hostStart = header.find("Host: ");
 	if (hostStart != std::string::npos)
 	{
-		std::cout << "\nHOST START: " << hostStart << '\n';
 		hostStart += 6;
 		size_t hostEnd = header.find("\r\n", hostStart);
-		std::cout << "\nHOST END: " << hostEnd << '\n';
 		if (hostEnd != std::string::npos)
 		{
 			std::string host = header.substr(hostStart, hostEnd - hostStart);
-			std::cout << "\nHOST SUBSTR: " << host << '\n';
 			size_t colon = host.find(":");
 			if (colon != std::string::npos)
 			{

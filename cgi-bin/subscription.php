@@ -1,14 +1,25 @@
-<html>
-<body>
-
+#!/usr/bin/php-cgi
 <?php
-	print("Content-type:text/html\r\n\r\n");
-	print_r($_POST);
-	print_r($_REQUEST);
+	header("Content-type:text/html\r\n\r\n");
+
+	echo ("<html>");
+	echo ('<head>');
+	echo ("<title>Newsletter</title>");
+	echo ('</head>');
+	echo ('<body>');
+
+	$name = isset($_POST['name']) ? htmlspecialchars($_POST['name']) : '';
+	$email = isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '';
+
+	if (empty($name) || empty($email))
+	{
+		echo ("Name and email are required!");
+		exit;
+	}
+
+	echo ("<h2>Welcome $name!</h2>");
+	echo ("<p>You have successfully subscribed with this email: $email.</p>");
+
+	echo ('</body>');
+	echo ('</html>');
 ?>
-
-Welcome <?php echo $_POST["name"]; ?><br>
-Your email address is: <?php echo $_POST["email"]; ?>
-
-</body>
-</html>

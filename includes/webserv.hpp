@@ -18,7 +18,7 @@
 #endif
 
 #ifndef VERBOSE
-# define VERBOSE 1
+# define VERBOSE 0
 #endif
 
 #ifndef DEBUG

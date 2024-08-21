@@ -283,11 +283,7 @@ void	Cluster::runServers(void)
 			if (is_server_socket(fd) && (event_type & EPOLLIN))
 				accept_new_connections(fd);
 			else if (is_cgi_pipe(fd))
-			{
-				std::cerr << "\nevent on pipe fd: " << fd <<
-					"; pid: " << _cgi_pipes[fd]->getResponse()->getCGIHandler()->get_pid() << "\n\n";
 				handle_cgi(_cgi_pipes[fd], event_type);
-			}
 			else
 			{
 				if (event_type & EPOLLIN)
@@ -508,22 +504,16 @@ void	Cluster::handle_cgi(Client *client, uint32_t event_type)
 		return ;
 
 	int	cgi_status = response->getCGIStatus();
-	std::cerr << "\n\n----------------------------------------\n\n";
-	std::cerr << "handle_cgi: pid: " << response->getCGIHandler()->get_pid() << "\n\n";
 	if (event_type & EPOLLOUT && (cgi_status == CGI_GET || cgi_status == CGI_POST))
 	{
 		try
 		{
-			std::cerr << CYAN << "inside handle_cgi EPOLLOUT: pid: " << response->getCGIHandler()->get_pid() << "\n" << RESET;
 			response->getCGIHandler()->write_cgi(cgi_status);
 			if (cgi_status == CGI_POST && response->getCGIHandler()->get_pid() == 0)
 			{
 				response->setCGIStatus(CGI_POST_READ);
-				std::cerr << "cgi status set to: " << response->getCGIStatus() << '\n';
 				return ;
 			}
-			else
-				std::cout << "cgi status: " << response->getCGIStatus() << '\n';
 		}
 		catch (std::exception& e)
 		{
@@ -535,8 +525,6 @@ void	Cluster::handle_cgi(Client *client, uint32_t event_type)
 	{
 		try
 		{
-			std::cerr << CYAN << "inside handle_cgi EPOLLIN: pid: " << response->getCGIHandler()->get_pid() << "\n" << RESET;
-
 			if (cgi_status == CGI_POST_READ)
 			{
 				response->getCGIHandler()->read_cgi_request(cgi_status);
@@ -582,9 +570,6 @@ void	Cluster::add_cgi_pipes(Client *client, Response *response, int cgi_status)
 
 		_cgi_pipes[request_pipe[1]] = client;
 		addToEpoll(request_pipe[1], EPOLLOUT);
-		std::cout << "registered: " << response_pipe[0] << " "
-			<< request_pipe[0] << " "
-			<< request_pipe[1] << "\n\n";
 	}
 }
 

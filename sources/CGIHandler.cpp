@@ -145,9 +145,11 @@ void	CGIHandler::execute_cgi(int cgi_status)
 	std::string	content_type = "CONTENT_TYPE=" + _request.getHeaders()["content-type"];
 	std::string	gateway_interface = "GATEWAY_INTERFACE=CGI/1.1";
 	std::string	path_info = "PATH_INFO=" + getFullPath();
-	std::string	script_name = "SCRIPT_NAME=" + getFullPath();
+	std::string	script_name = "SCRIPT_NAME=" + _request.getPath();
+	std::string	script_filename = "SCRIPT_FILENAME=" + getFullPath();
 	std::string	server_protocol = "SERVER_PROTOCOL=HTTP/1.1";
 	std::string	server_software = "SERVER_SOFTWARE=42webserv";
+	std::string	redirect_status = "REDIRECT_STATUS=200";
 	// std::string	query_string = "QUERY_STRING";
 	// std::string	remote_addr = "REMOTE_ADDR";
 	// std::string	remote_host = "REMOTE_HOST";
@@ -164,16 +166,12 @@ void	CGIHandler::execute_cgi(int cgi_status)
 		gateway_interface.c_str(),
 		path_info.c_str(),
 		script_name.c_str(),
+		script_filename.c_str(),
 		server_protocol.c_str(),
 		server_software.c_str(),
+		redirect_status.c_str(),
 		NULL
 	};
-
-	for (size_t i = 0; argv[i] != NULL; i++)
-		std::cerr << RED << "argv[" << i << "]: " << argv[i] << RESET << '\n';
-
-	for (size_t i = 0; env[i] != NULL; i++)
-		std::cerr << CYAN << "env[" << i << "]: " << env[i] << RESET << '\n';
 
 	execve(_cgi_exec.c_str(), argv, const_cast<char* const*>(env));
 
@@ -201,7 +199,6 @@ void	CGIHandler::read_cgi_result(int cgi_status)
 	while (bytes_read != 0)
 	{
 		bytes_read = read(_response_pipe[0], buffer, 500);
-		std::cerr << "bytes_read: " << bytes_read << '\n' << RESET;
 		if (bytes_read < 0)
 		{
 			std::cerr << "Error: " << strerror(errno) << std::endl;
@@ -221,7 +218,6 @@ void	CGIHandler::read_cgi_result(int cgi_status)
 
 void		CGIHandler::setHeaders()
 {
-	// std::cout << "\n\nresult: " << _result << "\n\n";
 	std::size_t		pos = _result.find("\r\n\r\n", 0);
 
 	if (pos == std::string::npos)
@@ -235,12 +231,10 @@ void	CGIHandler::setContentType()
 	setHeaders();
 
 	std::string	low = _headers;
-	std::cout << "\nsetContentType(): low BEFORE: " << low << "\n";
 	for (size_t i = 0; i < _headers.size() ; i++)
 	{
 		low[i] = (char)tolower(_headers[i]);
 	}
-	std::cout << "\nsetContentType(): low AFTER: " << low << "\n\n";
 
 	std::size_t		pos = low.find("content-type:", 0);
 	if (pos == std::string::npos)
@@ -262,10 +256,7 @@ void	CGIHandler::setHtml()
 	if (pos == std::string::npos)
 		_html = _result;
 	else
-		_html = _result.substr(pos + delim.size() + 1, _result.size());
-	std::cout << "pos: " << pos << "\n";
-	std::cout << "SUBSTR: (" << _result[pos] << ")" << _result.substr(pos + delim.size() + 1, _result.size()) << "\n\n";
-	std::cout << "_html: " << _html << "\n";
+		_html = _result.substr(pos + delim.size(), _result.size());
 }
 
 /*
