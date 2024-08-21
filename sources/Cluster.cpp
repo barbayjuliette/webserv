@@ -385,7 +385,7 @@ void	Cluster::assignServer(int client_socket)
 		client->getServer()->printServerNames();
 	}
 	// Set request's body max length to server config's body max len
-	request->setBodyMaxLength(client->getServer()->getConfig()->getBodyMaxLength());
+	request->setBodyMaxLength(client->getServer()->getBodyMaxLength());
 }
 
 /* Preliminary request parsing: extract host and port to determine which server to route to */
