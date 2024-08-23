@@ -8,8 +8,23 @@
 	echo ('</head>');
 	echo ('<body>');
 
-	$name = isset($_POST['name']) ? htmlspecialchars($_POST['name']) : '';
-	$email = isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '';
+	$name = '';
+	$email = '';
+
+	if ($_SERVER["REQUEST_METHOD"] == "POST")
+	{
+		if (isset($_POST['name']))
+			$name = htmlspecialchars($_POST['name']);
+		if (isset($_POST['email']))
+			$email = htmlspecialchars($_POST['email']);
+	}
+	elseif ($_SERVER["REQUEST_METHOD"] == "GET")
+	{
+		if (isset($_GET['name']))
+			$name = htmlspecialchars($_GET['name']);
+		if (isset($_GET['email']))
+			$email = htmlspecialchars($_GET['email']);
+	}
 
 	if (empty($name) || empty($email))
 	{

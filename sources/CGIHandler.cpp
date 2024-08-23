@@ -136,9 +136,13 @@ void	CGIHandler::execute_cgi(int cgi_status)
 
 	std::string	content_length = "CONTENT_LENGTH=" + intToString(_request.getBody().size());
 
-	std::string	request_method;
+	std::string	request_method, query_string = "";
 	if (cgi_status == CGI_GET)
+	{
 		request_method = "REQUEST_METHOD=GET";
+		if (_request.hasQuery())
+			query_string = "QUERY_STRING=" + _request.getQuery();
+	}
 	else if (cgi_status == CGI_POST_READ)
 		request_method = "REQUEST_METHOD=POST";
 
@@ -150,13 +154,6 @@ void	CGIHandler::execute_cgi(int cgi_status)
 	std::string	server_protocol = "SERVER_PROTOCOL=HTTP/1.1";
 	std::string	server_software = "SERVER_SOFTWARE=42webserv";
 	std::string	redirect_status = "REDIRECT_STATUS=200";
-	// std::string	query_string = "QUERY_STRING";
-	// std::string	remote_addr = "REMOTE_ADDR";
-	// std::string	remote_host = "REMOTE_HOST";
-	// std::string	remote_ident = "REMOTE_IDENT";
-	// std::string	remote_user = "REMOTE_USER";
-	// std::string	server_name = "SERVER_NAME";
-	// std::string	server_port = "SERVER_PORT";
 
 	const char* env[] =
 	{
@@ -170,6 +167,7 @@ void	CGIHandler::execute_cgi(int cgi_status)
 		server_protocol.c_str(),
 		server_software.c_str(),
 		redirect_status.c_str(),
+		query_string.c_str(),
 		NULL
 	};
 

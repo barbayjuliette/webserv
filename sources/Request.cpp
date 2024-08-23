@@ -13,6 +13,104 @@
 #include "Request.hpp"
 
 /*
+** ------------------------------- CONSTRUCTOR --------------------------------
+*/
+
+Request::Request() {}
+
+Request::Request(char *full_request, int bytes_read) : 
+	_header_length(-1),
+	_req_complete(false),
+	_body_max_length(DEFAULT_BODY_MAX),
+	_content_length(-1),
+	_is_chunked(false),
+	_encoding_chunked(false),
+	_error(NO_ERR)
+{
+	_timeout = time(NULL);
+	copyRawRequest(full_request, bytes_read);
+	if (this->_raw.size() == 0)
+	{
+		_error = INVALID_EMPTY_REQ;
+		print_error("error: request is empty");
+	}
+	this->initRequest();
+	if (_header_length != -1)
+	{
+		this->initBody();
+	}
+	if (VERBOSE)
+	{
+		// std::cout << _raw << std::endl << RED << "end of req" << RESET << std::endl;
+		print_variables();
+	}
+}
+
+Request::Request( const Request & src ):
+	_server(src._server),
+	_raw(src._raw),
+	_header_length(src._header_length),
+	_req_complete(src._req_complete),
+	_body_max_length(src._body_max_length),
+	_content_length(src._content_length),
+	_is_chunked(src._is_chunked),
+	_method(src._method),
+	_path(src._path),
+	_http_version(src._http_version),
+	_content_type(src._content_type),
+	_boundary(src._boundary),
+	_host(src._host),
+	_port(src._port),
+	_headers(src._headers),
+	_body(src._body),
+	_error(src._error),
+	_config(src._config),
+	_formData(src._formData),
+	_bodyMap(src._bodyMap),
+	_fileMap(src._fileMap)
+{}
+
+/*
+** -------------------------------- DESTRUCTOR --------------------------------
+*/
+
+Request::~Request() 
+{}
+
+/*
+** --------------------------------- OVERLOAD ---------------------------------
+*/
+
+Request &				Request::operator=( Request const & rhs )
+{
+	if (this != &rhs)
+	{
+		this->_server = rhs._server;
+		this->_raw = rhs._raw;
+		this->_header_length = rhs._header_length;
+		this->_req_complete = rhs._req_complete;
+		this->_body_max_length = rhs._body_max_length;
+		this->_content_length = rhs._content_length;
+		this->_is_chunked = rhs._is_chunked;
+		this->_method = rhs._method;
+		this->_path = rhs._path;
+		this->_http_version = rhs._http_version;
+		this->_content_type = rhs._content_type;
+		this->_boundary = rhs._boundary;
+		this->_host = rhs._host;
+		this->_port = rhs._port;
+		this->_headers = rhs._headers;
+		this->_body = rhs._body;
+		this->_error = rhs._error;
+		this->_config = rhs._config;
+		this->_formData = rhs._formData;
+		this->_bodyMap = rhs._bodyMap;
+		this->_fileMap = rhs._fileMap;
+	}
+	return (*this);
+}
+
+/*
 ** ------------------------------- MEMBER FUNCTIONS ---------------------------
 */
 
@@ -339,6 +437,18 @@ bool	Request::handle_chunk(char *buffer, int bytes_read)
 	return _req_complete;
 }
 
+void	Request::parseQuery()
+{
+	size_t	query_pos = this->_path.find('?');
+	if (query_pos == std::string::npos)
+	{
+		this->_query = "";
+		return ;
+	}
+	this->_query = _path.substr(query_pos + 1, std::string::npos);
+	this->_path = _path.substr(0, query_pos);
+}
+
 void Request::initRequest()
 {
 	// Check if header is complete
@@ -348,6 +458,7 @@ void Request::initRequest()
 		std::cout << "initing request" << std::endl;
 	std::string header = extractHeader();
 	this->parseRequest(header);
+	this->parseQuery();
 	this->parsePort(header);
 	this->parseHeader(header);
 	// Check if encoding chunked
@@ -574,103 +685,6 @@ void Request::print_error(std::string msg)
 	std::cerr << msg << std::endl;
 }
 
-/*
-** ------------------------------- CONSTRUCTOR --------------------------------
-*/
-
-Request::Request() {}
-
-Request::Request(char *full_request, int bytes_read) : 
-	_header_length(-1),
-	_req_complete(false),
-	_body_max_length(DEFAULT_BODY_MAX),
-	_content_length(-1),
-	_is_chunked(false),
-	_encoding_chunked(false),
-	_error(NO_ERR)
-{
-	_timeout = time(NULL);
-	copyRawRequest(full_request, bytes_read);
-	if (this->_raw.size() == 0)
-	{
-		_error = INVALID_EMPTY_REQ;
-		print_error("error: request is empty");
-	}
-	this->initRequest();
-	if (_header_length != -1)
-	{
-		this->initBody();
-	}
-	if (VERBOSE)
-	{
-		// std::cout << _raw << std::endl << RED << "end of req" << RESET << std::endl;
-		print_variables();
-	}
-}
-
-Request::Request( const Request & src ):
-	_server(src._server),
-	_raw(src._raw),
-	_header_length(src._header_length),
-	_req_complete(src._req_complete),
-	_body_max_length(src._body_max_length),
-	_content_length(src._content_length),
-	_is_chunked(src._is_chunked),
-	_method(src._method),
-	_path(src._path),
-	_http_version(src._http_version),
-	_content_type(src._content_type),
-	_boundary(src._boundary),
-	_host(src._host),
-	_port(src._port),
-	_headers(src._headers),
-	_body(src._body),
-	_error(src._error),
-	_config(src._config),
-	_formData(src._formData),
-	_bodyMap(src._bodyMap),
-	_fileMap(src._fileMap)
-{}
-
-/*
-** -------------------------------- DESTRUCTOR --------------------------------
-*/
-
-Request::~Request() 
-{}
-
-/*
-** --------------------------------- OVERLOAD ---------------------------------
-*/
-
-Request &				Request::operator=( Request const & rhs )
-{
-	if (this != &rhs)
-	{
-		this->_server = rhs._server;
-		this->_raw = rhs._raw;
-		this->_header_length = rhs._header_length;
-		this->_req_complete = rhs._req_complete;
-		this->_body_max_length = rhs._body_max_length;
-		this->_content_length = rhs._content_length;
-		this->_is_chunked = rhs._is_chunked;
-		this->_method = rhs._method;
-		this->_path = rhs._path;
-		this->_http_version = rhs._http_version;
-		this->_content_type = rhs._content_type;
-		this->_boundary = rhs._boundary;
-		this->_host = rhs._host;
-		this->_port = rhs._port;
-		this->_headers = rhs._headers;
-		this->_body = rhs._body;
-		this->_error = rhs._error;
-		this->_config = rhs._config;
-		this->_formData = rhs._formData;
-		this->_bodyMap = rhs._bodyMap;
-		this->_fileMap = rhs._fileMap;
-	}
-	return (*this);
-}
 
 /*
 ** --------------------------------- ACCESSOR ---------------------------------
@@ -739,6 +753,16 @@ Webserver *Request::getServer()
 time_t	Request::getTimeout()
 {
 	return (this->_timeout);
+}
+
+bool	Request::hasQuery() const
+{
+	return (!this->_query.empty());
+}
+
+std::string	Request::getQuery() const
+{
+	return (this->_query);
 }
 
 void Request::setBodyMaxLength(size_t len)

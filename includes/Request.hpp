@@ -61,6 +61,7 @@ class Request
 		std::string							_http_version;
 		std::string							_content_type;
 		std::string							_boundary;
+		std::string							_query;
 		std::string							_host;
 		int									_port;
 		std::map<std::string, std::string>	_headers;
@@ -78,6 +79,7 @@ class Request
 		void 		parseHeader(std::string header);
 		void 		parsePort(std::string header);
 		void		parseContentType();
+		void		parseQuery();
 
 		void 		checkMethod();
 		void 		checkPath();
@@ -121,6 +123,8 @@ class Request
 		error_type							getError() const;
 		Webserver*							getServer();
 		time_t								getTimeout();
+		bool								hasQuery() const;
+		std::string							getQuery() const;
 		void								setBodyMaxLength(size_t len);
 		void								setServer(Webserver* server);
 
