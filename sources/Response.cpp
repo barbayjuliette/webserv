@@ -50,10 +50,12 @@ _cgi_handler(NULL)
 
 	_path = _location->getRoot() + request.getPath().substr(1, std::string::npos);
 	setContentType(_path);
-
 	if (request.getError() != NO_ERR && request.getError() != NOT_SUPPORTED)
 	{
-		set_error(400);
+		if (request.getError() == TIMEOUT_ERR)
+			set_error(408);
+		else
+			set_error(400);
 		_headers["Content-Length"] = intToString(this->_body.size());
 		std::cout << "Error: " << request.getError() << std::endl;
 	}

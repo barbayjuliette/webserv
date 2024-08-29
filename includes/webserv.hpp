@@ -14,7 +14,7 @@
 # define WEBSERV_HPP
 
 #ifndef TIMEOUT_DEBUG
-# define TIMEOUT_DEBUG 1
+# define TIMEOUT_DEBUG 0
 #endif
 
 #ifndef VERBOSE

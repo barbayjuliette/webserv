@@ -235,7 +235,7 @@ void	Cluster::removeFromEpoll(int fd)
 	}
 }
 
-void Cluster::checkTimeout(void)
+void	Cluster::checkTimeout(void)
 {
 	std::map<int /*socket fd*/, Client*>::iterator it;
 	time_t now = time(NULL);
@@ -246,10 +246,6 @@ void Cluster::checkTimeout(void)
 	// }
 	for (it = _clients.begin(); it != _clients.end(); it++)
 	{
-		if (TIMEOUT_DEBUG)
-		{
-			std::cerr << "checking timeout" << std::endl;
-		}
 		if (it->second->getRequest() && \
 			now - it->second->getRequest()->getTimeout() > REQ_TIMEOUT)
 		{
@@ -257,7 +253,19 @@ void Cluster::checkTimeout(void)
 			{
 				std::cerr << "Closing connection due to timeout" << std::endl;
 			}
+			it->second->getRequest()->setError(TIMEOUT_ERR);
+			it->second->getRequest()->setReqComplete(true);
+			if (!it->second->getServer())
+			{
+				it->second->setServer(_server_sockets.begin()->second.servers[0]);
+			}
+			it->second->getRequest()->getServer()->create_response(it->second->getRequest(), it->second);
+			if (TIMEOUT_DEBUG)
+			{
+				std::cerr << "Sending timeout response..." << std::endl;
+			}
 			removeClient(it->first);
+			break ;
 		}
 	}
 }
@@ -280,7 +288,6 @@ void	Cluster::runServers(void)
 		{
 			int	fd = ep_events[i].data.fd;
 			int	event_type = ep_events[i].events;
-
 			if (is_server_socket(fd) && (event_type & EPOLLIN))
 				accept_new_connections(fd);
 			else if (is_cgi_pipe(fd))
@@ -298,6 +305,7 @@ void	Cluster::runServers(void)
 						std::cerr << RED << "handle_read_connection(): " << e.what() << ".\n" << RESET;
 					}
 				}
+				checkTimeout();
 				if (event_type & EPOLLOUT)
 				{
 					handle_write_connection(fd);

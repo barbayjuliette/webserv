@@ -418,6 +418,7 @@ bool	Request::handle_chunk(char *buffer, int bytes_read)
     {
         return false;
     }
+    _timeout = time(NULL);
  	// Parse the new chunked data
     _raw.insert(_raw.end(), buffer, buffer + bytes_read);
     if (_content_type == "multipart/form-data" && !_encoding_chunked) 
@@ -773,6 +774,16 @@ void Request::setBodyMaxLength(size_t len)
 void	Request::setServer(Webserver* server)
 {
 	_server = server;
+}
+
+void	Request::setError(error_type err)
+{
+	_error = err;
+}
+
+void	Request::setReqComplete(bool complete)
+{
+	_req_complete = complete;
 }
 
 /* ************************************************************************** */

@@ -42,6 +42,7 @@ enum error_type {
 	BODY_TOO_LONG,
 	NO_HOST,
 	INVALID_PORT,
+	TIMEOUT_ERR
 };
 
 class Request
@@ -125,6 +126,8 @@ class Request
 		std::string							getQuery() const;
 		void								setBodyMaxLength(size_t len);
 		void								setServer(Webserver* server);
+		void								setError(error_type err);
+		void								setReqComplete(bool complete);
 
 		void		handle_incomplete_header(int bytes_read, char *buffer);
 		bool		handle_chunk(char *buffer, int bytes_read);
