@@ -84,8 +84,14 @@ void	ServerConfig::validateKeys(void)
 		_locations["/"] = new LocationConfig(this);
 
 	if (_server_name.empty())
-	{
 		_server_name.push_back("");
+
+	if (_port == -1)
+		_port = 8080;
+	if (_host.empty())
+	{
+		_host = "127.0.0.1";
+		parseAddressInfo(_host, intToStr(_port));
 	}
 }
 

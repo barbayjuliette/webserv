@@ -144,7 +144,7 @@ void	Cluster::initServerSocket(std::string& host, int port, struct addrinfo *add
 	}
 	if (!tmp) // no bind attempt is successful
 	{
-		std::cerr << strerror(errno) << std::endl;
+		std::cerr << "initServerSocket(): " << strerror(errno) << std::endl;
 		exit(1);
 	}
 	check(listen(socket_fd, 12) < 0);
@@ -411,7 +411,7 @@ void	Cluster::handle_read_connection(int client_socket)
 	if (bytes_read <= 0)
 	{
 		if (bytes_read < 0)
-			std::cerr << strerror(errno) << std::endl;
+			std::cerr << "handle_read_connection(): " << strerror(errno) << std::endl;
 		else if (DEBUG)
 			std::cout << "Client closed the connection\n";
 		removeClient(client_socket);
@@ -694,7 +694,7 @@ std::string	Cluster::getClientIPAddress(const int client_socket)
 
 	if (getsockname(client_socket, (struct sockaddr*)&client_addr, &client_len) == -1)
 	{
-		std::cout << strerror(errno) << std::endl;
+		std::cout << "getClientIPAddress(): " << strerror(errno) << std::endl;
 		return ("");
 	}
 
