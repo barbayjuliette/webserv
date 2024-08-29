@@ -53,9 +53,13 @@ _cgi_handler(NULL)
 
 	if (request.getError() != NO_ERR && request.getError() != NOT_SUPPORTED)
 	{
-		set_error(400);
+		if (request.getError() == TIMEOUT_ERR)
+			set_error(408);
+		else
+			set_error(400);
 		_headers["Content-Length"] = intToString(this->_body.size());
-		std::cout << "Error: " << request.getError() << std::endl;
+		if (DEBUG)
+			std::cout << "Error: " << request.getError() << std::endl;
 	}
 	else if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
 		set_allow_methods(false);

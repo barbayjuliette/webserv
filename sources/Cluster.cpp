@@ -237,28 +237,37 @@ void	Cluster::removeFromEpoll(int fd)
 	}
 }
 
-void Cluster::checkTimeout(void)
+void	Cluster::checkTimeout(void)
 {
 	std::map<int /*socket fd*/, Client*>::iterator it;
 	time_t now = time(NULL);
 
 	// if (TIMEOUT_DEBUG)
 	// {
-	// 	std::cout << "checking timeout 1" << std::endl;
+	// 	std::cerr << "checking timeout 1" << std::endl;
 	// }
 	for (it = _clients.begin(); it != _clients.end(); it++)
 	{
-		if (TIMEOUT_DEBUG)
-		{
-			std::cout << "checking timeout" << std::endl;
-		}
-		if (now - it->second->getRequest()->getTimeout() > REQ_TIMEOUT)
+		Request* request = it->second->getRequest();
+		if (request && \
+			now - request->getTimeout() > REQ_TIMEOUT)
 		{
 			if (TIMEOUT_DEBUG)
 			{
-				std::cout << "Closing connection due to timeout" << std::endl;
+				std::cerr << "Closing connection due to timeout" << std::endl;
 			}
-			removeClient(it->first);
+			request->setError(TIMEOUT_ERR);
+			request->setReqComplete(true);
+			if (!it->second->getServer())
+			{
+				it->second->setServer(_server_sockets.begin()->second.servers[0]);
+			}
+			request->getServer()->create_response(request, it->second);
+			if (TIMEOUT_DEBUG)
+			{
+				std::cerr << "Sending timeout response..." << std::endl;
+			}
+			break ;
 		}
 	}
 }
@@ -281,7 +290,6 @@ void	Cluster::runServers(void)
 		{
 			int	fd = ep_events[i].data.fd;
 			int	event_type = ep_events[i].events;
-
 			if (is_server_socket(fd) && (event_type & EPOLLIN))
 				accept_new_connections(fd);
 			else if (is_cgi_pipe(fd))
@@ -299,8 +307,11 @@ void	Cluster::runServers(void)
 						std::cerr << RED << "handle_read_connection(): " << e.what() << ".\n" << RESET;
 					}
 				}
+				checkTimeout();
 				if (event_type & EPOLLOUT)
 				{
+					if (TIMEOUT_DEBUG)
+						std::cerr << "Running handle_write_connection" << std::endl;
 					handle_write_connection(fd);
 				}
 			}
@@ -332,7 +343,7 @@ void	Cluster::accept_new_connections(int server_socket)
 	addToEpoll(client_socket, EPOLLIN | EPOLLOUT);
 
 	_clients[client_socket] = new Client(client_socket, client_addr);
-	if (CTRACE)
+	if (TRACE)
 		std::cout << GREEN << "\nNew client created: " << client_socket << "\n\n" << RESET;
 }
 
@@ -477,7 +488,7 @@ void	Cluster::handle_write_connection(int client_socket)
 			std::cout << response->getFullResponse() << std::endl;
 			std::cout << GREEN << "End of response\n" << RESET;
 		}
-		if ((response->getHeaders())["Connection"] == "keep-alive")
+		if ((response->getHeaders())["Connection"] == "keep-alive" && client->getRequest()->getError() != TIMEOUT_ERR)
 		{
 			client->reset();
 		}
@@ -490,7 +501,6 @@ void	Cluster::handle_write_connection(int client_socket)
 	{
 		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
 		removeClient(client_socket);
-		// Error, so we need to remove client??
 	}
 }
 
