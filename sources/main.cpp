@@ -22,9 +22,9 @@ int main(int argc, char **argv)
 		return (0);
 	}
 
+	ConfigFile	*config_file;
 	try
 	{
-		ConfigFile	*config_file;
 		if (argc == 2)
 			config_file = new ConfigFile(argv[1]);
 		else
@@ -33,9 +33,21 @@ int main(int argc, char **argv)
 		Cluster		*cluster = new Cluster(config_file);
 		cluster->runServers();
 	}
-	catch (std::exception& e)
+	catch (const ConfigFile::ConfigReadError &e)
 	{
-		std::cerr << RED << e.what() << ".\n" << RESET;
+		std::cerr << "ConfigReadError\n";
+		delete config_file;
+	    std::cerr << RED << e.what() << ".\n" << RESET;
+	}
+	catch (const ValidConfig::InvalidConfigError &e)
+	{
+		std::cerr << "InvalidConfigError\n";
+		delete config_file;
+	    std::cerr << RED << e.what() << ".\n" << RESET;
+	}
+	catch (const std::exception &e)
+	{
+	    std::cerr << RED << e.what() << ".\n" << RESET;
 	}
 	return (0);
 }

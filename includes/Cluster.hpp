@@ -19,8 +19,8 @@
 # include "ConfigFile.hpp"
 
 # define MAX_EVENTS 10
-# define TIMEOUT 3
-# define REQ_TIMEOUT 3
+# define TIMEOUT 1000
+# define REQ_TIMEOUT 10
 
 class ConfigFile;
 class ServerConfig;

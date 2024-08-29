@@ -478,7 +478,12 @@ void	Cluster::handle_write_connection(int client_socket)
 	bytes_sent = send(client->getSocket(), response->getFullResponse().c_str(), response->getFullResponse().size(), 0);
 	if (response->getCGIStatus() == CGI_DONE)
 		remove_cgi_pipes(client->getRequest(), response);
-	if (bytes_sent == response->getFullResponse().size())
+	if (bytes_sent <= 0)
+	{
+		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
+		removeClient(client_socket);
+	}
+	else if (bytes_sent == response->getFullResponse().size())
 	{
 		if (TRACE)
 			std::cout << CYAN << "\ninside handle_write_connection: fd " << client_socket << "\n\n" << RESET;
