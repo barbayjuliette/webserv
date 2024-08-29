@@ -246,25 +246,25 @@ void	Cluster::checkTimeout(void)
 	// }
 	for (it = _clients.begin(); it != _clients.end(); it++)
 	{
-		if (it->second->getRequest() && \
-			now - it->second->getRequest()->getTimeout() > REQ_TIMEOUT)
+		Request* request = it->second->getRequest();
+		if (request && \
+			now - request->getTimeout() > REQ_TIMEOUT)
 		{
 			if (TIMEOUT_DEBUG)
 			{
 				std::cerr << "Closing connection due to timeout" << std::endl;
 			}
-			it->second->getRequest()->setError(TIMEOUT_ERR);
-			it->second->getRequest()->setReqComplete(true);
+			request->setError(TIMEOUT_ERR);
+			request->setReqComplete(true);
 			if (!it->second->getServer())
 			{
 				it->second->setServer(_server_sockets.begin()->second.servers[0]);
 			}
-			it->second->getRequest()->getServer()->create_response(it->second->getRequest(), it->second);
+			request->getServer()->create_response(request, it->second);
 			if (TIMEOUT_DEBUG)
 			{
 				std::cerr << "Sending timeout response..." << std::endl;
 			}
-			removeClient(it->first);
 			break ;
 		}
 	}
@@ -308,6 +308,8 @@ void	Cluster::runServers(void)
 				checkTimeout();
 				if (event_type & EPOLLOUT)
 				{
+					if (TIMEOUT_DEBUG)
+						std::cerr << "Running handle_write_connection" << std::endl;
 					handle_write_connection(fd);
 				}
 			}
@@ -484,7 +486,7 @@ void	Cluster::handle_write_connection(int client_socket)
 			std::cout << response->getFullResponse() << std::endl;
 			std::cout << GREEN << "End of response\n" << RESET;
 		}
-		if ((response->getHeaders())["Connection"] == "keep-alive")
+		if ((response->getHeaders())["Connection"] == "keep-alive" && client->getRequest()->getError() != TIMEOUT_ERR)
 		{
 			client->reset();
 		}

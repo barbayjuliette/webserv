@@ -50,6 +50,7 @@ _cgi_handler(NULL)
 
 	_path = _location->getRoot() + request.getPath().substr(1, std::string::npos);
 	setContentType(_path);
+
 	if (request.getError() != NO_ERR && request.getError() != NOT_SUPPORTED)
 	{
 		if (request.getError() == TIMEOUT_ERR)
@@ -57,7 +58,8 @@ _cgi_handler(NULL)
 		else
 			set_error(400);
 		_headers["Content-Length"] = intToString(this->_body.size());
-		std::cout << "Error: " << request.getError() << std::endl;
+		if (DEBUG)
+			std::cout << "Error: " << request.getError() << std::endl;
 	}
 	else if (!method_is_allowed(request.getMethod(), _location->getAllowedMethods()))
 		set_allow_methods(false);
