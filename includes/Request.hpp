@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:06:01 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/12 13:43:35 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/29 14:50:22 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,7 +71,6 @@ class Request
 		std::map<std::string, std::string> 	_bodyMap;
 		std::map<std::string, std::string>	_fileMap;
 
-		Request();
 
 		// Member functions
 		int 		parseRequest(std::string header);
@@ -103,6 +102,7 @@ class Request
 		void 			print_vector(std::vector<unsigned char> vec);
 
 	public:
+		Request();
 		Request(char *full_request, int bytes_read);
 		Request( Request const & src );
 		~Request();

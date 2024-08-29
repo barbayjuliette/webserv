@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/02 20:33:16 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/06 19:35:16 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/29 13:26:18 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,4 @@ class CGIGet : public CGIHandler
 
 		void		write_cgi(int cgi_status);
 		void		read_cgi_request(int cgi_status);
-		// void			execute_cgi(int pipe_fd[], Request const & request);
-		// void			process_result_cgi(int pid, int pipe_fd[]);
 };

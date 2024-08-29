@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 15:00:25 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/12 14:31:57 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/29 14:56:15 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,11 @@
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
+
+CGIHandler::CGIHandler() : _request(*(new Request()))
+{
+	
+}
 
 CGIHandler::CGIHandler(const Request& request, LocationConfig *location, std::string cgi_ext) :
 _request(request),
@@ -46,7 +51,8 @@ _content_type(src._content_type),
 _html(src._html),
 _headers(src._headers),
 _full_path(src._full_path),
-_error(src._error)
+_error(src._error),
+_pid(src._pid)
 {}
 
 /*
@@ -68,6 +74,7 @@ CGIHandler &		CGIHandler::operator=( CGIHandler const & rhs )
 		this->_headers = rhs._headers;
 		this->_full_path = rhs._full_path;
 		this->_error = rhs._error;
+		this->_pid = rhs._pid;
 	}
 	return(*this);
 }
@@ -150,13 +157,6 @@ void	CGIHandler::execute_cgi(int cgi_status)
 	std::string	server_protocol = "SERVER_PROTOCOL=HTTP/1.1";
 	std::string	server_software = "SERVER_SOFTWARE=42webserv";
 	std::string	redirect_status = "REDIRECT_STATUS=200";
-	// std::string	query_string = "QUERY_STRING";
-	// std::string	remote_addr = "REMOTE_ADDR";
-	// std::string	remote_host = "REMOTE_HOST";
-	// std::string	remote_ident = "REMOTE_IDENT";
-	// std::string	remote_user = "REMOTE_USER";
-	// std::string	server_name = "SERVER_NAME";
-	// std::string	server_port = "SERVER_PORT";
 
 	const char* env[] =
 	{
@@ -239,7 +239,6 @@ void	CGIHandler::setContentType()
 	std::size_t		pos = low.find("content-type:", 0);
 	if (pos == std::string::npos)
 	{
-		// TO DO Error 
 		this->_content_type = "text/plain";
 		std::cerr << "No Content-type found in CGI\n";
 		return ;

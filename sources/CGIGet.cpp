@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 15:00:25 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/02 20:26:17 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/29 14:58:30 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,11 @@
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
+
+CGIGet::CGIGet() : CGIHandler()
+{
+
+}
 
 CGIGet::CGIGet(const Request& request, LocationConfig *location, std::string cgi_ext) :
 CGIHandler(request, location, cgi_ext)

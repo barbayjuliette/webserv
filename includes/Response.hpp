@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:05:36 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/08 17:05:51 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/29 13:54:02 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,11 +75,10 @@ class Response
 		int			is_directory(std::string req_path);
 		void		create_directory_listing(std::string path, std::string req_path);
 		std::string	create_html(std::string source, std::string path);
-		std::string	get_index_page(void);
 		std::string	intToString(int num);
 
 		/* CGI utils */
-		void		process_cgi_response(const Request& request);
+		void		process_cgi_response();
 		std::string	extract_cgi_extension(const std::string& req_path);
 
 		/* Setters */

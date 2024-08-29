@@ -1,0 +1,8 @@
+curl -X KFYKY  http://localhost:8080/random.html
+--> Bad request
+
+curl -X PATCH  http://localhost:8080/random.html -d "ef=1&wflgw=354"
+--> Method not allowed
+
+ curl -X DELETE http://localhost:8080/database/images/animal.jpeg
+

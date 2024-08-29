@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/17 19:18:04 by yliew             #+#    #+#             */
-/*   Updated: 2024/08/13 10:56:25 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/29 13:54:28 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,8 @@ Cluster::Cluster() {}
 
 Cluster::Cluster(const Cluster& src) :
 _server_sockets(src._server_sockets),
-_clients(src._clients)
+_clients(src._clients),
+_cgi_pipes(src._cgi_pipes)
 {
 
 }
@@ -69,6 +70,7 @@ Cluster&	Cluster::operator=(const Cluster& src)
 	{
 		this->_server_sockets = src._server_sockets;
 		this->_clients = src._clients;
+		this->_cgi_pipes = src._cgi_pipes;
 	}
 	return (*this);
 }
@@ -532,7 +534,7 @@ void	Cluster::handle_cgi(Client *client, uint32_t event_type)
 			else
 			{
 				response->getCGIHandler()->read_cgi_result(cgi_status);
-				response->process_cgi_response(*request);
+				response->process_cgi_response();
 			}
 		}
 		catch (std::exception& e)

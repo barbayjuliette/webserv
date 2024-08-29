@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/05 21:18:39 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/12 15:53:47 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/29 14:49:35 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,8 @@
 /*
 ** ------------------------------- CONSTRUCTOR --------------------------------
 */
+CGIPost::CGIPost() : CGIHandler()
+{}
 
 CGIPost::CGIPost(const Request& request, LocationConfig *location, std::string cgi_ext) :
 CGIHandler(request, location, cgi_ext)
@@ -41,7 +43,6 @@ CGIPost &	CGIPost::operator=( CGIPost const & rhs )
 /*
 ** -------------------------------- DESTRUCTOR --------------------------------
 */
-
 CGIPost::~CGIPost() {}
 
 
