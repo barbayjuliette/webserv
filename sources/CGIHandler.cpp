@@ -143,9 +143,13 @@ void	CGIHandler::execute_cgi(int cgi_status)
 
 	std::string	content_length = "CONTENT_LENGTH=" + intToString(_request.getBody().size());
 
-	std::string	request_method;
+	std::string	request_method, query_string = "";
 	if (cgi_status == CGI_GET)
+	{
 		request_method = "REQUEST_METHOD=GET";
+		if (_request.hasQuery())
+			query_string = "QUERY_STRING=" + _request.getQuery();
+	}
 	else if (cgi_status == CGI_POST_READ)
 		request_method = "REQUEST_METHOD=POST";
 
@@ -170,6 +174,7 @@ void	CGIHandler::execute_cgi(int cgi_status)
 		server_protocol.c_str(),
 		server_software.c_str(),
 		redirect_status.c_str(),
+		query_string.c_str(),
 		NULL
 	};
 
@@ -210,7 +215,6 @@ void	CGIHandler::read_cgi_result(int cgi_status)
 			setResult(getResult() + buffer);
 	}
 	close(_response_pipe[0]);
-	std::cerr << GREEN << "GET FINAL RESULT:\n" << getResult() << "\n" << RESET;
 
 	setContentType();
 	setHtml();

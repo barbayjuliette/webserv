@@ -320,6 +320,7 @@ bool	Request::handle_chunk(char *buffer, int bytes_read)
     {
         return false;
     }
+    _timeout = time(NULL);
  	// Parse the new chunked data
     _raw.insert(_raw.end(), buffer, buffer + bytes_read);
     if (_content_type == "multipart/form-data" && !_encoding_chunked) 
@@ -339,6 +340,18 @@ bool	Request::handle_chunk(char *buffer, int bytes_read)
 	return _req_complete;
 }
 
+void	Request::parseQuery()
+{
+	size_t	query_pos = this->_path.find('?');
+	if (query_pos == std::string::npos)
+	{
+		this->_query = "";
+		return ;
+	}
+	this->_query = _path.substr(query_pos + 1, std::string::npos);
+	this->_path = _path.substr(0, query_pos);
+}
+
 void Request::initRequest()
 {
 	// Check if header is complete
@@ -348,6 +361,7 @@ void Request::initRequest()
 		std::cout << "initing request" << std::endl;
 	std::string header = extractHeader();
 	this->parseRequest(header);
+	this->parseQuery();
 	this->parsePort(header);
 	this->parseHeader(header);
 	// Check if encoding chunked
@@ -745,6 +759,16 @@ time_t	Request::getTimeout()
 	return (this->_timeout);
 }
 
+bool	Request::hasQuery() const
+{
+	return (!this->_query.empty());
+}
+
+std::string	Request::getQuery() const
+{
+	return (this->_query);
+}
+
 void Request::setBodyMaxLength(size_t len)
 {
 	this->_body_max_length = len;
@@ -753,6 +777,16 @@ void Request::setBodyMaxLength(size_t len)
 void	Request::setServer(Webserver* server)
 {
 	_server = server;
+}
+
+void	Request::setError(error_type err)
+{
+	_error = err;
+}
+
+void	Request::setReqComplete(bool complete)
+{
+	_req_complete = complete;
 }
 
 /* ************************************************************************** */
