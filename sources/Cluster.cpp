@@ -242,19 +242,20 @@ void Cluster::checkTimeout(void)
 
 	// if (TIMEOUT_DEBUG)
 	// {
-	// 	std::cout << "checking timeout 1" << std::endl;
+	// 	std::cerr << "checking timeout 1" << std::endl;
 	// }
 	for (it = _clients.begin(); it != _clients.end(); it++)
 	{
 		if (TIMEOUT_DEBUG)
 		{
-			std::cout << "checking timeout" << std::endl;
+			std::cerr << "checking timeout" << std::endl;
 		}
-		if (now - it->second->getRequest()->getTimeout() > REQ_TIMEOUT)
+		if (it->second->getRequest() && \
+			now - it->second->getRequest()->getTimeout() > REQ_TIMEOUT)
 		{
 			if (TIMEOUT_DEBUG)
 			{
-				std::cout << "Closing connection due to timeout" << std::endl;
+				std::cerr << "Closing connection due to timeout" << std::endl;
 			}
 			removeClient(it->first);
 		}
@@ -488,7 +489,6 @@ void	Cluster::handle_write_connection(int client_socket)
 	{
 		std::cerr << RED << "Error sending response to client " << client->getSocket() << std::endl << RESET;
 		removeClient(client_socket);
-		// Error, so we need to remove client??
 	}
 }
 

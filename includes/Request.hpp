@@ -101,8 +101,6 @@ class Request
 
 		// Error handling
 		void 			printError(std::string error_msg);
-		static void		printMap(std::map<std::string, std::string> map);
-		void 			print_vector(std::vector<unsigned char> vec);
 
 	public:
 		Request(char *full_request, int bytes_read);
@@ -135,5 +133,6 @@ class Request
 
 		// Debug
 		void 			print_variables() const;
-
+		static void		printMap(std::map<std::string, std::string> map);
+		void 			print_vector(std::vector<unsigned char> vec);
 };
