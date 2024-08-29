@@ -21,10 +21,6 @@ ConfigFile::ConfigFile() {}
 ConfigFile::ConfigFile(const char *file)
 {
 	openFile(file);
-	readFile();
-	// if (TRACE)
-	// 	printContexts(this->_servers);
-	validateConfig();
 }
 
 ConfigFile::ConfigFile(const ConfigFile& src)
@@ -48,10 +44,8 @@ ConfigFile&	ConfigFile::operator=(const ConfigFile& other)
 
 ConfigFile::~ConfigFile()
 {
-	std::cerr << RED << "destructor called\n" << RESET;
 	for (std::vector<ServerConfig*>::iterator it = this->_servers.begin(); it != this->_servers.end(); it++)
 	{
-		std::cerr << RED << "destructor called\n" << RESET;
 		delete *it;
 	}
 }
