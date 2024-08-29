@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/10 19:34:58 by yliew             #+#    #+#             */
-/*   Updated: 2024/08/12 14:21:03 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/29 15:03:43 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@
 #endif
 
 #ifndef CTRACE
-# define CTRACE 1
+# define CTRACE 0
 #endif
 
 /* C++ headers */

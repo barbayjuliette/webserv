@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:27 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/16 15:04:40 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/29 14:47:58 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,13 +88,15 @@ void	Response::setHeaders(const Request &request)
 Response::Response( const Response & src ) :
 _status_code(src._status_code),
 _status_text(src._status_text),
+_cgi_status(src._cgi_status),
 _http_version(src._http_version),
 _body(src._body),
 _full_response(src._full_response),
 _path(src._path),
 _headers(src._headers),
 _config(src._config),
-_location(src._location)
+_location(src._location),
+_cgi_handler(src._cgi_handler)
 {
 
 }
@@ -119,6 +121,7 @@ Response &				Response::operator=( Response const & rhs )
 	{
 		this->_status_code = rhs._status_code;
 		this->_status_text = rhs._status_text;
+		this->_cgi_status = rhs._cgi_status;
 		this->_http_version = rhs._http_version;
 		this->_body = rhs._body;
 		this->_full_response = rhs._full_response;
@@ -126,6 +129,7 @@ Response &				Response::operator=( Response const & rhs )
 		this->_headers = rhs._headers;
 		this->_config = rhs._config;
 		this->_location = rhs._location;
+		this->_cgi_handler = rhs._cgi_handler;
 	}
 	return (*this);
 }
@@ -299,10 +303,8 @@ std::string	Response::extract_cgi_extension(const std::string& req_path)
 	return (req_path.substr(i, std::string::npos));
 }
 
-void	Response::process_cgi_response(const Request& request)
+void	Response::process_cgi_response()
 {
-	(void)request; //remove if request info not needed?
-
 	if (_cgi_handler->getError() != 0)
 		set_error(_cgi_handler->getError());
 	else
@@ -311,10 +313,6 @@ void	Response::process_cgi_response(const Request& request)
 		_headers["Content-Type"] = _cgi_handler->getContentType();
 		set_success();
 	}
-	// std::cout << CYAN << "cgi error: " << RESET << _cgi_handler->getError() << '\n';
-	// std::cout << CYAN << "cgi body: " << RESET << _cgi_handler->getHtml() <<'\n';
-	// std::cout << CYAN << "cgi headers: " << RESET << _cgi_handler->getContentType() <<'\n';
-
 	_headers["Content-Length"] = intToString(this->_body.size());
 	_cgi_status = CGI_DONE;
 	getDate();

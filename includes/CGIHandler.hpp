@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/31 14:56:13 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/12 15:38:00 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/29 14:50:31 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,9 +55,8 @@ class CGIHandler
 		int					_error;
 		int					_pid;
 
-		CGIHandler();
-
 	public:
+		CGIHandler();
 		CGIHandler(const Request& request, LocationConfig *location, std::string cgi_ext);
 		CGIHandler(CGIHandler const & src);
 		virtual ~CGIHandler();
@@ -70,8 +69,6 @@ class CGIHandler
 		void			execute_cgi(int cgi_status);
 		virtual void	write_cgi(int cgi_status) = 0;
 		virtual void	read_cgi_request(int cgi_status) = 0;
-		// void			execute_cgi(int pipe_fd[], Request const & request);
-		// void			process_result_cgi(int pid, int pipe_fd[]);
 
 		/* Utils */
 		std::string	intToString(int num);

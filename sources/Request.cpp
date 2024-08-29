@@ -6,7 +6,7 @@
 /*   By: jbarbay <jbarbay@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/11 13:15:33 by jbarbay           #+#    #+#             */
-/*   Updated: 2024/08/12 13:42:31 by jbarbay          ###   ########.fr       */
+/*   Updated: 2024/08/29 14:48:52 by jbarbay          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -610,12 +610,14 @@ Request::Request(char *full_request, int bytes_read) :
 
 Request::Request( const Request & src ):
 	_server(src._server),
+	_timeout(src._timeout),
 	_raw(src._raw),
 	_header_length(src._header_length),
 	_req_complete(src._req_complete),
 	_body_max_length(src._body_max_length),
 	_content_length(src._content_length),
 	_is_chunked(src._is_chunked),
+	_encoding_chunked(src._encoding_chunked),
 	_method(src._method),
 	_path(src._path),
 	_http_version(src._http_version),
@@ -648,12 +650,14 @@ Request &				Request::operator=( Request const & rhs )
 	if (this != &rhs)
 	{
 		this->_server = rhs._server;
+		this->_timeout = rhs._timeout;
 		this->_raw = rhs._raw;
 		this->_header_length = rhs._header_length;
 		this->_req_complete = rhs._req_complete;
 		this->_body_max_length = rhs._body_max_length;
 		this->_content_length = rhs._content_length;
 		this->_is_chunked = rhs._is_chunked;
+		this->_encoding_chunked = rhs._encoding_chunked;
 		this->_method = rhs._method;
 		this->_path = rhs._path;
 		this->_http_version = rhs._http_version;
