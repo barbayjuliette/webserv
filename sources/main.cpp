@@ -22,20 +22,24 @@ int main(int argc, char **argv)
 		return (0);
 	}
 
+	ConfigFile	*config_file = NULL;
 	try
 	{
-		ConfigFile	*config_file;
 		if (argc == 2)
 			config_file = new ConfigFile(argv[1]);
 		else
 			config_file = new ConfigFile("./config_files/default.conf");
+		config_file->readFile();
+		config_file->validateConfig();
 
 		Cluster		*cluster = new Cluster(config_file);
 		cluster->runServers();
 	}
-	catch (std::exception& e)
+	catch (const std::exception &e)
 	{
-		std::cerr << RED << e.what() << ".\n" << RESET;
+		if (config_file)
+			delete config_file;
+	    std::cerr << RED << e.what() << ".\n" << RESET;
 	}
 	return (0);
 }

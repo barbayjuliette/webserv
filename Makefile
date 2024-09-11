@@ -19,11 +19,6 @@ CFLAGS	= -Wall -Wextra -Werror -std=c++98 -g
 DFLAGS	= -MMD -MP # handle header dependencies
 RM		= rm -fr
 
-# enable/disable debug modes
-DEBUG	?= 0
-TRACE	?= 0
-MODE	= -DDEBUG=$(DEBUG) -DTRACE=$(TRACE)
-
 # directories
 INC_DIR = ./includes \
 		./includes/config
@@ -71,11 +66,11 @@ $(NAME): $(OBJS)
 
 # build objects
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
-	@$(CC) $(CFLAGS) $(DFLAGS) $(MODE) -c $< -o $@ $(INC)
+	@$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@ $(INC)
 	@echo "$(B_GREEN)$< compiled.$(END)"
 
 $(BUILD_DIR)/%.o: $(CONFIG_DIR)/%.cpp | $(BUILD_DIR)
-	@$(CC) $(CFLAGS) $(DFLAGS) $(MODE) -c $< -o $@ $(INC)
+	@$(CC) $(CFLAGS) $(DFLAGS) -c $< -o $@ $(INC)
 	@echo "$(B_GREEN)$< compiled.$(END)"
 
 # build directory to store objects and dependency files

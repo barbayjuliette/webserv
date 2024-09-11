@@ -204,6 +204,8 @@ void	CGIHandler::read_cgi_result(int cgi_status)
 	while (bytes_read != 0)
 	{
 		bytes_read = read(_response_pipe[0], buffer, 500);
+		if (bytes_read == 0)
+			break ;
 		if (bytes_read < 0)
 		{
 			std::cerr << "Error: " << strerror(errno) << std::endl;

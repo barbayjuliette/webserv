@@ -4,19 +4,23 @@ import cgitb; cgitb.enable()
 
 form = cgi.FieldStorage()
 
-fileitem = form['file']
-print("Form keys: ", form.keys())
+if 'file' not in form:
+    message = 'No file field found in the request'
+else: 
+	fileitem = form['file']
+	if fileitem == None:
+		message = 'No file provided'
 
-if fileitem.filename:
-	fn = os.path.basename(fileitem.filename.replace("\\", "/" ))
-	if os.path.isdir("./uploads") is False :
-		os.makedirs("./uploads")
-	file = open('./uploads/' + fn, 'wb')
-	file.write(fileitem.file.read())
-	message = 'The file "' + fn + '" was uploaded successfully'
-   
-else:
-	message = 'No file was uploaded'
+	else :
+		if fileitem.filename:
+			fn = os.path.basename(fileitem.filename.replace("\\", "/" ))
+			if os.path.isdir("./uploads") is False :
+				os.makedirs("./uploads")
+			with open('./uploads/' + fn, 'wb') as file:
+				file.write(fileitem.file.read())
+			message = 'The file "' + fn + '" was uploaded successfully'
+		else:
+			message = 'No file was uploaded'
 
 print ("Content-type:text/html\r\n\r\n")
 print ("<html>")

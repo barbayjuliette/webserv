@@ -21,10 +21,6 @@ ConfigFile::ConfigFile() {}
 ConfigFile::ConfigFile(const char *file)
 {
 	openFile(file);
-	readFile();
-	// if (TRACE)
-	// 	printContexts(this->_servers);
-	validateConfig();
 }
 
 ConfigFile::ConfigFile(const ConfigFile& src)
